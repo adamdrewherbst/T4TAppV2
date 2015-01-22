@@ -1,0 +1,39 @@
+form position {
+	theme = res/common/default.theme
+	style = basicContainer
+	position = 200,10
+	width = 120
+	height = 350
+	layout = LAYOUT_FLOW
+	consumeEvents = true
+	
+	button subMode {
+		style = buttonStyle
+		width = 100
+		height = 50
+		text = Translating
+	}
+	button reset {
+		style = buttonStyle
+		width = 100
+		height = 50
+		text = X
+	}
+	button axis {
+		style = buttonStyle
+		width = 100
+		height = 50
+		text = X
+	}
+	slider axisValue {
+		style = buttonStyle
+		width = 100
+		height = 50
+		orientation = HORIZONTAL
+		text = Value
+		valueTextVisible = true
+		valueTextPrecision = 1
+		enabled = false
+	}
+}
+

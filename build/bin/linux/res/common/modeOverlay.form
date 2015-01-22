@@ -1,0 +1,8 @@
+form overlay
+{
+	theme = res/common/default.theme
+	style = hiddenContainer
+	autoHeight = true
+	layout = LAYOUT_ABSOLUTE
+}
+

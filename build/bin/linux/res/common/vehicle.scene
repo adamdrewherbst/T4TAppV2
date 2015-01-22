@@ -1,0 +1,50 @@
+scene
+{
+	path = res/common/vehicle.gpb
+	
+	activeCamera = cameraNode
+
+	node ground
+	{
+		url = ground
+		//material = res/common/sample.material#box
+		translate = 0.0,10.0,0.0
+		collisionObject = res/common/models.physics#staticbox
+	}
+	node carbody
+	{
+		url = box
+		//scale = 0.5,0.5,0.5
+		translate = 0.0,-2.0,0.0
+		material = res/common/sample.material#box
+		collisionObject = res/common/vehicle.physics#carbody
+	}
+	node wheelFrontLeft
+	{
+		url = cylinder1
+		//scale = 0.5,0.5,0.5
+		material = res/common/sample.material#cylinder
+		collisionObject = res/common/vehicle.physics#frontWheel
+	}
+	node wheelFrontRight
+	{
+		url = cylinder2
+		//scale = 0.5,0.5,0.5
+		material = res/common/sample.material#cylinder
+		collisionObject = res/common/vehicle.physics#frontWheel
+	}
+	node wheelBackLeft
+	{
+		url = cylinder3
+		//scale = 0.5,0.5,0.5
+		material = res/common/sample.material#cylinder
+		collisionObject = res/common/vehicle.physics#rearWheel
+	}
+	node wheelBackRight
+	{
+		url = cylinder4
+		//scale = 0.5,0.5,0.5
+		material = res/common/sample.material#cylinder
+		collisionObject = res/common/vehicle.physics#rearWheel
+	}
+}

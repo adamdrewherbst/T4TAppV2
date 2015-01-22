@@ -1,0 +1,42 @@
+form rotate {
+	theme = res/common/default.theme
+	style = basicContainer
+	position = 200,10
+	width = 120
+	height = 240
+	layout = LAYOUT_FLOW
+	
+	button subMode {
+		style = buttonStyle
+		width = 100
+		height = 50
+		text = Axle
+	}
+	button axis {
+		style = buttonStyle
+		width = 100
+		height = 50
+		text = X
+	}
+	checkbox snap {
+		style = buttonStyle
+		width = 100
+		height = 50
+		text = Snap to Grid
+		value = false
+	}
+	slider spacing {
+		style = buttonStyle
+		width = 100
+		height = 50
+		orientation = HORIZONTAL
+		text = Grid Spacing
+		min = 0.1
+		max = 5.0
+		step = 0.1
+		value = 1.0
+		valueTextVisible = true
+		valueTextPrecision = 1
+	}
+}
+

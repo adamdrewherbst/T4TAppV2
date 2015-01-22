@@ -1,0 +1,10 @@
+container overlay {
+	style = hiddenContainer
+	position = 0,0
+	autoWidth = true
+	autoHeight = true
+	layout = LAYOUT_ABSOLUTE
+	zIndex = 50
+	consumeInputEvents = true
+}
+

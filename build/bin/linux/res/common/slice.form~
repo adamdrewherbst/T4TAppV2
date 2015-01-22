@@ -1,0 +1,34 @@
+form slice {
+	theme = res/common/default.theme
+	style = basicContainer
+	position = 200,10
+	width = 120
+	height = 240
+	layout = LAYOUT_FLOW
+	
+	button Slice_axis {
+		style = buttonStyle
+		width = 100
+		height = 50
+		text = Y
+	}
+	button Slice_rotate {
+		style = buttonStyle
+		width = 100
+		height = 50
+		text = Rotate
+	}
+	button Slice_translate {
+		style = buttonStyle
+		width = 100
+		height = 50
+		text = Translate
+	}
+	button Slice_doTool {
+		style = buttonStyle
+		width = 100
+		height = 50
+		text = Slice!
+	}
+}
+

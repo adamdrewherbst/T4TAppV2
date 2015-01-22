@@ -1,0 +1,14 @@
+form overlay
+{
+	theme = res/common/default.theme
+	style = hiddenContainer
+	autoHeight = true
+	layout = LAYOUT_ABSOLUTE
+	
+	button overlayButton {
+		style = buttonStyle
+		autoWidth = true
+		autoHeight = true
+	}
+}
+

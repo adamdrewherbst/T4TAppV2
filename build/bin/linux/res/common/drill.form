@@ -1,0 +1,28 @@
+form drill {
+	theme = res/common/default.theme
+	style = basicContainer
+	position = 200,10
+	width = 120
+	height = 240
+	layout = LAYOUT_FLOW
+	
+	button Drill_axis {
+		style = buttonStyle
+		width = 100
+		height = 50
+		text = Y
+	}
+	button cameraMode {
+		style = buttonStyle
+		width = 100
+		height = 50
+		text = Translating
+	}
+	button Drill_doTool {
+		style = buttonStyle
+		width = 100
+		height = 50
+		text = Drill!
+	}
+}
+

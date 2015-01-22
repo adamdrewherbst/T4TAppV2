@@ -1,0 +1,60 @@
+collisionObject sphere
+{
+    type = RIGID_BODY
+    shape = MESH
+    mass = 10.0
+    friction = 0.5
+    restitution = 0.5
+    linearDamping = 0.025
+    angularDamping = 0.6
+}
+collisionObject staticsphere : sphere
+{
+	mass = 0.0
+}
+
+collisionObject cylinder
+{
+    type = RIGID_BODY
+    shape = MESH
+    mass = 10.0
+    friction = 0.5
+    restitution = 0.5
+    linearDamping = 0.025
+    angularDamping = 0.6
+}
+collisionObject staticcylinder : cylinder
+{
+	mass = 0.0
+}
+
+collisionObject halfpipe
+{
+    type = RIGID_BODY
+    shape = MESH
+    mass = 10.0
+    friction = 0.5
+    restitution = 0.5
+    linearDamping = 0.025
+    angularDamping = 0.6
+}
+collisionObject statichalfpipe : halfpipe
+{
+	mass = 0.0
+}
+
+collisionObject box
+{
+    type = RIGID_BODY
+    shape = BOX
+    mass = 10.0
+    friction = 0.5
+    restitution = 0.5
+    linearDamping = 0.025
+    angularDamping = 0.6
+}
+collisionObject staticbox : box
+{
+	mass = 0.0
+}
+

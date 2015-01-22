@@ -1,0 +1,117 @@
+		container mode_lever {
+			style = hiddenContainer
+			autoWidth = true
+			autoHeight = true
+			layout = LAYOUT_ABSOLUTE
+			
+			container controls {
+				style = basicContainer
+				position = 20, 10
+				size = 180, 250
+				layout = LAYOUT_VERTICAL
+				consumeInputEvents = true
+				zIndex = 5
+				
+				container moveElement {
+					style = hiddenContainer
+					autoWidth = true
+					height = 140
+					layout = LAYOUT_VERTICAL
+					
+					image translate {
+						style = imageWide
+						autoWidth = true
+						height = 75
+						path = res/png/translate.png
+					}
+					container rotate {
+						style = hiddenContainer
+						autoWidth = true
+						height = 60
+						layout = LAYOUT_FLOW
+						
+						image rotateY {
+							style = imageSquare
+							size = 50, 50
+							path = res/png/rotateY.png
+						}
+						image rotateZ {
+							style = imageSquare
+							size = 50, 50
+							path = res/png/rotateZ.png
+						}
+						image rotateX {
+							style = imageSquare
+							size = 50, 50
+							path = res/png/rotateX.png
+						}
+					}
+				}
+				button finishElement {
+					style = buttonStyle
+					autoWidth = true
+					height = 40
+					text = Finish
+				}
+			}
+		}
+
+		container mode_pulley {
+			style = hiddenContainer
+			autoWidth = true
+			autoHeight = true
+			layout = LAYOUT_ABSOLUTE
+
+			container controls {
+				style = basicContainer
+				position = 20, 10
+				size = 180, 250
+				layout = LAYOUT_VERTICAL
+				consumeInputEvents = true
+				zIndex = 5
+				
+				container moveElement {
+					style = hiddenContainer
+					autoWidth = true
+					height = 140
+					layout = LAYOUT_VERTICAL
+					
+					image translate {
+						style = imageWide
+						autoWidth = true
+						height = 75
+						path = res/png/translate.png
+					}
+					container rotate {
+						style = hiddenContainer
+						autoWidth = true
+						height = 60
+						layout = LAYOUT_FLOW
+						
+						image rotateY {
+							style = imageSquare
+							size = 50, 50
+							path = res/png/rotateY.png
+						}
+						image rotateZ {
+							style = imageSquare
+							size = 50, 50
+							path = res/png/rotateZ.png
+						}
+						image rotateX {
+							style = imageSquare
+							size = 50, 50
+							path = res/png/rotateX.png
+						}
+					}
+				}
+				button finishElement {
+					style = buttonStyle
+					autoWidth = true
+					height = 40
+					text = Finish
+				}
+			}
+		}
+		
+
