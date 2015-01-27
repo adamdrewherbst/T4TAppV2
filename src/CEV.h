@@ -34,7 +34,7 @@ public:
 
 	CEV();
 	bool touchEvent(Touch::TouchEvent evt, int x, int y, unsigned int contactIndex);
-	void controlEvent(Control *control, EventType evt);
+	void controlEvent(Control *control, Control::Listener::EventType evt);
 	void setupMenu();
 	void setActive(bool active);
 	bool setSubMode(short mode);

@@ -141,6 +141,7 @@ public:
 	void removeMe();
 	nodeConstraint* getNodeConstraint(MyNode *other);
 	MyNode *getConstraintNode(nodeConstraint *constraint);
+	bool isBroken();
 	//get the world space joint attributes
 	Vector3 getAnchorPoint();
 	Vector3 getJointAxis();

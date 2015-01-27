@@ -35,7 +35,7 @@ public:
 	void setActive(bool active);
 	bool setSubMode(short mode);
 	void launch();
-	void controlEvent(Control *control, EventType evt);
+	void controlEvent(Control *control, Control::Listener::EventType evt);
 	bool touchEvent(Touch::TouchEvent evt, int x, int y, unsigned int contactIndex);
 	void setRampHeight(float scale);
 };

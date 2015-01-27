@@ -10,6 +10,7 @@ Rocket::Rocket() : Project::Project("rocket") {
 	app->addItem("balloon_sphere", 2, "general", "balloon");
 	app->addItem("balloon_long", 2, "general", "balloon");
 
+	_pathLength = 10;
 	_straw = (Straw*) addElement(new Straw(this));
 	_balloons = (Balloon*) addElement(new Balloon(this, _straw));
 	setupMenu();
@@ -27,7 +28,7 @@ bool Rocket::setSubMode(short mode) {
 			break;
 		} case 1: { //test
 			//move the straw back to the starting point
-			Vector3 start(0, 0, -5);
+			Vector3 start(0, 0, -_pathLength/2);
 			app->setCameraEye(30, 0, M_PI/12);
 			app->getPhysicsController()->setGravity(app->_gravity);
 			_straw->_constraint->setEnabled(false);
@@ -68,19 +69,26 @@ bool Rocket::setSubMode(short mode) {
 
 void Rocket::launch() {
 	Project::launch();
+	_deflating = true;
 }
 
 void Rocket::update() {
 	if(!_launching) return;
+	//see if we made it to the end
+	float maxZ = _rootNode->getFirstChild()->getTranslationWorld().z; //getMaxValue(Vector3::unitZ());
+	if(maxZ > 0.99f * _pathLength/2) {
+		app->message("You made it to the end!");
+	}
 	//deflate each balloon by a fixed percentage
-	_launching = false;
+	if(!_deflating) return;
+	_deflating = false;
 	short n = _balloons->_nodes.size();
 	MyNode *straw = _straw->getNode();
 	for(short i = 0; i < n; i++) {
 		MyNode *balloon = _balloons->_nodes[i].get(), *anchor = dynamic_cast<MyNode*>(balloon->getParent());
 		float scale = balloon->getScaleX();
 		if(scale > 0.2f) {
-			_launching = true;
+			_deflating = true;
 			scale *= 0.985f;
 			balloon->setScale(scale);
 			//adjust it so it is still tangent to the straw
@@ -96,7 +104,10 @@ void Rocket::update() {
 	}
 }
 
-void Rocket::controlEvent(Control *control, EventType evt) {
+void Rocket::launchComplete() {
+}
+
+void Rocket::controlEvent(Control *control, Control::Listener::EventType evt) {
 	Project::controlEvent(control, evt);
 	const char *id = control->getId();
 	
@@ -134,8 +145,8 @@ void Rocket::Straw::addPhysics(short n) {
 
 	Quaternion rot = Quaternion::identity();
 	float angle = atan2(rocket->_strawRadius * 2, rocket->_strawLength);
-	Vector3 trans = Vector3::zero(), linearLow(0, 0, -5), linearHigh(0, 0, 5), angularLow(0, -2*M_PI, -2*M_PI),
-	  angularHigh(angle, 2*M_PI, 2*M_PI);
+	Vector3 trans = Vector3::zero(), linearLow(0, 0, -rocket->_pathLength/2), linearHigh(0, 0, rocket->_pathLength/2),
+	  angularLow(0, -2*M_PI, -2*M_PI), angularHigh(angle, 2*M_PI, 2*M_PI);
 	MyNode *node = getNode();
 	node->addPhysics();
 	_project->_rootNode->addChild(node);

@@ -5,7 +5,7 @@
 
 namespace T4T {
 
-class Project : public Mode
+class Project : public Mode, public PhysicsController::Listener
 {
 public:
 	//component is divided into elements, eg. a lever has a base and arm
@@ -89,7 +89,7 @@ public:
 	Element* addElement(Element *element);
 	Element* getEl(short n = -1);
 	MyNode* getNode(short n = -1);
-	void controlEvent(Control *control, EventType evt);
+	void controlEvent(Control *control, Control::Listener::EventType evt);
 	bool touchEvent(Touch::TouchEvent evt, int x, int y, unsigned int contactIndex);
 	void setCurrentElement(short n);
 	void promptNextElement();
@@ -99,6 +99,8 @@ public:
 	virtual void deleteSelected();
 	virtual void launch();
 	virtual void activate();
+	virtual void launchComplete();
+	void statusEvent(PhysicsController::Listener::EventType type);
 };
 
 }

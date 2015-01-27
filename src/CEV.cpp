@@ -34,7 +34,7 @@ bool CEV::touchEvent(Touch::TouchEvent evt, int x, int y, unsigned int contactIn
 	return true;
 }
 
-void CEV::controlEvent(Control *control, EventType evt) {
+void CEV::controlEvent(Control *control, Control::Listener::EventType evt) {
 	Project::controlEvent(control, evt);
 	const char *id = control->getId();
 	

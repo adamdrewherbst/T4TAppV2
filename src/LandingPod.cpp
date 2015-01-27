@@ -30,7 +30,7 @@ bool LandingPod::touchEvent(Touch::TouchEvent evt, int x, int y, unsigned int co
 	return true;
 }
 
-void LandingPod::controlEvent(Control *control, EventType evt) {
+void LandingPod::controlEvent(Control *control, Control::Listener::EventType evt) {
 	Project::controlEvent(control, evt);
 	const char *id = control->getId();
 	

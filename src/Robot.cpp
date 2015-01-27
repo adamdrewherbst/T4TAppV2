@@ -128,7 +128,7 @@ void Robot::update() {
 	}
 }
 
-void Robot::controlEvent(Control *control, EventType evt) {
+void Robot::controlEvent(Control *control, Control::Listener::EventType evt) {
 	Project::controlEvent(control, evt);
 	const char *id = control->getId();
 	

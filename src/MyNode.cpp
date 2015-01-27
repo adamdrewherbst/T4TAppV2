@@ -665,9 +665,18 @@ BoundingBox MyNode::getBoundingBox(bool modelSpace, bool recur) {
 }
 
 float MyNode::getMaxValue(const Vector3 &axis, bool modelSpace) {
+	float max = -1e6, val;
+	//check children first
+	for(Node *child = getFirstChild(); child; child = child->getNextSibling()) {
+		MyNode *node = dynamic_cast<MyNode*>(child);
+		if(node) {
+			val = node->getMaxValue(axis, modelSpace);
+			if(val > max) max = val;
+		}
+	}
+	//then loop through all my vertices
 	short i, n = this->nv();
 	Vector3 vec, center = getTranslationWorld();
-	float max = -1e6, val;
 	for(i = 0; i < n; i++) {
 		vec = (modelSpace ? _vertices[i] : _worldVertices[i]) - center;
 		val = vec.dot(axis);
@@ -2043,6 +2052,20 @@ MyNode* MyNode::getConstraintNode(nodeConstraint *constraint) {
 	Node *node = app->_scene->findNode(constraint->other.c_str());
 	if(node == NULL) return NULL;
 	return dynamic_cast<MyNode*>(node);
+}
+
+bool MyNode::isBroken() { //true if any constraint among me or my child nodes is disabled
+	std::vector<MyNode*> nodes = getAllNodes();
+	short i, j, n = nodes.size();
+	for(i = 0; i < n-1; i++) {
+		for(j = i+1; j < n; j++) {
+			nodeConstraint *nc = nodes[i]->getNodeConstraint(nodes[j]);
+			if(nc == NULL || nc->id < 0 || app->_constraints.find(nc->id) == app->_constraints.end()) continue;
+			PhysicsConstraint *constraint = app->_constraints[nc->id].get();
+			if(constraint && !constraint->isEnabled()) return true;
+		}
+	}
+	return false;
 }
 
 Vector3 MyNode::getAnchorPoint() {

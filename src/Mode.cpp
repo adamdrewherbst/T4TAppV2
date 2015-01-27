@@ -152,7 +152,7 @@ bool Mode::touchEvent(Touch::TouchEvent evt, int x, int y, unsigned int contactI
 	return true;
 }
 
-void Mode::controlEvent(Control *control, EventType evt) {
+void Mode::controlEvent(Control *control, Control::Listener::EventType evt) {
 	const char *id = control->getId();
 	//if(control != this)
 		app->setNavMode(-1);

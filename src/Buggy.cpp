@@ -80,7 +80,7 @@ void Buggy::launch() {
 	_rootNode->setActivation(DISABLE_DEACTIVATION);
 }
 
-void Buggy::controlEvent(Control *control, EventType evt) {
+void Buggy::controlEvent(Control *control, Control::Listener::EventType evt) {
 	Project::controlEvent(control, evt);
 	const char *id = control->getId();
 }

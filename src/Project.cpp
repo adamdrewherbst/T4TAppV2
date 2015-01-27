@@ -19,6 +19,7 @@ Project::Project(const char* id) : Mode::Mode(id) {
 
 	_currentElement = 0;
 	_moveMode = 0;
+	_launching = false;
 
 	_subModes.push_back("build");
 	_subModes.push_back("test");
@@ -83,7 +84,7 @@ void Project::setupMenu() {
 	app->addListener(_actionContainer, this);
 }
 
-void Project::controlEvent(Control *control, EventType evt) {
+void Project::controlEvent(Control *control, Control::Listener::EventType evt) {
 	Mode::controlEvent(control, evt);
 	const char *id = control->getId();
 	cout << "project control " << id << endl;
@@ -128,7 +129,7 @@ void Project::controlEvent(Control *control, EventType evt) {
 bool Project::touchEvent(Touch::TouchEvent evt, int x, int y, unsigned int contactIndex) {
 	MyNode *touchNode = getTouchNode(); //get the current node first in case we release and thus set it to null
 	Mode::touchEvent(evt, x, y, contactIndex);
-	if(touchNode == NULL) touchNode = getTouchNode();
+	if(getTouchNode() && getTouchNode() != touchNode) touchNode = getTouchNode();
 	if(app->_navMode >= 0) return false;
 	if(touchNode != NULL && touchNode->_element != NULL && touchNode->_element->_project == this) {
 		//see if we are placing a node on its parent
@@ -236,6 +237,7 @@ void Project::setActive(bool active) {
 		Control *finish = _controls->getControl("finishElement");
 		if(finish) finish->setEnabled(true);
 		app->getPhysicsController()->setGravity(Vector3::zero());
+		app->getPhysicsController()->addStatusListener(this);
 		_inSequence = true;
 		//determine the next element needing to be added
 		short e;
@@ -250,6 +252,7 @@ void Project::setActive(bool active) {
 		app->removeListener(app->_componentMenu, this);
 		app->addListener(app->_componentMenu, app);
 		app->getPhysicsController()->setGravity(app->_gravity);
+		app->getPhysicsController()->removeStatusListener(this);
 	}
 }
 
@@ -270,6 +273,7 @@ bool Project::setSubMode(short mode) {
 		}
 	}
 	_launchButton->setEnabled(_subMode == 1);
+	_launching = false;
 	return changed;
 }
 
@@ -283,6 +287,7 @@ void Project::setCurrentElement(short n) {
 			_actionFilter->filter(actions[i].c_str(), false);
 		}
 	}
+	_moveMode = -1;
 }
 
 void Project::promptNextElement() {
@@ -302,17 +307,38 @@ void Project::activate() {
 	_rootNode->setActivation(ACTIVE_TAG);
 }
 
+void Project::statusEvent(PhysicsController::Listener::EventType type) {
+	switch(type) {
+		case PhysicsController::Listener::ACTIVATED:
+			break;
+		case PhysicsController::Listener::DEACTIVATED:
+			if(_launching) {
+				_launching = false;
+				launchComplete();
+			}
+			break;
+	}
+}
+
+void Project::launchComplete() {
+	if(!_rootNode->isBroken()) {
+		std::ostringstream os;
+		os << "Your " << _id << " survived!";
+		app->message(os.str().c_str());
+	}
+}
+
 void Project::update() {
 	Mode::update();
 	if(_launching) {
 		_launchSteps++;
+		//after launching, switch back to normal activation
 		if(_launchSteps == 100) {
-			cout << "Switching to normal activation [" << ACTIVE_TAG << "] for " << _id << endl;
 			_rootNode->setActivation(ACTIVE_TAG, true);
-			cout << "100: Activation is now " << _rootNode->getActivation() << endl;
 		}
-		else if(_launchSteps == 105) {
-			cout << "105: Activation is now " << _rootNode->getActivation() << endl;
+		//see if any piece has broken off - if so, the project failed
+		if(_rootNode->isBroken()) {
+			app->message("Oh no! Something broke! Click 'Build' to fix your model.");
 		}
 	}
 }

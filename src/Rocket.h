@@ -28,15 +28,16 @@ public:
 
 	Straw *_straw;
 	Balloon *_balloons;
-	float _strawRadius, _strawLength, _originalStrawLength;
-	bool _launching;
+	float _strawRadius, _strawLength, _originalStrawLength, _pathLength;
+	bool _deflating;
 
 	Rocket();
 	void setActive(bool active);
 	bool setSubMode(short mode);
 	void launch();
 	void update();
-	void controlEvent(Control *control, EventType evt);
+	void launchComplete();
+	void controlEvent(Control *control, Control::Listener::EventType evt);
 	bool touchEvent(Touch::TouchEvent evt, int x, int y, unsigned int contactIndex);
 };
 
