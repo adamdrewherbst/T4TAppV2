@@ -246,8 +246,8 @@ void Project::setActive(bool active) {
 		if(e < _numElements) promptNextElement();
 	}else {
 		if(_buildAnchor) _buildAnchor->setEnabled(false);
+		if(_subMode == 0) _rootNode->setRest();
 		_rootNode->enablePhysics(false);
-		//app->_componentMenu->setState(Control::NORMAL);
 		app->filterItemMenu();
 		app->removeListener(app->_componentMenu, this);
 		app->addListener(app->_componentMenu, app);
@@ -274,6 +274,9 @@ bool Project::setSubMode(short mode) {
 	}
 	_launchButton->setEnabled(_subMode == 1);
 	_launching = false;
+	_launchComplete = false;
+	_broken = false;
+	app->message(NULL);
 	return changed;
 }
 
@@ -321,10 +324,11 @@ void Project::statusEvent(PhysicsController::Listener::EventType type) {
 }
 
 void Project::launchComplete() {
-	if(!_rootNode->isBroken()) {
+	_launchComplete = true;
+	if(!app->hasMessage() && !_broken) {
 		std::ostringstream os;
 		os << "Your " << _id << " survived!";
-		app->message(os.str().c_str());
+		if(!app->hasMessage()) app->message(os.str().c_str());
 	}
 }
 
@@ -338,6 +342,7 @@ void Project::update() {
 		}
 		//see if any piece has broken off - if so, the project failed
 		if(_rootNode->isBroken()) {
+			_broken = true;
 			app->message("Oh no! Something broke! Click 'Build' to fix your model.");
 		}
 	}

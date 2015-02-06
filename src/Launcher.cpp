@@ -19,7 +19,6 @@ Launcher::Launcher() : Project::Project("launcher") {
 	Vector3 tablePos(0, -tableBox.min.y, -tableBox.max.z);
 	_table->setMyTranslation(tablePos);
 	_tableHeight = tableBox.max.y - tableBox.min.y;
-	//app->getPhysicsController()->createFixedConstraint(_table->getCollisionObject()->asRigidBody());
 	_clampWidth = 8.0f;
 	for(short i = 0; i < 2; i++) {
 		_clamps[i] = MyNode::create("clamp");
@@ -68,9 +67,15 @@ bool Launcher::touchEvent(Touch::TouchEvent evt, int x, int y, unsigned int cont
 
 bool Launcher::setSubMode(short n) {
 	bool changed = Project::setSubMode(n);
+	MyNode *ends[2] = {NULL, NULL};
+	if(_rubberBand->getNode() != NULL) for(short i = 0; i < 2; i++) {
+		os.str("");
+		os << _nodeId << "_rubberBand" << (1 + i*(_rubberBand->_numNodes-1));
+		ends[i] = dynamic_cast<MyNode*>(_rootNode->findNode(os.str().c_str()));
+	}
 	switch(_subMode) {
 		case 0: {
-			for(short i = 0; i < 2; i++) _bandAnchors[i].reset();
+			if(ends[0] != NULL) for(short i = 0; i < 2; i++) app->removeConstraints(_clamps[i], ends[i], true);
 			break;
 		} case 1: {
 			//show the table with the clamps
@@ -83,12 +88,9 @@ bool Launcher::setSubMode(short n) {
 			Vector3 trans = _anchorPoints[0] + (_anchorPoints[1] - _anchorPoints[0]) / 2;
 			_rootNode->enablePhysics(false);
 			_rootNode->setMyTranslation(trans);
-			for(short i = 0; i < 2; i++) {
-				os.str("");
-				os << _nodeId << "_rubberBand" << (1 + i*(_rubberBand->_numNodes-1));
-				MyNode *end = dynamic_cast<MyNode*>(_rootNode->findNode(os.str().c_str()));
+			if(ends[0] != NULL) for(short i = 0; i < 2; i++) {
 				Vector3 dir = Vector3::unitX() * (2*i-1);
-				_bandAnchors[i] = ConstraintPtr(app->addConstraint(_clamps[i], end, -1, "socket", _anchorPoints[i], dir));
+				app->addConstraint(_clamps[i], ends[i], -1, "socket", _anchorPoints[i], dir);
 			}
 			//place the crew exploration vehicle in front of the rubber band
 			_cev = app->getProjectNode("buggy");
@@ -149,6 +151,17 @@ void Launcher::launch() {
 	Project::launch();
 	_cev->enablePhysics(true);
 	_rootNode->enablePhysics(true);
+}
+
+void Launcher::update() {
+	if(!_launching) return;
+	MyNode *cev = (MyNode*)_cev->getFirstChild();
+	cev->updateTransform();
+	float maxZ = cev->getMaxValue(Vector3::unitZ()) + cev->getTranslationWorld().z;
+	//cout << cev->getId() << " now at " << maxZ << endl;
+	if(maxZ > 15 && !app->hasMessage()) {
+		app->message("You reached 5 meters!");
+	}
 }
 
 Launcher::RubberBand::RubberBand(Project *project)

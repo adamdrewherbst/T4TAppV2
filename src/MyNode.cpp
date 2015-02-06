@@ -503,6 +503,7 @@ void MyNode::init() {
 	_element = NULL;
     app = (T4TApp*) Game::getInstance();
     _staticObj = false;
+    _boundingBox = BoundingBox::empty();
     _groundRotation = Quaternion::identity();
     _constraintParent = NULL;
     _constraintId = -1;
@@ -664,21 +665,22 @@ BoundingBox MyNode::getBoundingBox(bool modelSpace, bool recur) {
 	return BoundingBox(min, max);
 }
 
-float MyNode::getMaxValue(const Vector3 &axis, bool modelSpace) {
+float MyNode::getMaxValue(const Vector3 &axis, bool modelSpace, const Vector3 &center) {
 	float max = -1e6, val;
 	//check children first
+	Vector3 base = center.isZero() ? getTranslationWorld() : center;
 	for(Node *child = getFirstChild(); child; child = child->getNextSibling()) {
 		MyNode *node = dynamic_cast<MyNode*>(child);
 		if(node) {
-			val = node->getMaxValue(axis, modelSpace);
+			val = node->getMaxValue(axis, modelSpace, base);
 			if(val > max) max = val;
 		}
 	}
 	//then loop through all my vertices
 	short i, n = this->nv();
-	Vector3 vec, center = getTranslationWorld();
+	Vector3 vec;
 	for(i = 0; i < n; i++) {
-		vec = (modelSpace ? _vertices[i] : _worldVertices[i]) - center;
+		vec = (modelSpace ? _vertices[i] : _worldVertices[i]) - base;
 		val = vec.dot(axis);
 		if(val > max) max = val;
 	}
@@ -1929,7 +1931,13 @@ void MyNode::addCollisionObject() {
 		}
 		setCollisionObject(PhysicsCollisionObject::RIGID_BODY, PhysicsCollisionShape::mesh(mesh), &params);
 	} else if(_objType.compare("box") == 0) {
-		setCollisionObject(PhysicsCollisionObject::RIGID_BODY, PhysicsCollisionShape::box(), &params);
+		PhysicsCollisionShape::Definition box;
+		if(_boundingBox.isEmpty()) {
+			box = PhysicsCollisionShape::box();
+		} else {
+			box = PhysicsCollisionShape::box(_boundingBox.max - _boundingBox.min, _boundingBox.getCenter(), true);
+		}
+		setCollisionObject(PhysicsCollisionObject::RIGID_BODY, box, &params);
 	} else if(_objType.compare("sphere") == 0) {
 		setCollisionObject(PhysicsCollisionObject::RIGID_BODY,
 		  _radius > 0 ? PhysicsCollisionShape::sphere(_radius) : PhysicsCollisionShape::sphere(), &params);
@@ -2003,9 +2011,12 @@ bool MyNode::physicsEnabled() {
 	return obj != NULL && obj->isEnabled();
 }
 
-void MyNode::setVisible(bool visible) {
+void MyNode::setVisible(bool visible, bool doPhysics) {
 	_visible = visible;
-	enablePhysics(visible);
+	for(MyNode *node = dynamic_cast<MyNode*>(getFirstChild()); node; node = dynamic_cast<MyNode*>(node->getNextSibling())) {
+		node->setVisible(visible, false);
+	}
+	if(doPhysics) enablePhysics(visible);
 }
 
 void MyNode::setActivation(int state, bool force) {
@@ -2039,6 +2050,12 @@ void MyNode::removeMe() {
 	removePhysics();
 	if(_parent) _parent->removeChild(this);
 	else if(_scene) _scene->removeNode(this);
+}
+
+PhysicsConstraint* MyNode::getConstraint(MyNode *other) {
+	nodeConstraint *nc = getNodeConstraint(other);
+	if(nc == NULL || nc->id < 0) return NULL;
+	return app->_constraints[nc->id].get();
 }
 
 nodeConstraint* MyNode::getNodeConstraint(MyNode *other) {

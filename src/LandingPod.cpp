@@ -12,6 +12,25 @@ LandingPod::LandingPod() : Project::Project("landingPod") {
 
 	_body = (Body*) addElement(new Body(this));
 	_hatch = (Hatch*) addElement(new Hatch(this, _body));
+	
+	_ramp = MyNode::create("podRamp");
+	_ramp->_type = "root";
+	MyNode *ramp = MyNode::create("buggyRamp");
+	ramp->loadData("res/common/", false);
+	ramp->setTranslation(0.0f, 2.5f, -7.5f);
+	ramp->setStatic(true);
+	ramp->setColor(0.0f, 1.0f, 0.0f);
+	MyNode *platform = MyNode::create("buggyPlatform");
+	platform->loadData("res/common/", false);
+	platform->setTranslation(0.0f, 2.5f, -22.5f);
+	platform->setStatic(true);
+	platform->setColor(0.0f, 1.0f, 0.0f);
+	_ramp->addChild(ramp);
+	_ramp->addChild(platform);
+	_ramp->addPhysics();
+	_ramp->setVisible(false);
+	_scene->addNode(_ramp);
+
 	setupMenu();
 }
 
@@ -27,6 +46,38 @@ void LandingPod::setupMenu() {
 
 bool LandingPod::touchEvent(Touch::TouchEvent evt, int x, int y, unsigned int contactIndex) {
 	Project::touchEvent(evt, x, y, contactIndex);
+	//after launch complete, tap to place the pod at the top of the ramp
+	switch(evt) {
+		case Touch::TOUCH_PRESS:
+			if(_subMode == 1 && _launchComplete && !_broken) {
+				_ramp->setVisible(true);
+				_ramp->updateTransform();
+				_rootNode->updateTransform();
+				_buggy->updateTransform();
+				MyNode *pod = (MyNode*)_rootNode->getFirstChild(), *buggy = (MyNode*)_buggy->getFirstChild(),
+					*platform = (MyNode*)_ramp->findNode("buggyPlatform");
+				BoundingBox platformBox = platform->getBoundingBox(), podBox = pod->getBoundingBox();
+				Vector3 center = platformBox.getCenter(), normal = _hatch->getNode()->getJointNormal();
+				_rootNode->enablePhysics(false);
+				_buggy->enablePhysics(false);
+				Vector3 trans(center.x, platformBox.max.y + pod->getTranslationWorld().y - podBox.min.y, center.z),
+					delta = _buggy->getFirstChild()->getTranslationWorld() - _rootNode->getFirstChild()->getTranslationWorld();
+				Quaternion rot = MyNode::getVectorRotation(normal, Vector3::unitZ());
+				cout << "moving pod to " << app->pv(trans) << endl;
+				pod->setMyTranslation(trans);
+				buggy->setMyTranslation(trans + delta);
+				pod->myRotate(rot);
+				buggy->myRotate(rot);
+				pod->enablePhysics(true);
+				buggy->enablePhysics(true);
+				_hatchButton->setEnabled(true);
+			}
+			break;
+		case Touch::TOUCH_MOVE:
+			break;
+		case Touch::TOUCH_RELEASE:
+			break;
+	}
 	return true;
 }
 
@@ -82,7 +133,9 @@ bool LandingPod::setSubMode(short mode) {
 		}
 	}
 	if(changed) _hatchButton->setEnabled(false);
-	_body->_groundAnchor.reset();
+	_ramp->setVisible(false);
+	if(_body->_groundAnchor.get() != nullptr) _body->_groundAnchor.reset();
+	_hatching = false;
 	return changed;
 }
 
@@ -92,7 +145,29 @@ void LandingPod::launch() {
 	_buggy->enablePhysics(true);
 	app->getPhysicsController()->setGravity(app->_gravity);
 	_rootNode->setActivation(DISABLE_DEACTIVATION);
-	_hatchButton->setEnabled(true);
+	_buggy->setActivation(DISABLE_DEACTIVATION);
+	//_hatchButton->setEnabled(true);
+}
+
+void LandingPod::launchComplete() {
+	Project::launchComplete();
+	if(!_broken) {
+		app->message("Your pod survived! Now click anywhere to place it on the ramp.");
+	}
+}
+
+void LandingPod::update() {
+	Project::update();
+	if(_launching && _launchSteps == 100) _buggy->setActivation(ACTIVE_TAG, true);
+	if(_hatching) {
+		MyNode *buggy = (MyNode*)_buggy->getFirstChild();
+		buggy->updateTransform();
+		float maxZ = buggy->getMaxValue(Vector3::unitZ()) + buggy->getTranslationWorld().z;
+		cout << buggy->getId() << " hatched to " << maxZ << " [" << buggy->getTranslationWorld().z << "]" << endl;
+		if(maxZ > 15) {
+			if(!app->hasMessage()) app->message("You made it 100cm!");
+		}
+	}
 }
 
 void LandingPod::openHatch() {
@@ -103,12 +178,15 @@ void LandingPod::openHatch() {
 	node->getCollisionObject()->asRigidBody()->applyTorqueImpulse(-node->getJointAxis() * 10.0f);
 	//anchor the pod to the ground
 	_body->_groundAnchor = ConstraintPtr(app->getPhysicsController()->createFixedConstraint(
-	  _body->getNode()->getCollisionObject()->asRigidBody(), app->_ground->getCollisionObject()->asRigidBody()));
+	  _body->getNode()->getCollisionObject()->asRigidBody(),
+	  _ramp->findNode("buggyPlatform")->getCollisionObject()->asRigidBody()));
 	//push the buggy out through the hatch
 	if(_buggy->getScene() == _scene) {
 		MyNode *body = dynamic_cast<MyNode*>(_buggy->getFirstChild());
-		Vector3 impulse = -_buggy->getForwardVector() * 1000.0f;
+		Vector3 impulse = -body->getForwardVector() * 1000.0f;
 		body->getCollisionObject()->asRigidBody()->applyImpulse(impulse);
+		_hatching = true;
+		app->message(NULL);
 	}
 }
 

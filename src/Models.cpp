@@ -21,6 +21,7 @@ void T4TApp::generateModels() {
 	generateModel("wheel1", "cylinder", 1.2f, 0.5f, 20);
 	generateModel("wheel2", "box", 2.5f, 2.5f, 0.5f);
 	generateModel("buggyRamp", "wedge", 15.0f, 15.0f, 5.0f);
+	generateModel("buggyPlatform", "box", 15.0f, 5.0f, 15.0f);
 	generateModel("gravityProbe", "cylinder", 0.4f, 0.4f, 8);
 	generateModel("heatSensor", "cylinder", 0.3f, 0.6f, 8);
 	generateModel("cameraProbe", "box", 1.0f, 1.0f, 1.0f);

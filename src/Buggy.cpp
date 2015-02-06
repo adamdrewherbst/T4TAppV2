@@ -75,9 +75,21 @@ void Buggy::setRampHeight(float scale) {
 }
 
 void Buggy::launch() {
+	Project::launch();
 	_rootNode->enablePhysics(true);
 	app->getPhysicsController()->setGravity(app->_gravity);
 	_rootNode->setActivation(DISABLE_DEACTIVATION);
+}
+
+void Buggy::update() {
+	Project::update();
+	if(!_launching) return;
+	MyNode *body = _body->getNode();
+	body->updateTransform();
+	float maxZ = body->getMaxValue(Vector3::unitZ()) + body->getTranslationWorld().z;
+	if(maxZ > 10) {
+		app->message("You made it to the end!");
+	}
 }
 
 void Buggy::controlEvent(Control *control, Control::Listener::EventType evt) {

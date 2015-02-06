@@ -40,6 +40,7 @@ public:
 	bool _staticObj, _visible;
 	std::vector<ConvexHull*> _hulls;
 	std::vector<nodeConstraint*> _constraints;
+	BoundingBox _boundingBox;
 	//for a compound object, store a rest position for each node so we have a rest configuration for the object
 	Matrix _restPosition;
 	//when moving a node, need to know if it should move independently or relative to the node it is constrained to
@@ -87,7 +88,7 @@ public:
 	Vector3 getScaleVertex(short v);
 	Vector3 getScaleNormal(short f);
 	BoundingBox getBoundingBox(bool modelSpace = false, bool recur = true);
-	float getMaxValue(const Vector3 &axis, bool modelSpace = false);
+	float getMaxValue(const Vector3 &axis, bool modelSpace = false, const Vector3 &center = Vector3::zero());
 	void set(const Matrix& trans);
 	void set(Node *other);
 	void myTranslate(const Vector3& delta);
@@ -135,10 +136,11 @@ public:
 	void removePhysics(bool recur = true);
 	void enablePhysics(bool enable = true, bool recur = true);
 	bool physicsEnabled();
-	void setVisible(bool visible);
+	void setVisible(bool visible, bool doPhysics = true);
 	void setActivation(int state, bool force = false);
 	int getActivation();
 	void removeMe();
+	PhysicsConstraint* getConstraint(MyNode *other);
 	nodeConstraint* getNodeConstraint(MyNode *other);
 	MyNode *getConstraintNode(nodeConstraint *constraint);
 	bool isBroken();

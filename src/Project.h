@@ -74,7 +74,8 @@ public:
 	ConstraintPtr _buildAnchor; //keep the model from moving while we are building it
 
 	bool _inSequence, //true during the first run-through to add all the elements
-	     _launching; //after user clicks the Launch button in test mode
+	     _launching, //after user clicks the Launch button in test mode
+	     _launchComplete, _broken;
 	     
 	unsigned int _launchSteps;
 	     

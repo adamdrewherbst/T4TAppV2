@@ -233,7 +233,7 @@ public:
     void swapMesh(MyNode *n1, MyNode *n2);
 
     void addConstraints(MyNode *node);
-    void removeConstraints(MyNode *node);
+    void removeConstraints(MyNode *node, MyNode *otherNode = NULL, bool erase = false);
     void enableConstraints(MyNode *node, bool enable = true);
     void reloadConstraint(MyNode *node, nodeConstraint *constraint);
 
@@ -289,6 +289,7 @@ public:
     void showDialog(Container *dialog, bool show = true);
     void confirmDelete(bool yes);
     void message(const char *text);
+    bool hasMessage();
     
     //miscellaneous
     template <class T> T* popBack(std::vector<T*> &vec);

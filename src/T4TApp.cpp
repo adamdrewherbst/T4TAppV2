@@ -425,16 +425,40 @@ void T4TApp::initScene()
     _light = _lightNode->getLight();
 
 	//create the grid on which to place objects
+	short gridSize = 40;
     _ground = MyNode::create("grid");
-    Model* gridModel = createGridModel();
+    Model* gridModel = createGridModel(2 * gridSize + 1);
     gridModel->setMaterial("res/common/models.material#grid");
     _ground->setModel(gridModel);
     gridModel->release();
     _ground->_objType = "box";
     _ground->setStatic(true);
-    _ground->addPhysics();
     //store the plane representing the grid, for calculating intersections
     _groundPlane = Plane(Vector3(0, 1, 0), 0);
+    
+    //add invisible walls at the edges of the grid to prevent objects falling off the world
+    for(short i = 0; i < 2; i++) {
+    	for(short j = 0; j < 2; j++) {
+    		std::ostringstream os;
+			os << "wall" << i*2+j;
+			MyNode *wall = MyNode::create(os.str().c_str());
+			wall->_objType = "box";
+			Vector3 extents(0, 5, 0), center(0, 4, 0);
+			if(i == 0) {
+				center.x = (2*j-1) * (gridSize+1);
+				extents.x = 1;
+				extents.z = gridSize;
+			} else {
+				center.z = (2*j-1) * (gridSize+1);
+				extents.x = gridSize;
+				extents.z = 1;
+			}
+			wall->_boundingBox.set(center - extents, center + extents);
+			_ground->addChild(wall);
+		}
+    }
+
+    _ground->addPhysics();
 
     //create lines for the positive axes
     std::vector<float> vertices;
@@ -722,6 +746,10 @@ void T4TApp::message(const char *text) {
 		_message->setText(text);
 		_message->setVisible(true);
 	}
+}
+
+bool T4TApp::hasMessage() {
+	return _message->isVisible();
 }
 
 bool T4TApp::prepareNode(MyNode* node)
@@ -1182,7 +1210,7 @@ void T4TApp::addConstraints(MyNode *node) {
 	}
 }
 
-void T4TApp::removeConstraints(MyNode *node) {
+void T4TApp::removeConstraints(MyNode *node, MyNode *otherNode, bool erase) {
 	PhysicsController *controller = getPhysicsController();
 	nodeConstraint *c1, *c2;
 	unsigned short i, j;
@@ -1190,13 +1218,18 @@ void T4TApp::removeConstraints(MyNode *node) {
 		c1 = node->_constraints[i];
 		if(c1->id < 0) continue;
 		MyNode *other = dynamic_cast<MyNode*>(_activeScene->findNode(c1->other.c_str()));
-		if(!other) continue;
+		if(!other || (otherNode && other != otherNode)) continue;
 		for(j = 0; j < other->_constraints.size(); j++) {
 			c2 = other->_constraints[j];
 			if(c2->other.compare(node->getId()) == 0 && c2->type.compare(c1->type) == 0 && c2->id == c1->id) {
 				_constraints.erase(c1->id);
-				c1->id = -1;
-				c2->id = -1;
+				if(erase) {
+					node->_constraints.erase(node->_constraints.begin() + i);
+					other->_constraints.erase(other->_constraints.begin() + j);
+				} else {
+					c1->id = -1;
+					c2->id = -1;
+				}
 			}
 		}
 	}
@@ -1205,9 +1238,11 @@ void T4TApp::removeConstraints(MyNode *node) {
 void T4TApp::enableConstraints(MyNode *node, bool enable) {
 	int id;
 	for(short i = 0; i < node->_constraints.size(); i++) {
-		id = node->_constraints[i]->id;
-		if(id < 0 || _constraints.find(id) == _constraints.end()) continue;
+		nodeConstraint *constraint = node->_constraints[i];
+		id = constraint->id;
+		if(id < 0 || _constraints.find(id) == _constraints.end() || (!enable && !_constraints[id]->isEnabled())) continue;
 		_constraints[id]->setEnabled(enable);
+		if(!enable) cout << "disabled constraint " << id << " between " << node->getId() << " and " << constraint->other << endl;
 	}
 }
 
