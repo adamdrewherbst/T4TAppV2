@@ -50,8 +50,10 @@ void T4TApp::initialize()
     _font = Font::create("res/common/arial18.gpb");
     assert(_font);
     
-    initScene();
+    _userEmail = "";
     
+    initScene();
+
     cout << "cam at: " << pcam(_cameraState) << endl;
     
 	getPhysicsController()->setGravity(Vector3(0.0f, -10.0f, 0.0f));
@@ -249,6 +251,10 @@ void T4TApp::render(float elapsedTime)
     _font->finish();
 //*/
 	_mainMenu->draw();
+}
+
+void T4TApp::login() {
+	
 }
 
 void T4TApp::redraw() {

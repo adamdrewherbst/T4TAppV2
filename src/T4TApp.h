@@ -87,11 +87,14 @@ class T4TApp: public Game, public Control::Listener, public PhysicsCollisionObje
 {
 public:
 
+	//user info
+	std::string _userEmail;
+
 	//scene setup
     Scene* _scene;
     Node* _lightNode;
     Light* _light;
-
+    
 	//the functionality of the various interactive modes    
 	std::vector<Mode*> _modes;
 
@@ -160,6 +163,7 @@ public:
 
     T4TApp();
     T4TApp* getInstance();
+    void login();
 	void generateModels();
 	MyNode* generateModel(const char *id, const char *type, ...);
 	void loadModels(const char *filename);

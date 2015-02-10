@@ -1244,6 +1244,43 @@ void MyNode::writeData(const char *file, bool modelSpace) {
 	for(i = 0; i < children.size(); i++) children[i]->writeData(file);
 }
 
+void MyNode::uploadData(const char *url, const char *rootId) {
+	std::ostringstream os;
+	os << "res/tmp/" << _id << ".node";
+	const char *filename = os.str().c_str();
+	if(rootId == NULL) writeData("res/tmp/", true);
+	FILE *fd = FileSystem::openFile(filename, "rb");
+	/*fseek(fd, 0, SEEK_END);
+	long length = ftell(fd);
+	fseek(fd, 0, SEEK_SET);
+	char *buffer = malloc(length);
+	fread(buffer, 1, length, fd);//*/
+
+	CURL *curl = curl_easy_init();
+	CURLcode res;
+	
+	curl_easy_setopt(curl, CURLOPT_URL, "http://www.t4t.org/nasa-app/upload/index.php");
+	curl_easy_setopt(curl, CURLOPT_UPLOAD, 1L);
+	curl_easy_setopt(curl, CURLOPT_READDATA, fd);
+
+	struct curl_slist *chunk = NULL;
+	chunk = curl_slist_append(chunk, "From: adam@t4t.org");
+	os.str("");
+	os << "X-NodeName: " << rootId;
+	chunk = curl_slist_append(chunk, os.str().c_str());
+	res = curl_easy_setopt(curl, CURLOPT_HTTPHEADER, chunk);
+
+	res = curl_easy_perform(curl);
+	if(res != CURLE_OK) GP_ERROR("Couldn't upload file %s: %s", filename, curl_easy_strerror(res));
+	curl_easy_cleanup(curl);
+
+	fclose(fd);
+
+	for(MyNode *node = dynamic_cast<MyNode*>(getFirstChild()); node; node = dynamic_cast<MyNode*>(node->getNextSibling())) {
+		node->uploadData(url, rootId == NULL ? _id.c_str() : rootId);
+	}
+}
+
 void MyNode::loadAnimation(const char *filename, const char *id) {
 	std::vector<MyNode*> nodes = getAllNodes();
 	short i = 0, n = nodes.size();

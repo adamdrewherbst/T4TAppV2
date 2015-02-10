@@ -27,31 +27,38 @@ Project::Project(const char* id) : Mode::Mode(id) {
 
 void Project::setupMenu() {
 	_numElements = _elements.size();
-	_controls->setAutoSize(Control::AUTO_SIZE_HEIGHT);
+	
+	_container = app->addControl <Container> (app->_stage, MyNode::concat(2, "mode_", _id.c_str()), "hiddenContainer");
+	_container->setAutoSize(Control::AUTO_SIZE_BOTH);
+	_container->setLayout(Layout::LAYOUT_ABSOLUTE);
+	
+	_controls = app->addControl <Container> (_container, "controls", "basicContainer", 180, -1);
+	_controls->setPosition(20, 10);
+	_controls->setLayout(Layout::LAYOUT_VERTICAL);
+	_controls->setConsumeInputEvents(true);
+	_controls->setZIndex(5);
+	
+	_subModePanel = app->addControl <Container> (_controls, "subMode", "hiddenContainer");
+	_subModePanel->setLayout(Layout::LAYOUT_VERTICAL);
+	Button *button = app->addControl <Button> (_subModePanel, "build", NULL, -1, 40);
+	button->setText("Build");
+	button = app->addControl <Button> (_subModePanel, "test", NULL, -1, 40);
+	button->setText("Test");
 
 	//add a launch button
-	_launchButton = app->addControl <Button> (_controls, "launch");
-	_launchButton->setHeight(40.0f);
+	_launchButton = app->addControl <Button> (_controls, "launch", NULL, -1, 40);
 	_launchButton->setText("Launch");
-	app->addListener(_launchButton, this);
 	
-/*	_activateButton = app->addControl <Button> (_controls, "activate");
-	_activateButton->setText("Activate");
-	app->addListener(_activateButton, this);
-//*/
-
 	//add a button for each element to choose its item and edit it
 	short i, j, n;
 	_elementContainer = app->addControl <Container> (_controls, "elements", "hiddenContainer");
 	_elementContainer->setLayout(Layout::LAYOUT_VERTICAL);
 	for(i = 0; i < _numElements; i++) {
 		j = (i+1) % _numElements;
-		Button *button = app->addControl <Button> (_elementContainer, _elements[j]->_id.c_str());
-		button->setHeight(40.0f);
+		button = app->addControl <Button> (_elementContainer, _elements[j]->_id.c_str(), NULL, -1, 40);
 		button->setText(_elements[j]->_name.c_str());
 	}
-	app->addListener(_elementContainer, this);
-	
+
 	_moveContainer = app->addControl <Container> (_controls, "moveMode", "hiddenContainer");
 	_moveContainer->setLayout(Layout::LAYOUT_FLOW);
 	_moveModes.push_back("translate");
@@ -64,7 +71,6 @@ void Project::setupMenu() {
 			"imageSquare", 50.0f, 50.0f);
 		button->setImage(MyNode::concat(3, "res/png/", _moveModes[i].c_str(), ".png"));
 	}
-	app->addListener(_moveContainer, this);
 
 	//add a button for each action that any element has - we will enable them on the fly for the selected element
 	_actionContainer = app->addControl <Container> (_controls, "actions", "hiddenContainer");
@@ -81,7 +87,11 @@ void Project::setupMenu() {
 		}
 	}
 	_actionFilter = new MenuFilter(_actionContainer);
-	app->addListener(_actionContainer, this);
+	
+	button = app->addButton <Button> (_controls, "save", NULL, -1, 40);
+	
+	app->addListener(_controls, this);
+	_container->setVisible(false);
 }
 
 void Project::controlEvent(Control *control, Control::Listener::EventType evt) {
@@ -94,11 +104,9 @@ void Project::controlEvent(Control *control, Control::Listener::EventType evt) {
 		for(short i = 0; i < _elements.size(); i++) if(_elements[i]->_id.compare(id) == 0) {
 			cout << "current element now " << i << endl;
 			setCurrentElement(i);
+			_moveMode = -1;
 			break;
 		}
-//	} else if(strcmp(id, "other") == 0) {
-//		setCurrentElement(-1);
-//		app->promptItem();
 	} else if(strncmp(id, "comp_", 5) == 0) {
 		app->_componentMenu->setVisible(false);
 		if(element) element->setNode(id+5);
@@ -106,7 +114,11 @@ void Project::controlEvent(Control *control, Control::Listener::EventType evt) {
 	} else if(_moveContainer->getControl(id) == control) {
 		short n = _moveModes.size(), i;
 		for(i = 0; i < n; i++) {
-			if(_moveModes[i].compare(id) == 0) _moveMode = i;
+			if(_moveModes[i].compare(id) == 0) {
+				_moveMode = i;
+				app->setNavMode(-1);
+				cout << "move mode now " << _moveMode << endl;
+			}
 		}
 	} else if(_numActions > 0 && _actionContainer->getControl(id) == control) {
 		if(element) element->doAction(id);
@@ -115,14 +127,10 @@ void Project::controlEvent(Control *control, Control::Listener::EventType evt) {
 		launch();
 	} else if(control == _activateButton) {
 		activate();
-	} else if(strcmp(id, "translate") == 0) {
-		_moveMode = 0;
-	} else if(strlen(id) == 7 && strncmp(id, "rotate", 6) == 0) {
-		_moveMode = 1;
-		_moveAxis = (short)(id[6] - 88); //char 7 is 'X', 'Y', or 'Z'
-		app->setNavMode(-1);
 	} else if(strcmp(id, "finishElement") == 0) {
 		promptNextElement();
+	} else if(strcmp(id, "save") == 0) {
+		saveProject();
 	}
 }
 
@@ -290,11 +298,13 @@ void Project::setCurrentElement(short n) {
 			_actionFilter->filter(actions[i].c_str(), false);
 		}
 	}
-	_moveMode = -1;
 }
 
 void Project::promptNextElement() {
-	if(_currentElement < (short)_elements.size()-1) setCurrentElement(_currentElement+1);
+	if(_currentElement < (short)_elements.size()-1) {
+		setCurrentElement(_currentElement+1);
+		_moveMode = -1;
+	}
 	else _inSequence = false;
 	if(!_inSequence) return;
 	app->promptItem(getEl()->_filter);
@@ -346,6 +356,11 @@ void Project::update() {
 			app->message("Oh no! Something broke! Click 'Build' to fix your model.");
 		}
 	}
+}
+
+void Project::saveProject() {
+	app->login();
+	
 }
 
 Project::Element::Element(Project *project, Element *parent, const char *id, const char *name, bool multiple)

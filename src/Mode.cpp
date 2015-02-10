@@ -17,19 +17,19 @@ Mode::Mode(const char* id) : _selectedNode(NULL), _doSelect(true) {
 */
 	//add this button to the container it belongs in
 	_container = (Container*)app->_stage->getControl(("mode_" + _id).c_str());
-	_container->setVisible(false);
-	_container->setConsumeInputEvents(false);
-//	_container->addControl(this);
+	if(_container) {
+		_container->setVisible(false);
 	
-	//load any custom controls this mode includes
-	_controls = (Container*)_container->getControl("controls");
-	_subModePanel = NULL;
-	if(_controls != NULL) {
-		_subModePanel = (Container*)_controls->getControl("subMode");
-	}
+		//load any custom controls this mode includes
+		_controls = (Container*)_container->getControl("controls");
+		_subModePanel = NULL;
+		if(_controls != NULL) {
+			_subModePanel = (Container*)_controls->getControl("subMode");
+		}
 
-	app->removeListener(_container, app);
-	app->addListener(_container, this);
+		app->removeListener(_container, app);
+		app->addListener(_container, this);
+	}
 
 	_plane = app->_groundPlane;
 	_cameraBase = Camera::createPerspective(_camera->getFieldOfView(), _camera->getAspectRatio(),
@@ -41,7 +41,6 @@ Mode::Mode(const char* id) : _selectedNode(NULL), _doSelect(true) {
 	//setActive(false);
 	_active = false;
 	_selectedNode = NULL;
-	_container->setVisible(false);
 }
 
 const char* Mode::getId() {

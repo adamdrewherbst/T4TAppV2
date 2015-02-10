@@ -36,12 +36,11 @@ LandingPod::LandingPod() : Project::Project("landingPod") {
 
 void LandingPod::setupMenu() {
 	Project::setupMenu();
-	_hatchButton = app->addControl <Button> (NULL, "openHatch");
+	_hatchButton = app->addControl <Button> (NULL, "openHatch", NULL, -1, 40);
 	_hatchButton->setText("Open Hatch");
 	_controls->insertControl(_hatchButton, 2);
 	_hatchButton->setEnabled(false);
-	app->addListener(_hatchButton, this);
-	_controls->setHeight(_controls->getHeight() + 70.0f);	
+	app->addListener(_hatchButton, this);//*/
 }
 
 bool LandingPod::touchEvent(Touch::TouchEvent evt, int x, int y, unsigned int contactIndex) {
@@ -97,6 +96,7 @@ void LandingPod::setActive(bool active) {
 
 bool LandingPod::setSubMode(short mode) {
 	bool changed = Project::setSubMode(mode);
+	if(_body->_groundAnchor.get()) _body->_groundAnchor.reset();
 	switch(_subMode) {
 		case 0: { //build
 			break;
@@ -134,7 +134,6 @@ bool LandingPod::setSubMode(short mode) {
 	}
 	if(changed) _hatchButton->setEnabled(false);
 	_ramp->setVisible(false);
-	if(_body->_groundAnchor.get() != nullptr) _body->_groundAnchor.reset();
 	_hatching = false;
 	return changed;
 }

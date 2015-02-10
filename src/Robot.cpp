@@ -29,6 +29,10 @@ Robot::Robot() : Project::Project("robot") {
 
 void Robot::setupMenu() {
 	Project::setupMenu();
+	Button *button = app->addControl <Button> (_controls, "walk", NULL, -1, 40);
+	button->setText("Walk");
+	button = app->addControl <Button> (_controls, "stop", NULL, -1, 40);
+	button->setText("Stop");
 }
 
 void Robot::setActive(bool active) {

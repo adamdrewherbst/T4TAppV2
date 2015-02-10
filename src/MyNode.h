@@ -2,6 +2,7 @@
 #define MYNODE_H_
 
 #include "Project.h"
+#include <curl/curl.h>
 
 namespace T4T {
 
@@ -69,6 +70,7 @@ public:
 	std::string resolveFilename(const char *filename = NULL);
 	void loadData(const char *filename = NULL, bool doPhysics = true);
 	void writeData(const char *filename = NULL, bool modelSpace = true);
+	void uploadData(const char *url, const char *rootId = NULL);
 	void loadAnimation(const char *filename, const char *id);
 	void playAnimation(const char *id, bool repeat = false, float speed = 1.0f);
 	void stopAnimation();
