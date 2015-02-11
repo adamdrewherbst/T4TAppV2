@@ -88,7 +88,8 @@ void Project::setupMenu() {
 	}
 	_actionFilter = new MenuFilter(_actionContainer);
 	
-	button = app->addButton <Button> (_controls, "save", NULL, -1, 40);
+	button = app->addControl <Button> (_controls, "save", NULL, -1, 40);
+	button->setText("Save");
 	
 	app->addListener(_controls, this);
 	_container->setVisible(false);
@@ -130,7 +131,7 @@ void Project::controlEvent(Control *control, Control::Listener::EventType evt) {
 	} else if(strcmp(id, "finishElement") == 0) {
 		promptNextElement();
 	} else if(strcmp(id, "save") == 0) {
-		saveProject();
+		app->saveProject();
 	}
 }
 
@@ -356,11 +357,6 @@ void Project::update() {
 			app->message("Oh no! Something broke! Click 'Build' to fix your model.");
 		}
 	}
-}
-
-void Project::saveProject() {
-	app->login();
-	
 }
 
 Project::Element::Element(Project *project, Element *parent, const char *id, const char *name, bool multiple)

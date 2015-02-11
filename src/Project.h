@@ -94,6 +94,8 @@ public:
 	bool touchEvent(Touch::TouchEvent evt, int x, int y, unsigned int contactIndex);
 	void setCurrentElement(short n);
 	void promptNextElement();
+	void saveProject();
+	void saveHelper(const char *email);
 	virtual void addNode();
 	virtual void finish();
 	virtual void addPhysics();

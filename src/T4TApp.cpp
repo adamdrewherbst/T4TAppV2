@@ -253,8 +253,17 @@ void T4TApp::render(float elapsedTime)
 	_mainMenu->draw();
 }
 
-void T4TApp::login() {
-	
+bool T4TApp::login(void (T4TApp::*callback)(const char*)) {
+	if(_userEmail.length() > 0) {
+		if(callback) (this->*callback)(_userEmail.c_str());
+		return false;
+	}
+	getText("Enter your email", "Submit", callback);
+	return true;
+}
+
+void T4TApp::processLogin(const char *email) {
+	_userEmail = email;
 }
 
 void T4TApp::redraw() {
@@ -719,7 +728,22 @@ void T4TApp::getText(const char *prompt, const char *type, void (T4TApp::*callba
 	_textSubmit->setText(type);
 	_textName->setText("");
 	showDialog(_textDialog);
-	//_textName->setState(Control::ACTIVE);
+}
+
+void T4TApp::saveProject() {
+	if(_activeMode < 0) return;
+	Project *project = dynamic_cast<Project*>(_modes[_activeMode]);
+	if(!project) return;
+	login(&T4TApp::saveProjectHelper);
+}
+
+void T4TApp::saveProjectHelper(const char *email) {
+	processLogin(email);
+	Project *project = dynamic_cast<Project*>(_modes[_activeMode]);
+	project->_rootNode->uploadData("http://www.t4t.org/nasa-app/upload/index.php");
+	std::ostringstream os;
+	os << "Saved " << project->_id << " project";
+	message(os.str().c_str());
 }
 
 void T4TApp::doConfirm(const char *message, void (T4TApp::*callback)(bool)) {
@@ -731,7 +755,6 @@ void T4TApp::doConfirm(const char *message, void (T4TApp::*callback)(bool)) {
 void T4TApp::showDialog(Container *dialog, bool show) {
 	_overlay->setVisible(show);
 	dialog->setVisible(show);
-	//if(show) dialog->setState(Control::FOCUS);
 }
 
 void T4TApp::confirmDelete(bool yes) {

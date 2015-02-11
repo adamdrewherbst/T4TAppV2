@@ -1247,37 +1247,51 @@ void MyNode::writeData(const char *file, bool modelSpace) {
 void MyNode::uploadData(const char *url, const char *rootId) {
 	std::ostringstream os;
 	os << "res/tmp/" << _id << ".node";
-	const char *filename = os.str().c_str();
+	std::string filename = os.str();
+	//cout << "opening file " << filename << endl;
 	if(rootId == NULL) writeData("res/tmp/", true);
-	FILE *fd = FileSystem::openFile(filename, "rb");
-	/*fseek(fd, 0, SEEK_END);
+	std::string id = rootId == NULL ? _id.c_str() : rootId;
+	FILE *fd = FileSystem::openFile(filename.c_str(), "rb");
+	fseek(fd, 0, SEEK_END);
 	long length = ftell(fd);
 	fseek(fd, 0, SEEK_SET);
-	char *buffer = malloc(length);
+	/*char *buffer = malloc(length);
 	fread(buffer, 1, length, fd);//*/
+
+	//cout << filename << " is " << length << " bytes" << endl;
 
 	CURL *curl = curl_easy_init();
 	CURLcode res;
-	
-	curl_easy_setopt(curl, CURLOPT_URL, "http://www.t4t.org/nasa-app/upload/index.php");
-	curl_easy_setopt(curl, CURLOPT_UPLOAD, 1L);
-	curl_easy_setopt(curl, CURLOPT_READDATA, fd);
+
+	curl_easy_setopt(curl, CURLOPT_URL, url);
 
 	struct curl_slist *chunk = NULL;
-	chunk = curl_slist_append(chunk, "From: adam@t4t.org");
 	os.str("");
-	os << "X-NodeName: " << rootId;
+	os << "From: " << app->_userEmail;
 	chunk = curl_slist_append(chunk, os.str().c_str());
-	res = curl_easy_setopt(curl, CURLOPT_HTTPHEADER, chunk);
+	os.str("");
+	os << "X-RootNodeName: " << id;
+	chunk = curl_slist_append(chunk, os.str().c_str());
+	os.str("");
+	os << "X-NodeName: " << _id;
+	chunk = curl_slist_append(chunk, os.str().c_str());
+	curl_easy_setopt(curl, CURLOPT_HTTPHEADER, chunk);
+
+	curl_easy_setopt(curl, CURLOPT_UPLOAD, 1L);
+	curl_easy_setopt(curl, CURLOPT_READDATA, fd);
+	curl_easy_setopt(curl, CURLOPT_INFILESIZE, length);
+	curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);
+	
+	cout << "saving node " << _id << endl;
 
 	res = curl_easy_perform(curl);
-	if(res != CURLE_OK) GP_ERROR("Couldn't upload file %s: %s", filename, curl_easy_strerror(res));
+	if(res != CURLE_OK) GP_ERROR("Couldn't upload file %s: %s", filename.c_str(), curl_easy_strerror(res));
 	curl_easy_cleanup(curl);
 
 	fclose(fd);
 
 	for(MyNode *node = dynamic_cast<MyNode*>(getFirstChild()); node; node = dynamic_cast<MyNode*>(node->getNextSibling())) {
-		node->uploadData(url, rootId == NULL ? _id.c_str() : rootId);
+		node->uploadData(url, id.c_str());
 	}
 }
 
