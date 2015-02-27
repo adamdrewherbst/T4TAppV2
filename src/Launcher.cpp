@@ -93,7 +93,7 @@ bool Launcher::setSubMode(short n) {
 				app->addConstraint(_clamps[i], ends[i], -1, "socket", _anchorPoints[i], dir);
 			}
 			//place the crew exploration vehicle in front of the rubber band
-			_cev = app->getProjectNode("buggy");
+			_cev = app->getProjectNode("CEV");
 			if(_cev) {
 				_cev->enablePhysics(false);
 				_cev->placeRest();

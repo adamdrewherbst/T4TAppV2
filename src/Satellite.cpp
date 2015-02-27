@@ -7,9 +7,9 @@ namespace T4T {
 Satellite::Satellite() : Project::Project("satellite") {
 
 	app->addItem("solarPanel", 1, "instrument");
-	app->addItem("heatSensor", 1, "instrument");
-	app->addItem("cameraProbe", 1, "instrument");
-	app->addItem("gravityProbe", 1, "instrument");
+	app->addItem("heatSensor", 2, "instrument", "seat");
+	app->addItem("cameraProbe", 2, "instrument", "seat");
+	app->addItem("gravityProbe", 2, "instrument", "seat");
 
 	_body = (Body*) addElement(new Body(this));
 	_instruments = (Instrument*) addElement(new Instrument(this, _body));
@@ -116,10 +116,12 @@ void Satellite::Instrument::placeNode(short n) {
 
 void Satellite::Instrument::addPhysics(short n) {
 	Project::Element::addPhysics(n);
-	MyNode *body = _parent->getNode(), *node = _nodes[n].get();
+	MyNode *node = _nodes[n].get(),
+		*parent = dynamic_cast<MyNode*>(node->getParent() ? node->getParent() : _project->getTouchNode());
 	app->getPhysicsController()->setConstraintNoCollide();
-	PhysicsConstraint *constraint = app->addConstraint(body, node, node->_constraintId, "fixed", node->_parentOffset, node->_parentAxis, true);
-	constraint->setBreakingImpulse(1000);
+	PhysicsConstraint *constraint = app->addConstraint(parent, node, node->_constraintId, "fixed",
+		node->_parentOffset, node->_parentAxis, true);
+	constraint->setBreakingImpulse(100);
 	cout << "satellite impulse = " << constraint->getBreakingImpulse() << endl;
 }
 

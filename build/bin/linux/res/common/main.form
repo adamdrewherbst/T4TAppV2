@@ -20,6 +20,12 @@ form mainMenu {
 		layout = LAYOUT_VERTICAL
 		zIndex = 10
 		
+		button login {
+			style = buttonStyle
+			autoWidth = true
+			height = 50
+			text = Login
+		}
 		button parent_sceneMenu {
 			style = buttonStyle
 			autoWidth = true
@@ -74,6 +80,12 @@ form mainMenu {
 				autoWidth = true
 				height = 40
 				text = Landing Pod
+			}
+			button CEV {
+				style = buttonStyle
+				autoWidth = true
+				height = 40
+				text = CEV
 			}
 			button launcher {
 				style = buttonStyle
@@ -674,10 +686,31 @@ form mainMenu {
 	
 	container submenu_componentMenu {
 		style = basicContainer
-		layout = LAYOUT_FLOW
-		scroll = SCROLL_VERTICAL
+		layout = LAYOUT_VERTICAL
 		zIndex = 20
 		consumeInputEvents = true
+		
+		container components {
+			style = hiddenContainer
+			layout = LAYOUT_FLOW
+			scroll = SCROLL_VERTICAL
+			width = 100%
+			height = 90%
+		}
+		container controls {
+			style = hiddenContainer
+			layout = LAYOUT_FLOW
+			alignment = ALIGN_BOTTOM_RIGHT
+			autoSize = AUTO_SIZE_WIDTH
+			height = 10%
+			
+			button componentCancel {
+				style = buttonStyle
+				autoSize = AUTO_SIZE_WIDTH
+				height = 40
+				text = Cancel
+			}
+		}
 	}
 
 	//MODAL DIALOGS - use hidden overlay with intermediate z-index to block other controls

@@ -885,6 +885,23 @@ std::vector<MyNode*> MyNode::getAllNodes() {
 	return nodes;
 }
 
+Project::Element* MyNode::getElement() {
+	return _element;
+}
+
+Project::Element* MyNode::getBaseElement() {
+	MyNode *node = this;
+	Project::Element *ret = NULL;
+	while(node) {
+		Project::Element *element = node->_element;
+		if(!element) return ret;
+		if(element->_id.compare("other") != 0) return element;
+		ret = element;
+		node = (MyNode*) node->getParent();
+	}
+	return ret;
+}
+
 void MyNode::addComponentInstance(std::string id, const std::vector<unsigned short> &instance) {
 	_components[id].push_back(instance);
 	_componentInd.resize(nv());
@@ -921,16 +938,43 @@ void MyNode::setOneHull() {
 std::string MyNode::resolveFilename(const char *filename) {
 	std::string path;
 	int n = filename == NULL ? 0 : strlen(filename);
-	if(filename == NULL) path = app->getSceneDir() + getId() + ".node";
-	else if(filename[n-1] == '/') path = filename + _id + ".node";
-	else if(strstr(filename, "/") == NULL) path = app->getSceneDir() + filename;
-	else path = filename;
+	if(filename == NULL) {
+		path = app->getSceneDir() + getId() + ".node";
+	} else if(strncmp(filename, "http", 4) == 0) {
+
+		path = "res/tmp/" + _id + ".node";
+		FILE *fd = FileSystem::openFile(path.c_str(), "wb");
+		CURL *curl = curl_easy_init();
+		CURLcode res;
+		std::string url = filename + _id + ".node";
+		curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
+		curl_easy_setopt(curl, CURLOPT_WRITEDATA, fd);
+		curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, fwrite);
+		curl_easy_setopt(curl, CURLOPT_FAILONERROR, 1L);
+		curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);
+		cout << "loading node " << _id << endl;
+		res = curl_easy_perform(curl);
+		if(res != CURLE_OK) {
+			path = "";
+			GP_WARN("Couldn't load file %s: %s", url.c_str(), curl_easy_strerror(res));
+		}
+		curl_easy_cleanup(curl);
+		fclose(fd);
+
+	} else if(filename[n-1] == '/') {
+		path = filename + _id + ".node";
+	} else if(strstr(filename, "/") == NULL) {
+		path = app->getSceneDir() + filename;
+	} else {
+		path = filename;
+	}
 	return path;
 }
 
 void MyNode::loadData(const char *file, bool doPhysics)
 {
 	std::string filename = resolveFilename(file);
+	if(filename.size() == 0) return;
 	std::unique_ptr<Stream> stream(FileSystem::open(filename.c_str()));
 	if (stream.get() == NULL)
 	{
@@ -1111,7 +1155,7 @@ void MyNode::loadData(const char *file, bool doPhysics)
 		addChild(child);
 	}
     stream->close();
-	updateModel(doPhysics);
+	updateModel(doPhysics, false);
 	if(getCollisionObject() != NULL) getCollisionObject()->setEnabled(false);
 }
 
@@ -1908,6 +1952,9 @@ void MyNode::attachTo(MyNode *parent, const Vector3 &point, const Vector3 &norm)
 	setMyTranslation(point - normal * box.min.z);
 	//hold the position data in my constraint parameters in case needed to add a constraint later
 	_parentOffset = point;
+	Matrix normInv;
+	parent->getInverseTransposeWorldMatrix().invert(&normInv);
+	normInv.transformVector(&normal);
 	_parentAxis = normal;
 	_parentNormal = normal;
 }

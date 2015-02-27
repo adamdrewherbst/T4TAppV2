@@ -23,7 +23,14 @@ public:
 		void addPhysics(short n);
 	};
 	
+	class Seat : public Project::Element { 
+		public:
+		Seat(Project *project, Element *parent);
+		void addPhysics(short n);
+	};
+	
 	Body *_body;
+	Seat *_seat;
 	Hatch *_hatch;
 	
 	MyNode *_astronauts[2];

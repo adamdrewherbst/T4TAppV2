@@ -200,7 +200,7 @@ LandingPod::Hatch::Hatch(Project *project, Element *parent)
 
 void LandingPod::Hatch::placeNode(short n) {
 	//put the bottom center of the bounding box where the user clicked
-	MyNode *node = _nodes[n].get(), *parent = _parent->getNode();
+	MyNode *node = _nodes[n].get(), *parent = _project->getTouchNode();
 	node->updateTransform();
 	BoundingBox box = node->getBoundingBox(true);
 	node->shiftModel(0, -box.min.y, 0);

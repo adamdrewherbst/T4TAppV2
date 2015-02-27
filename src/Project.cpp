@@ -11,7 +11,8 @@ Project::Project(const char* id) : Mode::Mode(id) {
 	_camera = _scene->getActiveCamera();
     _camera->setAspectRatio(app->getAspectRatio());
 
-	_rootNode = MyNode::create(_id.c_str());
+	_nodeId = _id;
+	_rootNode = MyNode::create(_nodeId.c_str());
 	_rootNode->_type = "root";
 	_buildAnchor = NULL;
 
@@ -57,11 +58,13 @@ void Project::setupMenu() {
 		j = (i+1) % _numElements;
 		button = app->addControl <Button> (_elementContainer, _elements[j]->_id.c_str(), NULL, -1, 40);
 		button->setText(_elements[j]->_name.c_str());
+		if(_elements[j]->_parent) button->setEnabled(false);
 	}
 
 	_moveContainer = app->addControl <Container> (_controls, "moveMode", "hiddenContainer");
 	_moveContainer->setLayout(Layout::LAYOUT_FLOW);
 	_moveModes.push_back("translate");
+	_moveModes.push_back("translateFree");
 	_moveModes.push_back("rotate");
 	_moveModes.push_back("rotateFree");
 	_moveModes.push_back("groundFace");
@@ -103,8 +106,11 @@ void Project::controlEvent(Control *control, Control::Listener::EventType evt) {
 
 	if(_numElements > 0 && _elementContainer->getControl(id) == control) {
 		for(short i = 0; i < _elements.size(); i++) if(_elements[i]->_id.compare(id) == 0) {
-			cout << "current element now " << i << endl;
 			setCurrentElement(i);
+			if(!getEl()->_complete) {
+				app->promptItem(getEl()->_filter);
+				cout << "prompting for " << getEl()->_filter << endl;
+			}
 			_moveMode = -1;
 			break;
 		}
@@ -112,6 +118,9 @@ void Project::controlEvent(Control *control, Control::Listener::EventType evt) {
 		app->_componentMenu->setVisible(false);
 		if(element) element->setNode(id+5);
 		else _currentNodeId = id+5;
+	} else if(strcmp(id, "componentCancel") == 0) {
+		app->_componentMenu->setVisible(false);
+		_inSequence = false;
 	} else if(_moveContainer->getControl(id) == control) {
 		short n = _moveModes.size(), i;
 		for(i = 0; i < n; i++) {
@@ -144,7 +153,7 @@ bool Project::touchEvent(Touch::TouchEvent evt, int x, int y, unsigned int conta
 		//see if we are placing a node on its parent
 		Element *current = getEl();
 		if(evt == Touch::TOUCH_PRESS && current && current->_currentNodeId
-		  && (current->_isOther || current->_parent == touchNode->_element)) {
+		  && (current->_isOther || current->_parent == touchNode->getBaseElement())) {
 			current->addNode();
 		}
 		//otherwise just trigger whatever node we clicked
@@ -230,13 +239,6 @@ void Project::setActive(bool active) {
 	if(active) {
 		//determine the count of this component type based on the highest index for this element in the scene or in saved files
 		_typeCount = 0;
-		do {
-			std::stringstream ss;
-			ss << _id << ++_typeCount;
-			_nodeId = ss.str();
-		} while(app->_scene->findNode(_nodeId.c_str()) != NULL
-			|| FileSystem::fileExists(("res/common/" + _nodeId + ".node").c_str()));
-		_rootNode->setId(_nodeId.c_str());
 		_scene->addNode(_rootNode);
 		app->_ground->setVisible(false);
 		app->_componentMenu->setFocus();
@@ -266,6 +268,17 @@ void Project::setActive(bool active) {
 }
 
 bool Project::setSubMode(short mode) {
+	//if trying to test, must first make sure all components have been added
+	if(mode == 1) {
+		for(short i = 0; i < _elements.size(); i++) {
+			if(!_elements[i]->_isOther && !_elements[i]->_complete) {
+				std::ostringstream os;
+				os << "You must add a " << _elements[i]->_name << " first";
+				app->message(os.str().c_str());
+				return false;
+			}
+		}
+	}
 	bool building = _subMode == 0, changed = Mode::setSubMode(mode);
 	if(_subMode == 0) app->_ground->setVisible(false);
 	if(building) {
@@ -361,7 +374,7 @@ void Project::update() {
 
 Project::Element::Element(Project *project, Element *parent, const char *id, const char *name, bool multiple)
   : _project(project), _id(id), _name(name), _numNodes(1), _currentNodeId(NULL), _multiple(multiple), _touchInd(-1),
-    _isOther(false) {
+    _isOther(false), _complete(false) {
 	app = (T4TApp*) Game::getInstance();
   	if(name == NULL) _name = _id;
 	setParent(parent);
@@ -473,6 +486,7 @@ void Project::Element::addNode() {
 		addPhysics(offset + i);
 	}
 	_currentNodeId = NULL;
+	setComplete(true);
 	_project->promptNextElement();
 }
 
@@ -483,12 +497,23 @@ void Project::Element::placeNode(short n) {
 	if(_parent == NULL && !_isOther) {
 		node->setTranslation(0, 0, 0);
 	} else {
-		MyNode *parent = _isOther ? _project->getTouchNode(_project->getLastTouchEvent()) : _parent->getNode();
+		MyNode *parent = _project->getTouchNode(_project->getLastTouchEvent());
+			//_isOther ? _project->getTouchNode(_project->getLastTouchEvent()) : _parent->getNode();
 		if(parent && parent != node) {
 			cout << "attaching to " << parent->getId() << " at " << app->pv(point) << endl;
 			node->attachTo(parent, point, normal);
 		}
 	}
+}
+
+void Project::Element::setComplete(bool complete) {
+	_complete = complete;
+	cout << _id << " complete" << endl;
+	for(short i = 0; i < _children.size(); i++) {
+		cout << "\tenabling " << _children[i]->_id << endl;
+		Control *button = _project->_elementContainer->getControl(_children[i]->_id.c_str());
+		if(button) button->setEnabled(complete);
+	}	
 }
 
 void Project::Element::addPhysics(short n) {
@@ -505,6 +530,7 @@ void Project::Element::deleteNode(short n) {
 	MyNode *node = _nodes[n].get();
 	node->removeMe();
 	_nodes.erase(_nodes.begin() + n);
+	if(_nodes.empty()) setComplete(false);
 }
 
 short Project::Element::getNodeCount() {
@@ -531,7 +557,25 @@ bool Project::Element::touchEvent(Touch::TouchEvent evt, int x, int y, unsigned 
 	//move the node as needed
 	if(node && parent && _project->_moveMode >= 0) {
 		switch(_project->_moveMode) {
-			case 0: { //translate
+			case 0: { //translate in plane
+				switch(evt) {
+					case Touch::TOUCH_PRESS: {
+						Vector3 point = _project->getTouchPoint(evt), normal = node->getJointNormal();
+						_plane.set(normal, -normal.dot(point));
+						node->enablePhysics(false);
+						break;
+					} case Touch::TOUCH_MOVE: {
+						Vector3 delta = _planeTouch.getPoint(evt) - _project->getTouchPoint(Touch::TOUCH_PRESS);
+						node->baseTranslate(delta);
+						break;
+					} case Touch::TOUCH_RELEASE: {
+						addPhysics(_touchInd);
+						node->enablePhysics(true);
+						break;
+					}
+				}
+				break;
+			} case 1: { //translate over surface
 				switch(evt) {
 					case Touch::TOUCH_PRESS: {
 						//treat it as if the user clicked on the point where this node is attached to its parent
@@ -554,7 +598,7 @@ bool Project::Element::touchEvent(Touch::TouchEvent evt, int x, int y, unsigned 
 					}
 				}
 				break;
-			} case 1: { //rotate
+			} case 2: { //rotate in plane
 				switch(evt) {
 					case Touch::TOUCH_PRESS: {
 						node->enablePhysics(false);
@@ -571,7 +615,7 @@ bool Project::Element::touchEvent(Touch::TouchEvent evt, int x, int y, unsigned 
 					}
 				}
 				break;
-			} case 2: { //free rotate
+			} case 3: { //free rotate
 				switch(evt) {
 					case Touch::TOUCH_PRESS: {
 						node->enablePhysics(false);
@@ -613,7 +657,7 @@ bool Project::Element::touchEvent(Touch::TouchEvent evt, int x, int y, unsigned 
 					}
 				}
 				break;
-			} case 3: { //ground face
+			} case 4: { //ground face
 				switch(evt) {
 					case Touch::TOUCH_PRESS: {
 						break;
@@ -623,6 +667,7 @@ bool Project::Element::touchEvent(Touch::TouchEvent evt, int x, int y, unsigned 
 						if(node->getChildCount() > 0) break;
 						short f = node->pt2Face(_project->_touchPt.getPoint(evt));
 						if(f < 0) break;
+						parent->updateTransform();
 						node->enablePhysics(false);
 						Vector3 joint = node->getAnchorPoint(), normal = node->getJointNormal();
 						Plane plane(normal, -joint.dot(normal));

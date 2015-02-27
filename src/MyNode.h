@@ -82,6 +82,8 @@ public:
 	void mergeVertices(float threshold);
 	void calculateHulls();
 	void setColor(float r, float g, float b);
+	Project::Element* getElement();
+	Project::Element* getBaseElement();
 
 	//transform
 	Matrix getRotTrans();

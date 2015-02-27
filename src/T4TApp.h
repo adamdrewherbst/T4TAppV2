@@ -140,7 +140,7 @@ public:
     //user interface
     Form *_mainMenu;
     Container *_sideMenu, *_stage, *_sceneMenu, *_machineMenu, *_modePanel,
-      *_textDialog, *_confirmDialog, *_overlay, *_cameraMenu, *_componentMenu;
+      *_textDialog, *_confirmDialog, *_overlay, *_cameraMenu, *_componentMenu, *_componentContainer;
     MenuFilter *_itemFilter;
     Label *_message, *_textPrompt, *_confirmMessage;
     TextBox *_textName;
@@ -219,6 +219,7 @@ public:
     MyNode* getProjectNode(const char *id);
     void saveProject();
     void saveProjectHelper(const char *email);
+    void loadProjects(const char *email);
 
     Camera* getCamera();
     Node* getCameraNode();

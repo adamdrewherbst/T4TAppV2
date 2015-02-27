@@ -12,6 +12,7 @@
 #include "Rocket.h"
 #include "Robot.h"
 #include "LandingPod.h"
+#include "CEV.h"
 #include "Launcher.h"
 #include "HullMode.h"
 #include "Grid.h"
@@ -85,6 +86,7 @@ void T4TApp::initialize()
 
 	//for selecting items	
 	_componentMenu = (Container*)_mainMenu->getControl("submenu_componentMenu");
+	_componentContainer = (Container*) _componentMenu->getControl("components");
 
 	//dialogs
 	_message = (Label*)_stage->getControl("message");
@@ -147,6 +149,7 @@ void T4TApp::initialize()
 	_modes.push_back(new Buggy());
 	_modes.push_back(new Robot());
 	_modes.push_back(new LandingPod());
+	_modes.push_back(new CEV());
 	_modes.push_back(new Launcher());
 	_modes.push_back(new HullMode());
 	_modes.push_back(new StringMode());
@@ -158,7 +161,7 @@ void T4TApp::initialize()
     //_modes.push_back(new Lever());
     //_modes.push_back(new Pulley());
     
-    _itemFilter = new MenuFilter(_componentMenu);
+    _itemFilter = new MenuFilter(_componentContainer);
     
 	//for queuing user actions for undo/redo
     _action = NULL;
@@ -289,8 +292,12 @@ void T4TApp::controlEvent(Control* control, Control::Listener::EventType evt)
 	Container *parent = (Container*) control->getParent();
 	cout << "CLICKED " << id << endl;
 
+	//login/register
+	if(strcmp(id, "login") == 0) {
+		login(&T4TApp::loadProjects);
+	}
 	//scene operations
-	if(_sceneMenu->getControl(id) == control) {
+	else if(_sceneMenu->getControl(id) == control) {
 		if(strcmp(id, "new") == 0) {
 			clearScene();
 			setSceneName("test");
@@ -506,7 +513,7 @@ void T4TApp::addItem(const char *type, short numTags, ...) {
 	va_end(args);
 	_models->addNode(node);
 	//ImageControl* itemImage = addControl <ImageControl> (_componentMenu, MyNode::concat(2, "comp_", type));
-	Button *itemImage = addControl <Button> (_componentMenu, MyNode::concat(2, "comp_", type), NULL, 150.0f, 150.0f);
+	Button *itemImage = addControl <Button> (_componentContainer, MyNode::concat(2, "comp_", type), NULL, 150.0f, 150.0f);
 	itemImage->setText(type);
 	itemImage->setZIndex(_componentMenu->getZIndex());
 	//itemImage->setImage("res/png/cowboys-helmet-nobkg.png");
@@ -744,6 +751,17 @@ void T4TApp::saveProjectHelper(const char *email) {
 	std::ostringstream os;
 	os << "Saved " << project->_id << " project";
 	message(os.str().c_str());
+}
+
+void T4TApp::loadProjects(const char *email) {
+	processLogin(email);
+	short i, n = _modes.size();
+	for(i = 0; i < n; i++) {
+		Project *project = dynamic_cast<Project*>(_modes[i]);
+		if(!project) continue;
+		std::string dir = "http://www.t4t.org/nasa-app/upload/" + _userEmail + "/";
+		project->_rootNode->loadData(dir.c_str());
+	}
 }
 
 void T4TApp::doConfirm(const char *message, void (T4TApp::*callback)(bool)) {

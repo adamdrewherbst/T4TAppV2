@@ -14,7 +14,7 @@ public:
 		T4TApp *app;
 		Project *_project;
 		std::string _id, _name;
-		bool _static, _multiple, _isOther, _movable[3], _rotable[3];
+		bool _static, _multiple, _isOther, _movable[3], _rotable[3], _complete;
 		float _limits[3][2];
 		short _moveRef, _numNodes, _touchInd;
 		std::vector<std::shared_ptr<MyNode> > _nodes;
@@ -42,6 +42,7 @@ public:
 		virtual void setNode(const char *id);
 		virtual void addNode();
 		virtual void placeNode(short n = 0);
+		virtual void setComplete(bool complete);
 		virtual void addPhysics(short n = 0);
 		virtual void deleteNode(short n = 0);
 	};

@@ -11,6 +11,7 @@ CEV::CEV() : Project::Project("CEV") {
 	app->addItem("hatch2", 2, "general", "hatch");
 
 	_body = (Body*) addElement(new Body(this));
+	_seat = (Seat*) addElement(new Seat(this, _body));
 	_hatch = (Hatch*) addElement(new Hatch(this, _body));
 	setupMenu();
 	
@@ -21,12 +22,11 @@ CEV::CEV() : Project::Project("CEV") {
 
 void CEV::setupMenu() {
 	Project::setupMenu();
-	_hatchButton = app->addControl <Button> (NULL, "openHatch");
+	_hatchButton = app->addControl <Button> (NULL, "openHatch", NULL, -1, 40);
 	_hatchButton->setText("Open Hatch");
 	_controls->insertControl(_hatchButton, 2);
 	_hatchButton->setEnabled(false);
 	app->addListener(_hatchButton, this);
-	_controls->setHeight(_controls->getHeight() + 70.0f);	
 }
 
 bool CEV::touchEvent(Touch::TouchEvent evt, int x, int y, unsigned int contactIndex) {
@@ -112,6 +112,22 @@ void CEV::openHatch() {
 
 CEV::Body::Body(Project *project) : Project::Element::Element(project, NULL, "body", "Body") {
 	_filter = "body";
+}
+
+CEV::Seat::Seat(Project *project, Element *parent)
+  : Project::Element::Element(project, parent, "seat", "Seat") {
+	_filter = "seat";
+}
+
+void CEV::Seat::addPhysics(short n) {
+	Project::Element::addPhysics(n);
+	MyNode *node = _nodes[n].get(),
+		*parent = dynamic_cast<MyNode*>(node->getParent() ? node->getParent() : _project->getTouchNode());
+	app->getPhysicsController()->setConstraintNoCollide();
+	PhysicsConstraint *constraint = app->addConstraint(parent, node, node->_constraintId, "fixed",
+		node->_parentOffset, node->_parentAxis, true);
+	constraint->setBreakingImpulse(100);
+	cout << "CEV impulse = " << constraint->getBreakingImpulse() << endl;
 }
 
 CEV::Hatch::Hatch(Project *project, Element *parent)
