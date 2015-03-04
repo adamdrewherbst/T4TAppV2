@@ -93,6 +93,7 @@ public:
 	Vector3 getScaleNormal(short f);
 	BoundingBox getBoundingBox(bool modelSpace = false, bool recur = true);
 	float getMaxValue(const Vector3 &axis, bool modelSpace = false, const Vector3 &center = Vector3::zero());
+	Vector3 getCentroid();
 	void set(const Matrix& trans);
 	void set(Node *other);
 	void myTranslate(const Vector3& delta);
@@ -102,6 +103,7 @@ public:
 	void myScale(const Vector3& scale);
 	void setMyScale(const Vector3& scale);
 	void shiftModel(float x, float y, float z);
+	void translateToOrigin();
 	void attachTo(MyNode *parent, const Vector3 &point, const Vector3 &normal);
 	void updateMaterial();
 	void setBase();

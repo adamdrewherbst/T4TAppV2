@@ -280,6 +280,14 @@ material cap_with_hole_2 : colored
     }
 }
 
+material disk_with_holes : colored {
+	technique {
+		pass {
+			u_ambientColor = 0.7, 0.7, 0.7
+		}
+	}
+}
+
 material axle1 : box {}
 material wheel1 : box {}
 material wheel2 : box {}

@@ -500,6 +500,7 @@ MyNode* MyNode::create(const char *id) {
 
 void MyNode::init() {
 	_node = this;
+	_project = NULL;
 	_element = NULL;
     app = (T4TApp*) Game::getInstance();
     _staticObj = false;
@@ -685,6 +686,15 @@ float MyNode::getMaxValue(const Vector3 &axis, bool modelSpace, const Vector3 &c
 		if(val > max) max = val;
 	}
 	return max;
+}
+
+Vector3 MyNode::getCentroid() {
+	short i, n = nv();
+	Vector3 centroid;
+	for(i = 0; i < n; i++) {
+		centroid += _vertices[i];
+	}
+	return centroid / n;
 }
 
 //given a point in space, find the best match for the face that contains it
@@ -1141,6 +1151,11 @@ void MyNode::loadData(const char *file, bool doPhysics)
 		_mass = atof(str);
 		str = stream->readLine(line, 2048);
 		_staticObj = atoi(str) > 0;
+		str = stream->readLine(line, 2048);
+		if(_project != NULL && strlen(str) > 0) {
+			_element = _project->getElement(str);
+			if(_element) _element->setComplete(true);
+		}
 	}
 	//see if this node has any children
 	str = stream->readLine(line, 2048);
@@ -1151,6 +1166,7 @@ void MyNode::loadData(const char *file, bool doPhysics)
 		in.str(str);
 		in >> childId;
 		MyNode *child = MyNode::create(childId.c_str());
+		child->_project = _project;
 		child->loadData(file, doPhysics);
 		addChild(child);
 	}
@@ -1271,6 +1287,8 @@ void MyNode::writeData(const char *file, bool modelSpace) {
 		float mass = (getCollisionObject() != NULL) ? getCollisionObject()->asRigidBody()->getMass() : _mass;
 		os << mass << endl;
 		os << (_staticObj ? 1 : 0) << endl;
+		if(_element != NULL) os << _element->_id;
+		os << endl;
 		line = os.str();
 		stream->write(line.c_str(), sizeof(char), line.length());
 	}
@@ -1929,6 +1947,13 @@ void MyNode::shiftModel(float x, float y, float z) {
 		_vertices[i].y += y;
 		_vertices[i].z += z;
 	}
+}
+
+void MyNode::translateToOrigin() {
+	Vector3 centroid = getCentroid();
+	cout << "shifting by " << app->pv(-centroid) << endl;
+	shiftModel(-centroid.x, -centroid.y, -centroid.z);
+	cout << "centroid now at " << app->pv(getCentroid()) << endl;
 }
 
 void MyNode::attachTo(MyNode *parent, const Vector3 &point, const Vector3 &norm) {

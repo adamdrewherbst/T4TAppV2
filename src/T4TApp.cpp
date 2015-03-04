@@ -132,6 +132,7 @@ void T4TApp::initialize()
 	addItem("pitri_wheel", 1, "general");
 	addItem("green_flange_wheel", 1, "general");
 	addItem("jar_with_cone", 1, "general");
+	addItem("disk_with_holes", 1, "general");
 
 	_drawDebugCheckbox = (CheckBox*) _sideMenu->getControl("drawDebug");
 	//_drawDebugCheckbox = addControl <CheckBox> (_sideMenu, "drawDebug");
@@ -382,6 +383,7 @@ void T4TApp::controlEvent(Control* control, Control::Listener::EventType evt)
 			setAction("addNode", node);
 			commitAction();
 		}
+		_componentMenu->setVisible(false);
 	}
 	else if(strcmp(id, "debugButton") == 0) {
 		debugTrigger();
@@ -761,6 +763,7 @@ void T4TApp::loadProjects(const char *email) {
 		if(!project) continue;
 		std::string dir = "http://www.t4t.org/nasa-app/upload/" + _userEmail + "/";
 		project->_rootNode->loadData(dir.c_str());
+		project->_rootNode->setRest();
 	}
 }
 

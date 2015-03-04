@@ -2,6 +2,7 @@
 #define TEMPLATEGAME_H_
 
 #define USE_GLU_TESS
+#define USE_COLLADA
 
 #include <cmath>
 #include <cstring>
@@ -14,10 +15,12 @@
 #include <limits>
 #include <algorithm>
 #include <memory>
-//#include "pugixml-1.5/src/pugixml.hpp"
-//#include <assimp/assimp.hpp>
-//#include <assimp/aiScene.h>
-//#include <assimp/aiPostProcess.h>
+#ifdef USE_COLLADA
+	#include "pugixml-1.5/src/pugixml.hpp"
+	//#include <assimp/assimp.hpp>
+	//#include <assimp/aiScene.h>
+	//#include <assimp/aiPostProcess.h>
+#endif
 #include "gameplay.h"
 
 using std::cout;
@@ -169,8 +172,10 @@ public:
 	MyNode* generateModel(const char *id, const char *type, ...);
 	void loadModels(const char *filename);
 	void loadObj(const char *filename);
-	//void loadXMLNode(pugi::xml_document &doc, pugi::xml_node &xnode, Matrix world, MyNode *node, std::vector<Meshy*> &meshes);
+	#ifdef USE_COLLADA
+	void loadXMLNode(pugi::xml_document &doc, pugi::xml_node &xnode, Matrix world, MyNode *node, std::vector<Meshy*> &meshes);
 	void loadDAE(const char *filename);
+	#endif
 	void addItem(const char *type, short numTags = 0, ...);
 	void filterItemMenu(const char *tag = NULL);
 	void promptItem(const char *tag = NULL);

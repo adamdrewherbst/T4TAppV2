@@ -90,6 +90,7 @@ public:
 	virtual void update();
 	Element* addElement(Element *element);
 	Element* getEl(short n = -1);
+	Element* getElement(const char *id);
 	MyNode* getNode(short n = -1);
 	void controlEvent(Control *control, Control::Listener::EventType evt);
 	bool touchEvent(Touch::TouchEvent evt, int x, int y, unsigned int contactIndex);

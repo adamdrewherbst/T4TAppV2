@@ -186,6 +186,12 @@ Project::Element* Project::getEl(short n) {
 	return _elements[n].get();
 }
 
+Project::Element* Project::getElement(const char *id) {
+	short i = 0, n = _elements.size();
+	for(i = 0; i < n; i++) if(_elements[i]->_id.compare(id) == 0) return _elements[i].get();
+	return NULL;
+}
+
 MyNode* Project::getNode(short n) {
 	if(n < 0) n = _currentElement;
 	if(_elements[n]->_nodes.empty()) return NULL;

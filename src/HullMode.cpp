@@ -258,17 +258,20 @@ bool HullMode::selectItem(const char *id) {
 	Mode::selectItem(id);
 	if(_hullNode) _scene->removeNode(_hullNode);
 	_hullNode = app->duplicateModelNode(id);
+	_hullNode->setTranslation(0, 0, 0);
 	_hullNode->_objType = "mesh";
 	_hullNode->_mass = 10;
 	_hullNode->setId(id);
+	_hullNode->translateToOrigin();
 	updateModel();
 	_scene->addNode(_hullNode);
 	updateTransform();
+	app->_componentMenu->setVisible(false);
 	return true;
 }
 
 void HullMode::updateModel() {
-	_hullNode->updateModel(false);
+	_hullNode->updateModel(false, false);
 	//add all the triangles again, but with opposite orientation, so the user can click on the backwards ones to reverse them
 	short nt = _hullNode->nt();
 	std::vector<short> forward(3 * nt), reverse(3 * nt);

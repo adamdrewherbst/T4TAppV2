@@ -241,8 +241,7 @@ form mainMenu {
 		
 		container mode_navigate {
 			style = hiddenContainer
-			autoWidth = true
-			autoHeight = true
+			autoSize = AUTO_SIZE_BOTH
 			layout = LAYOUT_ABSOLUTE
 		}
 		
@@ -358,14 +357,14 @@ form mainMenu {
 
 		container mode_hull {
 			style = hiddenContainer
-			autoWidth = true
-			autoHeight = true
+			autoSize = AUTO_SIZE_BOTH
 			layout = LAYOUT_ABSOLUTE
 			
 			container controls {
 				style = basicContainer
 				position = 20, 10
-				size = 180, 450
+				width = 180
+				autoSize = AUTO_SIZE_HEIGHT
 				layout = LAYOUT_VERTICAL
 				consumeInputEvents = true
 				zIndex = 5

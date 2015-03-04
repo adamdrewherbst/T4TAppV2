@@ -85,8 +85,10 @@ void T4TApp::loadModels(const char *filename) {
 			cout << "loading OBJ: " << modelFile << endl;
 			loadObj(modelFile);
 		} else if(strstr(modelFile, ".dae") != NULL) {
+			#ifdef USE_COLLADA
 			cout << "loading DAE: " << modelFile << endl;
 			loadDAE(modelFile);
+			#endif
 		}
 	}
 	stream->close();
@@ -389,8 +391,11 @@ void T4TApp::loadObj(const char *filename) {
 	stream->close();
 }
 
+#ifdef USE_COLLADA
+using namespace pugi;
+
 void T4TApp::loadDAE(const char *filename) {
-/*	std::string nodeId = filename;
+	std::string nodeId = filename;
 	size_t start = nodeId.find_last_of('/'), end = nodeId.find_first_of('.');
 	if(start == std::string::npos) start = -1;
 	if(end == std::string::npos) end = nodeId.length()-1;
@@ -515,12 +520,12 @@ void T4TApp::loadDAE(const char *filename) {
 	Matrix world;
 	loadXMLNode(doc, root, world, node, meshes);
 	node->mergeVertices(1e-5);
+	node->translateToOrigin();
 
 	node->writeData("res/common/");
-*/
 }
 
-/*void T4TApp::loadXMLNode(xml_document &doc, xml_node &xnode, Matrix world, MyNode *node, std::vector<Meshy*> &meshes) {
+void T4TApp::loadXMLNode(xml_document &doc, xml_node &xnode, Matrix world, MyNode *node, std::vector<Meshy*> &meshes) {
 	//get the node transformation
 	Matrix trans;
 	xml_node transNode = xnode.child("matrix");
@@ -585,6 +590,7 @@ void T4TApp::loadDAE(const char *filename) {
 	for(xml_node child : xnode.children("node")) {
 		loadXMLNode(doc, child, world, node, meshes);
 	}
-}*/
+}
+#endif
 
 }
