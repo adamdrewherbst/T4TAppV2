@@ -17,8 +17,10 @@ HullMode::HullMode() : Mode::Mode("hull") {
 	
 	_axisContainer = (Container*) _controls->getControl("axisContainer");
 	_scaleSlider = (Slider*) _controls->getControl("scale");
+	_scaleText = (TextBox*) _controls->getControl("scaleText");
 	app->addListener(_scaleSlider, this, Control::Listener::PRESS | Control::Listener::RELEASE);
-	
+	app->addListener(_scaleText, this, Control::Listener::TEXT_CHANGED | Control::Listener::VALUE_CHANGED);
+
 	_subModes.push_back("selectRegion");
 	_subModes.push_back("selectRing");
 	_subModes.push_back("selectChain");
@@ -79,6 +81,20 @@ void HullMode::controlEvent(Control *control, EventType evt) {
 		os << "Bounding box: " << box.max.x - box.min.x << " x " << box.max.y - box.min.y << " x " << box.max.z - box.min.z << endl;
 		app->message(os.str().c_str());
 		if(evt == Control::Listener::RELEASE) _hullNode->addPhysics();
+	} else if(control == _scaleText && (evt == TEXT_CHANGED || evt == VALUE_CHANGED)
+	  //&& (_scaleText->getLastKeypress() == 10 || _scaleText->getLastKeypress() == 13)
+	  ) {
+		float scale = atof(_scaleText->getText());
+		if(scale > 0) {
+			_hullNode->removePhysics();
+			_hullNode->setScale(scale);
+			updateTransform();
+			BoundingBox box = _hullNode->getBoundingBox();
+			os.str("");
+			os << "Bounding box: " << box.max.x - box.min.x << " x " << box.max.y - box.min.y << " x " << box.max.z - box.min.z << endl;
+			app->message(os.str().c_str());
+			_hullNode->addPhysics();
+		}
 	} else if(strcmp(id, "makeHull") == 0) {
 		makeHulls();
 	} else if(_axisContainer->getControl(id) == control) {

@@ -426,6 +426,11 @@ form mainMenu {
 					step = 0.01
 					value = 1.0
 				}
+				textbox scaleText {
+					style = basic
+					width = 100%
+					height = 50
+				}
 				button flipAxis {
 					style = buttonStyle
 					autoWidth = true

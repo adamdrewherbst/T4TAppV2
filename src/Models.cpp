@@ -86,8 +86,15 @@ void T4TApp::loadModels(const char *filename) {
 			loadObj(modelFile);
 		} else if(strstr(modelFile, ".dae") != NULL) {
 			#ifdef USE_COLLADA
-			cout << "loading DAE: " << modelFile << endl;
-			loadDAE(modelFile);
+			std::string nodeFile = modelFile;
+			short len = strlen(modelFile);
+			nodeFile.replace(len-3, 3, "node");
+			if(!FileSystem::fileExists(nodeFile.c_str())) {
+				cout << "loading DAE: " << modelFile << endl;
+				loadDAE(modelFile);
+			} else {
+				cout << "using NODE: " << nodeFile << endl;
+			}
 			#endif
 		}
 	}

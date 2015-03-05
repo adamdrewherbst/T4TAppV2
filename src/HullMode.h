@@ -27,6 +27,7 @@ public:
 	MyNode *_hullNode;
 	Container *_axisContainer;
 	Slider *_scaleSlider;
+	TextBox *_scaleText;
 	
 	HullMode();
 	void setActive(bool active);
