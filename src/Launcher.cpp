@@ -190,8 +190,7 @@ void Launcher::RubberBand::addPhysics(short n) {
 	Vector3 pos1 = prev->getTranslationWorld(), pos2 = node->getTranslationWorld();
 	Vector3 joint = (pos1 + pos2) / 2, dir = pos2 - pos1;
 	dir.normalize();
-	app->getPhysicsController()->setConstraintNoCollide();
-	PhysicsSpringConstraint *spring = (PhysicsSpringConstraint*) app->addConstraint(prev, node, -1, "spring", joint, dir);
+	PhysicsSpringConstraint *spring = (PhysicsSpringConstraint*) app->addConstraint(prev, node, -1, "spring", joint, dir, false, true);
 	spring->setLinearStrengthX(1.0f);
 	spring->setEnabled(false);
 	_links[n-1] = ConstraintPtr(spring);

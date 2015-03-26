@@ -26,7 +26,7 @@ public:
 	Body *_body;
 	Hatch *_hatch;
 	
-	MyNode *_buggy, *_ramp; //use the lunar buggy as the payload, roll it down a ramp
+	MyNode *_ramp; //roll the lunar buggy down a ramp after surviving the landing
 	
 	Button *_hatchButton;
 	bool _hatching;
@@ -37,6 +37,7 @@ public:
 	void setupMenu();
 	void setActive(bool active);
 	bool setSubMode(short mode);
+	bool positionPayload();
 	void launch();
 	void update();
 	void launchComplete();

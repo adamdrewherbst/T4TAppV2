@@ -19,7 +19,7 @@ Buggy::Buggy() : Project::Project("buggy") {
 
 	_ramp = MyNode::create("buggyRamp");
 	_ramp->loadData("res/common/", false);
-	_ramp->setTranslation(0, 2.5f, -7.5f);
+	_ramp->setTranslation(0, 0, -7.5f);
 	_ramp->setStatic(true);
 	_ramp->addPhysics();
 	_ramp->setVisible(false);
@@ -39,6 +39,7 @@ bool Buggy::setSubMode(short mode) {
 	bool changed = Project::setSubMode(mode);
 	switch(_subMode) {
 		case 0: { //build
+			_ramp->setVisible(false);
 			break;
 		} case 1: { //test
 			_rootNode->enablePhysics(false);
@@ -59,7 +60,7 @@ void Buggy::setRampHeight(float scale) {
 	_rampSlope = scale * 5.0f / 15.0f;
 	_ramp->removePhysics();
 	_ramp->setScaleY(scale);
-	_ramp->setTranslationY(scale * 2.5f);
+	_ramp->setTranslationY(0); //(scale - 1) * 2.5f);
 	_ramp->updateTransform();
 	_ramp->addPhysics();
 	//position the buggy near the top of the ramp
@@ -129,9 +130,9 @@ void Buggy::Axle::placeNode(short n) {
 
 void Buggy::Axle::addPhysics(short n) {
 	Element::addPhysics(n);
-	app->getPhysicsController()->setConstraintNoCollide();
 	MyNode *node = getNode(), *parent = _parent->getNode();
-	app->addConstraint(parent, node, -1, "fixed", node->getTranslationWorld(), Vector3::unitX(), true);
+	app->addConstraint(parent, node, node->_constraintId, "fixed", node->getTranslationWorld(), Vector3::unitX(), true, true);
+	node->_parentNormal = Vector3::unitX();
 }
 
 Buggy::Wheels::Wheels(Project *project, Element *parent, const char *id, const char *name)
@@ -154,8 +155,8 @@ void Buggy::Wheels::placeNode(short n) {
 void Buggy::Wheels::addPhysics(short n) {
 	Element::addPhysics(n);
 	MyNode *node = getNode(n);
-	app->getPhysicsController()->setConstraintNoCollide();
-	app->addConstraint(_parent->getNode(), node, -1, "hinge", node->getTranslationWorld(), Vector3::unitX(), true);
+	app->addConstraint(_parent->getNode(), node, node->_constraintId, "hinge", node->getTranslationWorld(), Vector3::unitX(), true, true);
+	node->_parentNormal = Vector3::unitX();
 }
 
 }

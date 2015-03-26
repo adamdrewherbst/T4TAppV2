@@ -16,6 +16,9 @@ Project::Project(const char* id) : Mode::Mode(id) {
 	_rootNode->_type = "root";
 	_buildAnchor = NULL;
 
+	_payloadId = NULL;
+	_payload = NULL;
+
 	_other = (Other*) addElement(new Other(this));	
 
 	_currentElement = 0;
@@ -262,6 +265,7 @@ void Project::setActive(bool active) {
 		_currentElement = e-1;
 		if(e < _numElements) promptNextElement();
 	}else {
+		removePayload();
 		if(_buildAnchor) _buildAnchor->setEnabled(false);
 		if(_subMode == 0) _rootNode->setRest();
 		_rootNode->enablePhysics(false);
@@ -294,6 +298,7 @@ bool Project::setSubMode(short mode) {
 	switch(_subMode) {
 		case 0: { //build
 			app->setCameraEye(30, -M_PI/3, M_PI/12);
+			removePayload();
 			break;
 		} case 1: { //place in test position
 			app->setCameraEye(40, 0, M_PI/12);
@@ -376,6 +381,34 @@ void Project::update() {
 			app->message("Oh no! Something broke! Click 'Build' to fix your model.");
 		}
 	}
+}
+
+//just identify my payload, if any - will be positioned according to project
+bool Project::positionPayload() {
+	MyNode *root = app->getProjectNode(_payloadId);
+	if(root && root->getChildCount() > 0) {
+		MyNode *body = dynamic_cast<MyNode*>(root->getFirstChild());
+		if(body) _payload = body;
+	}
+	if(_payload) {
+		_payload->enablePhysics(false);
+		_payload->placeRest();
+		_payload->updateTransform();
+	}
+	return _payload != NULL;
+}
+
+//put the payload back in its original project
+bool Project::removePayload() {
+	if(!_payload || _payload->getScene() != _scene) return false;
+	MyNode *root = app->getProjectNode(_payloadId);
+	if(!root) return false;
+	_payload->enablePhysics(false);
+	_payload->placeRest();
+	_payload->updateTransform();
+	root->addChild(_payload);
+	_payload = NULL;
+	return true;
 }
 
 Project::Element::Element(Project *project, Element *parent, const char *id, const char *name, bool multiple)
@@ -568,10 +601,13 @@ bool Project::Element::touchEvent(Touch::TouchEvent evt, int x, int y, unsigned 
 					case Touch::TOUCH_PRESS: {
 						Vector3 point = _project->getTouchPoint(evt), normal = node->getJointNormal();
 						_plane.set(normal, -normal.dot(point));
+						cout << "set plane to " << app->pv(_plane.getNormal()) << " at " << _plane.getDistance() << endl;
 						node->enablePhysics(false);
 						break;
 					} case Touch::TOUCH_MOVE: {
 						Vector3 delta = _planeTouch.getPoint(evt) - _project->getTouchPoint(Touch::TOUCH_PRESS);
+						cout << "plane now " << app->pv(_plane.getNormal()) << " at " << _plane.getDistance() << endl;
+						cout << "translating by " << app->pv(delta) << endl;
 						node->baseTranslate(delta);
 						break;
 					} case Touch::TOUCH_RELEASE: {
@@ -701,8 +737,7 @@ void Project::Other::addPhysics(short n) {
 	Project::Element::addPhysics(n);
 	MyNode *node = _nodes[n].get(), *parent = dynamic_cast<MyNode*>(node->getParent());
 	if(!parent) parent = _project->getTouchNode();
-	app->getPhysicsController()->setConstraintNoCollide();
-	app->addConstraint(parent, node, node->_constraintId, "fixed", node->_parentOffset, node->_parentAxis, true);
+	app->addConstraint(parent, node, node->_constraintId, "fixed", node->_parentOffset, node->_parentAxis, true, true);
 }
 
 }

@@ -68,6 +68,10 @@ public:
 	std::string _sceneFile, _nodeId;
 	MyNode *_rootNode; //parent node for this component
 
+	//eg. the satellite is the payload for the balloon rocket
+	const char *_payloadId;
+	MyNode *_payload;
+
 	Container *_elementContainer, *_actionContainer;
 	MenuFilter *_actionFilter;
 	Button *_launchButton, *_activateButton;
@@ -105,6 +109,8 @@ public:
 	virtual void launch();
 	virtual void activate();
 	virtual void launchComplete();
+	virtual bool positionPayload();
+	virtual bool removePayload();
 	void statusEvent(PhysicsController::Listener::EventType type);
 };
 

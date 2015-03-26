@@ -9,6 +9,8 @@ Rocket::Rocket() : Project::Project("rocket") {
 	app->addItem("straw", 2, "general", "straw");
 	app->addItem("balloon_sphere", 2, "general", "balloon");
 	app->addItem("balloon_long", 2, "general", "balloon");
+	
+	_payloadId = "satellite";
 
 	_pathLength = 10;
 	_straw = (Straw*) addElement(new Straw(this));
@@ -37,34 +39,41 @@ bool Rocket::setSubMode(short mode) {
 			_rootNode->enablePhysics(true);
 			_straw->_constraint->setEnabled(true);
 			//dangle the lunar buggy from the center of the straw with a socket constraint
-			MyNode *satellite = app->getProjectNode("satellite");
-			if(satellite && satellite->getScene() != _scene && satellite->getChildCount() > 0) {
-				MyNode *straw = _straw->getNode();
-				satellite->enablePhysics(false);
-				satellite->placeRest();
-				satellite->updateTransform();
-				straw->updateTransform();
-				BoundingBox strawBox = straw->getBoundingBox(true);
-				BoundingBox satelliteBox = satellite->getBoundingBox(true);
-				Vector3 trans = straw->getTranslationWorld();
-				trans.y += strawBox.min.y - satelliteBox.max.y - 1.5f;
-				satellite->setMyTranslation(trans);
-				satellite->enablePhysics(true);
-				MyNode *body = dynamic_cast<MyNode*>(satellite->getFirstChild());
-				Vector3 joint = trans, dir = Vector3::unitY();
-				joint.y += satelliteBox.max.y;
-				app->addConstraint(straw, body, -1, "fixed", joint, dir, true);
-				/*for(short i = 0; i < 2; i++) {
-					Vector3 springJoint(joint.x, joint.y, joint.z + (2*i-1) * _strawLength/3);
-					PhysicsSpringConstraint *constraint = 
-						(PhysicsSpringConstraint*) app->addConstraint(straw, body, -1, "spring", springJoint, dir, true);
-					constraint->setLinearStrengthZ(0.1f);
-				}*/
-			}
+			positionPayload();
+			/*for(short i = 0; i < 2; i++) {
+				Vector3 springJoint(joint.x, joint.y, joint.z + (2*i-1) * _strawLength/3);
+				PhysicsSpringConstraint *constraint = 
+					(PhysicsSpringConstraint*) app->addConstraint(straw, body, -1, "spring", springJoint, dir, true);
+				constraint->setLinearStrengthZ(0.1f);
+			}*/
 			break;
 		}
 	}
 	return changed;
+}
+
+bool Rocket::positionPayload() {
+	if(!Project::positionPayload()) return false;
+	MyNode *straw = _straw->getNode();
+	straw->updateTransform();
+	BoundingBox strawBox = straw->getBoundingBox(true);
+	BoundingBox satelliteBox = _payload->getBoundingBox(true);
+	Vector3 trans = straw->getTranslationWorld();
+	trans.y += strawBox.min.y - satelliteBox.max.y - 1.5f;
+	_payload->setMyTranslation(trans);
+	_payload->enablePhysics(true);
+	if(_payload->getScene() != _scene) {
+		Vector3 joint = trans, dir = Vector3::unitY();
+		joint.y += satelliteBox.max.y;
+		app->addConstraint(straw, _payload, -1, "fixed", joint, dir, true);
+	}
+	return true;
+}
+
+bool Rocket::removePayload() {
+	MyNode *straw = _straw->getNode();
+	if(_payload) app->removeConstraints(straw, _payload, true);
+	return Project::removePayload();
 }
 
 void Rocket::launch() {

@@ -233,12 +233,14 @@ void Face::tessVertex(unsigned short *vertex) {
 }
 
 void Face::tessCombine(GLfloat coords[3], unsigned short *vertex[4], GLfloat weight[4], unsigned short **dataOut) {
-	short n = _tessFace->_mesh->nv();
-	_tessFace->_mesh->addVertex((float)coords[0], (float)coords[1], (float)coords[2]);
+	short n = _tessFace->_mesh->nv(), i;
+	GLfloat vCoords[3];
+	for(i = 0; i < 3; i++) vCoords[i] = fmin(-10, fmax(10, coords[i]));
+	_tessFace->_mesh->addVertex((float)vCoords[0], (float)vCoords[1], (float)vCoords[2]);
 	_tessBuffer[_tessBufferInd] = n;
 	*dataOut = &_tessBuffer[_tessBufferInd++];
 	cout << "tess combining ";
-	for(short i = 0; i < 4 && vertex[i] > &_tessBuffer[0]; i++) cout << *vertex[i] << ",";
+	for(i = 0; i < 4 && vertex[i] > &_tessBuffer[0]; i++) cout << *vertex[i] << ",";
 	cout << " => " << n << endl;
 }
 
@@ -689,11 +691,18 @@ float MyNode::getMaxValue(const Vector3 &axis, bool modelSpace, const Vector3 &c
 }
 
 Vector3 MyNode::getCentroid() {
-	short i, n = nv();
+	short i, n = nv(), maxInd = 0;
+	float max = 0, len;
 	Vector3 centroid;
 	for(i = 0; i < n; i++) {
 		centroid += _vertices[i];
+		len = _vertices[i].length();
+		if(len > max) {
+			max = len;
+			maxInd = i;
+		}
 	}
+	cout << "max is " << maxInd << " = " << max << " " << app->pv(_vertices[maxInd]) << endl;
 	return centroid / n;
 }
 
@@ -981,15 +990,15 @@ std::string MyNode::resolveFilename(const char *filename) {
 	return path;
 }
 
-void MyNode::loadData(const char *file, bool doPhysics)
+bool MyNode::loadData(const char *file, bool doPhysics)
 {
 	std::string filename = resolveFilename(file);
-	if(filename.size() == 0) return;
+	if(filename.size() == 0) return false;
 	std::unique_ptr<Stream> stream(FileSystem::open(filename.c_str()));
 	if (stream.get() == NULL)
 	{
 		GP_ERROR("Failed to open file '%s'.", filename.c_str());
-		return;
+		return false;
 	}
 	stream->rewind();
 	
@@ -1133,6 +1142,7 @@ void MyNode::loadData(const char *file, bool doPhysics)
 		nc = atoi(str);
 		_constraints.resize(nc);
 		std::string word;
+		short boolVal;
 		for(i = 0; i < nc; i++) {
 			_constraints[i] = new nodeConstraint();
 			str = stream->readLine(line, 2048);
@@ -1145,6 +1155,10 @@ void MyNode::loadData(const char *file, bool doPhysics)
 			_constraints[i]->rotation.set(x, y, z, w);
 			in >> x >> y >> z;
 			_constraints[i]->translation.set(x, y, z);
+			in >> boolVal;
+			_constraints[i]->isChild = boolVal > 0;
+			in >> boolVal;
+			_constraints[i]->noCollide = boolVal > 0;
 			_constraints[i]->id = -1;
 		}
 		str = stream->readLine(line, 2048);
@@ -1173,6 +1187,7 @@ void MyNode::loadData(const char *file, bool doPhysics)
     stream->close();
 	updateModel(doPhysics, false);
 	if(getCollisionObject() != NULL) getCollisionObject()->setEnabled(false);
+	return true;
 }
 
 void MyNode::writeData(const char *file, bool modelSpace) {
@@ -1282,7 +1297,9 @@ void MyNode::writeData(const char *file, bool modelSpace) {
 			os << _constraints[i]->rotation.w << "\t";
 			os << _constraints[i]->translation.x << "\t";
 			os << _constraints[i]->translation.y << "\t";
-			os << _constraints[i]->translation.z << endl;
+			os << _constraints[i]->translation.z << "\t";
+			os << (_constraints[i]->isChild ? "1" : "0") << "\t";
+			os << (_constraints[i]->noCollide ? "1" : "0") << endl;
 		}
 		float mass = (getCollisionObject() != NULL) ? getCollisionObject()->asRigidBody()->getMass() : _mass;
 		os << mass << endl;
@@ -1485,18 +1502,20 @@ void MyNode::updateModel(bool doPhysics, bool doCenter) {
 		if(_color.x >= 0) setColor(_color.x, _color.y, _color.z); //updates the model's color
 
 		//update convex hulls and constraints to reflect shift in node origin
-		short nh = _hulls.size(), nc = _constraints.size();
-		for(i = 0; i < nh; i++) {
-			nv = _hulls[i]->nv();
-			for(j = 0; j < nv; j++) _hulls[i]->_vertices[j] -= center;
-			_hulls[i]->updateTransform();
-		}
-		for(i = 0; i < nc; i++) {
-			nodeConstraint *constraint = _constraints[i];
-			constraint->translation -= center;
-			MyNode *other = getConstraintNode(constraint);
-			if(other && other->_constraintParent == this) {
-				other->_parentOffset -= center;
+		if(doCenter) {
+			short nh = _hulls.size(), nc = _constraints.size();
+			for(i = 0; i < nh; i++) {
+				nv = _hulls[i]->nv();
+				for(j = 0; j < nv; j++) _hulls[i]->_vertices[j] -= center;
+				_hulls[i]->updateTransform();
+			}
+			for(i = 0; i < nc; i++) {
+				nodeConstraint *constraint = _constraints[i];
+				constraint->translation -= center;
+				MyNode *other = getConstraintNode(constraint);
+				if(other && other->_constraintParent == this) {
+					other->_parentOffset -= center;
+				}
 			}
 		}
 		if(doPhysics) addPhysics(false);
@@ -1954,6 +1973,13 @@ void MyNode::translateToOrigin() {
 	cout << "shifting by " << app->pv(-centroid) << endl;
 	shiftModel(-centroid.x, -centroid.y, -centroid.z);
 	cout << "centroid now at " << app->pv(getCentroid()) << endl;
+}
+
+void MyNode::scaleModel(float scale) {
+	short i, n = nv();
+	for(i = 0; i < n; i++) {
+		_vertices[i] *= scale;
+	}
 }
 
 void MyNode::attachTo(MyNode *parent, const Vector3 &point, const Vector3 &norm) {

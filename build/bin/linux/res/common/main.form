@@ -26,6 +26,12 @@ form mainMenu {
 			height = 50
 			text = Login
 		}
+		button register {
+			style = buttonStyle
+			autoWidth = true
+			height = 50
+			text = Register
+		}
 		button parent_sceneMenu {
 			style = buttonStyle
 			autoWidth = true
@@ -780,6 +786,165 @@ form mainMenu {
 			style = buttonStyle
 			size = 75, 40
 			text = No
+		}
+	}
+
+	container form_loginDialog {
+		style = basicContainer
+		font = res/common/arial14.gpb
+		layout = LAYOUT_FLOW
+		alignment = ALIGN_VCENTER_HCENTER
+		width = 350
+		autoSize = AUTO_SIZE_HEIGHT
+		zIndex = 100
+		consumeInputEvents = true
+
+		container prompts {
+			style = hiddenContainer
+			layout = LAYOUT_VERTICAL
+			width = 45%
+			autoSize = AUTO_SIZE_HEIGHT
+			
+			label emailPrompt {
+				style = noBorder
+				size = 100%, 40
+				text = Email
+			}
+			label passwordPrompt {
+				style = noBorder
+				size = 100%, 40
+				text = Password
+			}
+		}
+		container fields {
+			style = hiddenContainer
+			layout = LAYOUT_VERTICAL
+			width = 45%
+			autoSize = AUTO_SIZE_HEIGHT
+			
+			textBox email {
+				style = basic
+				size = 100%, 40
+			}
+			textBox password {
+				style = basic
+				size = 100%, 40
+				inputMode = PASSWORD
+			}
+		}
+		container buttons {
+			style = hiddenContainer
+			layout = LAYOUT_FLOW
+			alignment = ALIGN_RIGHT
+			
+			button cancel {
+				style = buttonStyle
+				size = 100,40
+				text = Cancel
+			}
+			button submit {
+				style = buttonStyle
+				size = 100,40
+				text = Submit
+			}
+		}
+	}
+	
+	container form_registerDialog {
+		style = basicContainer
+		font = res/common/arial14.gpb
+		layout = LAYOUT_FLOW
+		alignment = ALIGN_VCENTER_HCENTER
+		width = 350
+		autoSize = AUTO_SIZE_HEIGHT
+		zIndex = 100
+		consumeInputEvents = true
+
+		container prompts {
+			style = hiddenContainer
+			layout = LAYOUT_VERTICAL
+			width = 45%
+			autoSize = AUTO_SIZE_HEIGHT
+			
+			label firstNamePrompt {
+				style = noBorder
+				size = 100%, 40
+				text = First Name
+			}
+			label lastNamePrompt {
+				style = noBorder
+				size = 100%, 40
+				text = Last Name
+			}
+			label emailPrompt {
+				style = noBorder
+				size = 100%, 40
+				text = Email Address
+			}
+			label passwordPrompt {
+				style = noBorder
+				size = 100%, 40
+				text = Password
+			}
+			label confirmPasswordPrompt {
+				style = noBorder
+				size = 100%, 40
+				text = Re-enter Password
+			}
+		}
+		container fields {
+			style = hiddenContainer
+			layout = LAYOUT_VERTICAL
+			width = 45%
+			autoSize = AUTO_SIZE_HEIGHT
+			
+			textBox firstName {
+				style = basic
+				size = 100%, 40
+			}
+			textBox lastName {
+				style = basic
+				size = 100%, 40
+			}
+			textBox email {
+				style = basic
+				size = 100%, 40
+			}
+			textBox password {
+				style = basic
+				size = 100%, 40
+				inputMode = PASSWORD
+			}
+			textBox passwordConfirm {
+				style = basic
+				size = 100%, 40
+				inputMode = PASSWORD
+			}
+		}
+		container buttons {
+			style = hiddenContainer
+			layout = LAYOUT_FLOW
+			alignment = ALIGN_RIGHT
+			size = 100%, 70
+			
+			container buttonWrapper {
+				style = hiddenContainer
+				layout = LAYOUT_FLOW
+				alignment = ALIGN_BOTTOM_RIGHT
+				width = 210
+				autoSize = AUTO_SIZE_HEIGHT
+			
+				button cancel {
+					style = buttonStyle
+					size = 100,40
+					text = Cancel
+				}
+				button submit {
+					style = buttonStyle
+					size = 100,40
+					text = Submit
+				}
+			}
 		}
 	}
 }

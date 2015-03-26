@@ -288,6 +288,38 @@ material disk_with_holes : colored {
 	}
 }
 
+material threaded_post : colored {
+	technique {
+		pass {
+			u_ambientColor = 0.1, 0.1, 0.1
+		}
+	}
+}
+
+material nose_cone : colored {
+	technique {
+		pass {
+			u_ambientColor = 0.1, 0.1, 0.1
+		}
+	}
+}
+
+material peepee_cap : colored {
+	technique {
+		pass {
+			u_ambientColor = 0.8, 0.8, 0.1
+		}
+	}
+}
+
+material plastic_cone : colored {
+	technique {
+		pass {
+			u_ambientColor = 1.0, 0.0, 0.0
+		}
+	}
+}
+
 material axle1 : box {}
 material wheel1 : box {}
 material wheel2 : box {}

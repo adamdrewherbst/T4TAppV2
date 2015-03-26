@@ -364,7 +364,7 @@ theme mainMenu
             imageList = normalImages
             font = res/common/arial18.gpb
             textColor = #ffffffff
-            fontSize = 14
+            fontSize = 18
             textAlignment = ALIGN_VCENTER_HCENTER
         }
 		

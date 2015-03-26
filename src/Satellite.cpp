@@ -118,9 +118,8 @@ void Satellite::Instrument::addPhysics(short n) {
 	Project::Element::addPhysics(n);
 	MyNode *node = _nodes[n].get(),
 		*parent = dynamic_cast<MyNode*>(node->getParent() ? node->getParent() : _project->getTouchNode());
-	app->getPhysicsController()->setConstraintNoCollide();
 	PhysicsConstraint *constraint = app->addConstraint(parent, node, node->_constraintId, "fixed",
-		node->_parentOffset, node->_parentAxis, true);
+		node->_parentOffset, node->_parentAxis, true, true);
 	constraint->setBreakingImpulse(100);
 	cout << "satellite impulse = " << constraint->getBreakingImpulse() << endl;
 }

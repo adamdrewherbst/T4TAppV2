@@ -123,9 +123,8 @@ void CEV::Seat::addPhysics(short n) {
 	Project::Element::addPhysics(n);
 	MyNode *node = _nodes[n].get(),
 		*parent = dynamic_cast<MyNode*>(node->getParent() ? node->getParent() : _project->getTouchNode());
-	app->getPhysicsController()->setConstraintNoCollide();
 	PhysicsConstraint *constraint = app->addConstraint(parent, node, node->_constraintId, "fixed",
-		node->_parentOffset, node->_parentAxis, true);
+		node->_parentOffset, node->_parentAxis, true, true);
 	constraint->setBreakingImpulse(100);
 	cout << "CEV impulse = " << constraint->getBreakingImpulse() << endl;
 }
@@ -155,8 +154,7 @@ void CEV::Hatch::addPhysics(short n) {
 	Project::Element::addPhysics(n);
 	//the hinge should always be on the bottom edge so the buggy can roll out
 	MyNode *node = _nodes[n].get(), *parent = _parent->getNode();
-	app->getPhysicsController()->setConstraintNoCollide();
-	app->addConstraint(parent, node, -1, "hinge", node->_parentOffset, node->_parentAxis, true);
+	app->addConstraint(parent, node, -1, "hinge", node->_parentOffset, node->_parentAxis, true, true);
 	//fix the hatch in place until we have landed!
 	_lock = ConstraintPtr(app->addConstraint(parent, node, -1, "fixed", node->_parentOffset, node->_parentAxis, false));
 }

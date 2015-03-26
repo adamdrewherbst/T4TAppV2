@@ -34,6 +34,8 @@ public:
 	Rocket();
 	void setActive(bool active);
 	bool setSubMode(short mode);
+	bool positionPayload();
+	bool removePayload();
 	void launch();
 	void update();
 	void launchComplete();

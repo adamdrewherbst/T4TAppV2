@@ -89,6 +89,8 @@ void T4TApp::initialize()
 	_componentContainer = (Container*) _componentMenu->getControl("components");
 
 	//dialogs
+	_login = (Button*)_sideMenu->getControl("login");
+	_register = (Button*)_sideMenu->getControl("register");
 	_message = (Label*)_stage->getControl("message");
 	_message->setVisible(false);
 	_textDialog = (Container*)_mainMenu->getControl("textDialog");
@@ -121,6 +123,18 @@ void T4TApp::initialize()
 		}
 	}
 	
+	//link submittable forms to their callbacks
+	_loginForm = new AppForm("loginDialog");
+	_loginForm->_url = "http://www.t4t.org/nasa-app/login/index.php";
+	_forms.push_back(_loginForm);
+	_registerForm = new AppForm("registerDialog");
+	_registerForm->_url = "http://www.t4t.org/nasa-app/login/register.php";
+	_registerForm->_callback = &T4TApp::processRegistration;
+	_forms.push_back(_registerForm);
+	
+	short n = _forms.size(), i;
+	for(i = 0; i < n; i++) _forms[i]->_container->setVisible(false);
+	
 	// populate catalog of items
 	_models = Scene::create("models");
 	addItem("box", 2, "general", "body");
@@ -133,6 +147,10 @@ void T4TApp::initialize()
 	addItem("green_flange_wheel", 1, "general");
 	addItem("jar_with_cone", 1, "general");
 	addItem("disk_with_holes", 1, "general");
+	addItem("threaded_post", 1, "general");
+	addItem("nose_cone", 1, "general");
+	addItem("peepee_cap", 1, "general");
+	addItem("plastic_cone", 1, "general");
 
 	_drawDebugCheckbox = (CheckBox*) _sideMenu->getControl("drawDebug");
 	//_drawDebugCheckbox = addControl <CheckBox> (_sideMenu, "drawDebug");
@@ -257,17 +275,48 @@ void T4TApp::render(float elapsedTime)
 	_mainMenu->draw();
 }
 
-bool T4TApp::login(void (T4TApp::*callback)(const char*)) {
+bool T4TApp::login(void (T4TApp::*callback)(AppForm*)) {
 	if(_userEmail.length() > 0) {
-		if(callback) (this->*callback)(_userEmail.c_str());
+		if(callback) {
+			_loginForm->_fields["email"] = _userEmail;
+			(this->*callback)(_loginForm);
+		}
 		return false;
 	}
-	getText("Enter your email", "Submit", callback);
+	_loginForm->_callback = callback;
+	_loginForm->show();
 	return true;
 }
 
-void T4TApp::processLogin(const char *email) {
-	_userEmail = email;
+void T4TApp::processLogin(AppForm *form) {
+	_userEmail = form->_fields["email"];
+	short i, n = _modes.size();
+	for(i = 0; i < n; i++) {
+		Project *project = dynamic_cast<Project*>(_modes[i]);
+		if(!project) continue;
+		std::string dir = "http://www.t4t.org/nasa-app/upload/" + _userEmail + "/";
+		project->_rootNode->loadData(dir.c_str());
+		project->_rootNode->setRest();
+	}	
+}
+
+void T4TApp::processRegistration(AppForm *form) {
+	if(form->_response.empty()) return;
+	std::string &code = form->_response[0];
+	if(code.compare("REGISTER_OK") == 0) {
+		std::ostringstream os;
+		_userEmail = form->_fields["email"];
+		_userPass = form->_response[1];
+		os << "Registration successful - logged in as " << _userEmail << ", " << _userPass;
+		message(os.str().c_str());
+		form->hide();
+	} else if(code.compare("DB_CONNECT") == 0) {
+		message("Couldn't connect to database");
+	} else if(code.compare("EMAIL_INVALID") == 0) {
+		message("Please enter a valid email address");
+	} else if(code.compare("PASSWORD_MISMATCH") == 0) {
+		message("Passwords do not match");
+	}
 }
 
 void T4TApp::redraw() {
@@ -295,7 +344,9 @@ void T4TApp::controlEvent(Control* control, Control::Listener::EventType evt)
 
 	//login/register
 	if(strcmp(id, "login") == 0) {
-		login(&T4TApp::loadProjects);
+		_loginForm->show();
+	} else if(strcmp(id, "register") == 0) {
+		_registerForm->show();
 	}
 	//scene operations
 	else if(_sceneMenu->getControl(id) == control) {
@@ -353,7 +404,7 @@ void T4TApp::controlEvent(Control* control, Control::Listener::EventType evt)
 			cout << "No control with ID " << subName << endl;
 		}
 	}
-
+	
 	//misc submenu funcionality
 	else if(_cameraMenu->getControl(id) == control) {
 		if(strcmp(id, "eye") == 0) {
@@ -408,6 +459,35 @@ void T4TApp::controlEvent(Control* control, Control::Listener::EventType evt)
 		//if(handle != NULL) handle->setState(Control::NORMAL);
 		next = (Container*) next->getParent();
 	}
+	
+	//form submission
+	TextBox *text = dynamic_cast<TextBox*>(control);
+	if((text && evt == TEXT_CHANGED && (text->getLastKeypress() == 10 || text->getLastKeypress() == 13))
+	  || strcmp(id, "submit") == 0) {
+		AppForm *form = getForm(control);
+		if(form) form->submit();
+	} else if(strcmp(id, "cancel") == 0) {
+		AppForm *form = getForm(control);
+		if(form) form->hide();
+	}
+}
+
+Container* T4TApp::getContainer(Control *control) {
+	Control *parent = control;
+	while(parent && !parent->isContainer()) parent = parent->getParent();
+	return (Container*) parent;
+}
+
+AppForm* T4TApp::getForm(Control *control) {
+	Control *parent = control;
+	while(parent && (!parent->isContainer() || strncmp(parent->getId(), "form_", 5) != 0))
+		parent = parent->getParent();
+	if(!parent) return NULL;
+	short n = _forms.size(), i;
+	for(i = 0; i < n; i++) {
+		if(_forms[i]->_container == parent) return _forms[i];
+	}
+	return NULL;
 }
 
 void T4TApp::keyEvent(Keyboard::KeyEvent evt, int key) {
@@ -746,25 +826,13 @@ void T4TApp::saveProject() {
 	login(&T4TApp::saveProjectHelper);
 }
 
-void T4TApp::saveProjectHelper(const char *email) {
-	processLogin(email);
+void T4TApp::saveProjectHelper(AppForm *form) {
+	processLogin(form);
 	Project *project = dynamic_cast<Project*>(_modes[_activeMode]);
 	project->_rootNode->uploadData("http://www.t4t.org/nasa-app/upload/index.php");
 	std::ostringstream os;
 	os << "Saved " << project->_id << " project";
 	message(os.str().c_str());
-}
-
-void T4TApp::loadProjects(const char *email) {
-	processLogin(email);
-	short i, n = _modes.size();
-	for(i = 0; i < n; i++) {
-		Project *project = dynamic_cast<Project*>(_modes[i]);
-		if(!project) continue;
-		std::string dir = "http://www.t4t.org/nasa-app/upload/" + _userEmail + "/";
-		project->_rootNode->loadData(dir.c_str());
-		project->_rootNode->setRest();
-	}
 }
 
 void T4TApp::doConfirm(const char *message, void (T4TApp::*callback)(bool)) {
@@ -1171,17 +1239,17 @@ void T4TApp::collisionEvent(PhysicsCollisionObject::CollisionListener::EventType
 /********** PHYSICS ***********/
 
 PhysicsConstraint* T4TApp::addConstraint(MyNode *n1, MyNode *n2, int id, const char *type,
-  const Vector3 &joint, const Vector3 &direction, bool parentChild) {
+  const Vector3 &joint, const Vector3 &direction, bool parentChild, bool noCollide) {
 	Quaternion rotOffset = MyNode::getVectorRotation(Vector3::unitZ(), direction),
 	  rot1 = PhysicsConstraint::getRotationOffset(n1, joint) * rotOffset,
 	  rot2 = PhysicsConstraint::getRotationOffset(n2, joint) * rotOffset;
 	Vector3 trans1 = PhysicsConstraint::getTranslationOffset(n1, joint),
 	  trans2 = PhysicsConstraint::getTranslationOffset(n2, joint);
-	return addConstraint(n1, n2, id, type, rot1, trans1, rot2, trans2, parentChild);
+	return addConstraint(n1, n2, id, type, rot1, trans1, rot2, trans2, parentChild, noCollide);
 }
 
 PhysicsConstraint* T4TApp::addConstraint(MyNode *n1, MyNode *n2, int id, const char *type,
-  Quaternion &rot1, Vector3 &trans1, Quaternion &rot2, Vector3 &trans2, bool parentChild) {
+  Quaternion &rot1, Vector3 &trans1, Quaternion &rot2, Vector3 &trans2, bool parentChild, bool noCollide) {
 	MyNode *node[2];
 	PhysicsRigidBody *body[2];
 	Vector3 trans[2];
@@ -1199,6 +1267,7 @@ PhysicsConstraint* T4TApp::addConstraint(MyNode *n1, MyNode *n2, int id, const c
 			body[i]->setEnabled(true);
 		}//*/
 	}
+	if(noCollide) getPhysicsController()->setConstraintNoCollide();
 	if(strcmp(type, "hinge") == 0) {
 		ret = getPhysicsController()->createHingeConstraint(body[0], rot[0], trans[0], body[1], rot[1], trans[1]);
 	} else if(strcmp(type, "spring") == 0) {
@@ -1226,6 +1295,7 @@ PhysicsConstraint* T4TApp::addConstraint(MyNode *n1, MyNode *n2, int id, const c
 		constraint->translation = trans[i];
 		constraint->id = id;
 		constraint->isChild = parentChild && i == 1;
+		constraint->noCollide = noCollide;
 	}
 	_constraints[id] = ConstraintPtr(ret);
 	if(parentChild) {
@@ -1254,7 +1324,7 @@ void T4TApp::addConstraints(MyNode *node) {
 				c1->id = _constraintCount;
 				c2->id = _constraintCount++;
 				addConstraint(node, other, c1->id, c1->type.c_str(), c1->rotation, c1->translation,
-					c2->rotation, c2->translation, c2->isChild);
+					c2->rotation, c2->translation, c2->isChild, c2->noCollide);
 			}
 		}
 	}
@@ -1292,7 +1362,6 @@ void T4TApp::enableConstraints(MyNode *node, bool enable) {
 		id = constraint->id;
 		if(id < 0 || _constraints.find(id) == _constraints.end() || (!enable && !_constraints[id]->isEnabled())) continue;
 		_constraints[id]->setEnabled(enable);
-		if(!enable) cout << "disabled constraint " << id << " between " << node->getId() << " and " << constraint->other << endl;
 	}
 }
 
@@ -1308,7 +1377,8 @@ void T4TApp::reloadConstraint(MyNode *node, nodeConstraint *constraint) {
 		otherConstraint = other->_constraints[i];
 		if(otherConstraint->id == id) {
 			addConstraint(node, other, id, constraint->type.c_str(), constraint->rotation, constraint->translation,
-			  otherConstraint->rotation, otherConstraint->translation, constraint->isChild || otherConstraint->isChild);
+			  otherConstraint->rotation, otherConstraint->translation, constraint->isChild || otherConstraint->isChild,
+			  constraint->noCollide);
 			break;
 		}
 	}
@@ -1365,6 +1435,93 @@ void MenuFilter::filterAll(bool filter) {
 	for(it = _ordered.begin(); it != _ordered.end(); it++) {
 		this->filter((*it)->getId(), filter);
 	}
+}
+
+
+AppForm::AppForm(const char *id) {
+	app = (T4TApp*) Game::getInstance();
+	_id = id;
+	_url = "";
+	std::string containerId = std::string("form_") + id;
+	_container = (Container*)app->_mainMenu->getControl(containerId.c_str());
+}
+
+void AppForm::show() {
+	app->showDialog(_container);
+}
+
+void AppForm::hide() {
+	app->showDialog(_container, false);
+	std::vector<Control*> texts = ((Container*)_container->getControl("fields"))->getControls();
+	short n = texts.size(), i;
+	for(i = 0; i < n; i++) {
+		TextBox *text = (TextBox*) texts[i];
+		text->setText("");
+	}
+}
+
+void AppForm::processFields() {
+	_fields.clear();
+	std::vector<Control*> texts = ((Container*)_container->getControl("fields"))->getControls();
+	short n = texts.size(), i;
+	for(i = 0; i < n; i++) {
+		TextBox *text = (TextBox*) texts[i];
+		_fields[text->getId()] = text->getText();
+	}
+}
+
+size_t curl_size;
+size_t curl_return(char *ptr, size_t size, size_t nmemb, void *userdata) {
+	size_t bytes = size * nmemb;
+	char *buf = (char*) userdata;
+	memcpy(&buf[curl_size], ptr, bytes);
+	curl_size += bytes;
+	buf[curl_size] = '\0';
+	return bytes;
+}
+
+void AppForm::submit() {
+	processFields();
+
+	if(!_url.empty()) {
+		CURL *curl = curl_easy_init();
+		CURLcode res;
+		curl_easy_setopt(curl, CURLOPT_URL, _url.c_str());
+		curl_easy_setopt(curl, CURLOPT_FAILONERROR, 1L);
+		curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);
+		std::string postdata;
+		for(std::map<std::string, std::string>::const_iterator it = _fields.begin(); it != _fields.end(); it++) {
+			if(it != _fields.begin()) postdata += "&";
+			postdata += it->first + "=" + it->second;
+		}
+		curl_easy_setopt(curl, CURLOPT_POSTFIELDS, postdata.c_str());
+		char buffer[1024], error[CURL_ERROR_SIZE];
+		buffer[0] = '\0';
+		curl_size = 0;
+		curl_easy_setopt(curl, CURLOPT_WRITEDATA, (void*)buffer);
+		curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, &curl_return);
+		curl_easy_setopt(curl, CURLOPT_ERRORBUFFER, error);
+		cout << "submitting form " << _id << " to " << _url << endl << "\tdata: " << postdata << endl;
+		res = curl_easy_perform(curl);
+		if(res != CURLE_OK) {
+			GP_WARN("Unable to submit form: %s", error);
+		} else {
+			cout << "form response: " << buffer << endl;
+			_response.clear();
+			std::istringstream is(buffer);
+			cout << "\ttokens: ";
+			do {
+				std::string tok;
+				is >> tok;
+				_response.push_back(tok);
+				cout << tok << ", ";
+			} while(is);
+			cout << endl;
+		}
+		curl_easy_cleanup(curl);
+	}
+
+	(app->*_callback)(this);
 }
 
 
@@ -1489,7 +1646,7 @@ void T4TApp::redoLastAction() {
 		std::string type;
 		Quaternion rot[2];
 		Vector3 trans[2];
-		bool parentChild = false;
+		bool parentChild = false, noCollide = false;
 		for(short i = 0; i < 2; i++) {
 			//put the node back in its constraint-friendly position
 			node = action->nodes[i];
@@ -1501,9 +1658,11 @@ void T4TApp::redoLastAction() {
 			rot[i] = constraint->rotation;
 			trans[i] = constraint->translation;
 			parentChild = parentChild || constraint->isChild;
+			noCollide = constraint->noCollide;
 			delete constraint;
 		}
-		addConstraint(action->nodes[0], action->nodes[1], -1, type.c_str(), rot[0], trans[0], rot[1], trans[1], parentChild);
+		addConstraint(action->nodes[0], action->nodes[1], -1, type.c_str(), rot[0], trans[0], rot[1], trans[1],
+			parentChild, noCollide);
 		action->nodes[0]->addChild(action->nodes[1]);
 		action->nodes[1]->_constraintParent = action->nodes[0];
 	} else if(strcmp(type, "tool") == 0) {

@@ -68,7 +68,7 @@ public:
 	static MyNode* cloneNode(Node *node);
 	
 	std::string resolveFilename(const char *filename = NULL);
-	void loadData(const char *filename = NULL, bool doPhysics = true);
+	bool loadData(const char *filename = NULL, bool doPhysics = true);
 	void writeData(const char *filename = NULL, bool modelSpace = true);
 	void uploadData(const char *url, const char *rootId = NULL);
 	void loadAnimation(const char *filename, const char *id);
@@ -104,6 +104,7 @@ public:
 	void setMyScale(const Vector3& scale);
 	void shiftModel(float x, float y, float z);
 	void translateToOrigin();
+	void scaleModel(float scale);
 	void attachTo(MyNode *parent, const Vector3 &point, const Vector3 &normal);
 	void updateMaterial();
 	void setBase();

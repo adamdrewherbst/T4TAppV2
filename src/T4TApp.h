@@ -73,6 +73,7 @@ struct nodeConstraint {
 	Vector3 translation; //offset of the constraint point from my origin
 	Quaternion rotation; //rotation offset of the constraint point
 	bool isChild; //if this node is the constraint child of the other one
+	bool noCollide; //ignore collisions between the two constrained nodes
 };
 
 class MenuFilter {
@@ -86,12 +87,28 @@ public:
 	void filterAll(bool filter);
 };
 
+class AppForm {
+public:
+	T4TApp *app;
+	std::string _id, _url;
+	std::vector<std::string> _response;
+	Container *_container;
+	std::map<std::string, std::string> _fields;
+	void (T4TApp::*_callback)(AppForm *form);
+	
+	AppForm(const char *id);
+	void show();
+	void hide();
+	void processFields();
+	void submit();
+};
+
 class T4TApp: public Game, public Control::Listener, public PhysicsCollisionObject::CollisionListener
 {
 public:
 
 	//user info
-	std::string _userEmail;
+	std::string _userEmail, _userPass;
 
 	//scene setup
     Scene* _scene;
@@ -147,13 +164,15 @@ public:
     MenuFilter *_itemFilter;
     Label *_message, *_textPrompt, *_confirmMessage;
     TextBox *_textName;
-    Button *_textSubmit, *_textCancel, *_confirmYes, *_confirmNo, *_undo, *_redo;
+    Button *_login, *_register, *_textSubmit, *_textCancel, *_confirmYes, *_confirmNo, *_undo, *_redo;
     std::vector<Container*> _submenus; //submenus
     CheckBox *_drawDebugCheckbox;
     std::vector<std::string> _modeNames, _machineNames;
     Theme *_theme;
     Theme::Style *_formStyle, *_buttonStyle, *_titleStyle, *_hiddenStyle;
     Font *_font;
+    std::vector<AppForm*> _forms;
+    AppForm *_loginForm, *_registerForm;
     //callbacks
     void (T4TApp::*_textCallback)(const char*), (T4TApp::*_confirmCallback)(bool);
     
@@ -166,8 +185,9 @@ public:
 
     T4TApp();
     T4TApp* getInstance();
-    bool login(void (T4TApp::*callback)(const char*));
-    void processLogin(const char *email);
+    bool login(void (T4TApp::*callback)(AppForm*));
+    void processLogin(AppForm *form);
+    void processRegistration(AppForm *form);
 	void generateModels();
 	MyNode* generateModel(const char *id, const char *type, ...);
 	void loadModels(const char *filename);
@@ -195,9 +215,9 @@ public:
     bool prepareNode(MyNode *node);
     void translateNode(MyNode *node, Vector3 trans);
     PhysicsConstraint* addConstraint(MyNode *n1, MyNode *n2, int id, const char *type,
-      Quaternion &rot1, Vector3 &trans1, Quaternion &rot2, Vector3 &trans2, bool parentChild = false);
+      Quaternion &rot1, Vector3 &trans1, Quaternion &rot2, Vector3 &trans2, bool parentChild = false, bool noCollide = false);
     PhysicsConstraint* addConstraint(MyNode *n1, MyNode *n2, int id, const char *type,
-      const Vector3 &joint = Vector3::zero(), const Vector3 &direction = Vector3::unitZ(), bool parentChild = false);
+      const Vector3 &joint = Vector3::zero(), const Vector3 &direction = Vector3::unitZ(), bool parentChild = false, bool noCollide = false);
     //misc functions
     const std::string pv(const Vector3& v);
     const std::string pv2(const Vector2& v);
@@ -223,8 +243,7 @@ public:
     Project* getProject(const char *id);
     MyNode* getProjectNode(const char *id);
     void saveProject();
-    void saveProjectHelper(const char *email);
-    void loadProjects(const char *email);
+    void saveProjectHelper(AppForm *form);
 
     Camera* getCamera();
     Node* getCameraNode();
@@ -296,6 +315,8 @@ public:
 		return control;
 	}
     //other UI
+    Container* getContainer(Control *control);
+    AppForm* getForm(Control *control);
     void promptComponent();
     void getText(const char *prompt, const char *type, void (T4TApp::*callback)(const char*));
     void doConfirm(const char *message, void (T4TApp::*callback)(bool));

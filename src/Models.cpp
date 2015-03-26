@@ -412,6 +412,10 @@ void T4TApp::loadDAE(const char *filename) {
 
 	xml_document doc;
 	xml_parse_result result = doc.load_file(filename);
+	//get the model's global scale factor
+	float scale = 1;
+	xpath_node scaleNode = doc.select_node("//scale");
+	if(scaleNode) scale = atof(scaleNode.node().text().get());
 	//first store the vertices and faces of each mesh
 	xpath_node_set meshNodes = doc.select_nodes("//mesh");
 	std::map<std::string, std::vector<float> > sources;
@@ -528,6 +532,7 @@ void T4TApp::loadDAE(const char *filename) {
 	loadXMLNode(doc, root, world, node, meshes);
 	node->mergeVertices(1e-5);
 	node->translateToOrigin();
+	if(scale != 1) node->scaleModel(scale);
 
 	node->writeData("res/common/");
 }
