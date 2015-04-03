@@ -43,14 +43,14 @@ void Label::initialize(const char* typeName, Theme::Style* style, Properties* pr
 
 void Label::addListener(Control::Listener* listener, int eventFlags)
 {
-    if ((eventFlags & Control::Listener::TEXT_CHANGED) == Control::Listener::TEXT_CHANGED)
+    /*if ((eventFlags & Control::Listener::TEXT_CHANGED) == Control::Listener::TEXT_CHANGED)
     {
         GP_ERROR("TEXT_CHANGED event is not applicable to this control.");
-    }
-    if ((eventFlags & Control::Listener::VALUE_CHANGED) == Control::Listener::VALUE_CHANGED)
+    }*/
+    /*if ((eventFlags & Control::Listener::VALUE_CHANGED) == Control::Listener::VALUE_CHANGED)
     {
         GP_ERROR("VALUE_CHANGED event is not applicable to this control.");
-    }
+    }*/
 
     Control::addListener(listener, eventFlags);
 }

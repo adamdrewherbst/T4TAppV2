@@ -320,6 +320,14 @@ material plastic_cone : colored {
 	}
 }
 
+material EnginePropellerThing : colored {
+	technique {
+		pass {
+			u_ambientColor = 0.0, 0.0, 1.0
+		}
+	}
+}
+
 material axle1 : box {}
 material wheel1 : box {}
 material wheel2 : box {}

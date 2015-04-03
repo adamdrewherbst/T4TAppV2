@@ -85,9 +85,12 @@ public:
 	unsigned int _launchSteps;
 	     
 	const char *_currentNodeId; //when attaching general items (not for a specific element)
+	
+	bool _saveFlag; //whether this project needs to be saved
 
 	Project(const char* id);
 
+	virtual void sync();
 	virtual void setupMenu();
 	void setActive(bool active);
 	bool setSubMode(short mode);

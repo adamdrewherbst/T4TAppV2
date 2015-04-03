@@ -103,6 +103,9 @@ void HullMode::controlEvent(Control *control, EventType evt) {
 		else if(id[0] == 'Y') rot = MyNode::getVectorRotation(Vector3::unitY(), Vector3::unitZ());
 		_hullNode->setMyRotation(rot);
 		updateTransform();
+	} else if(strcmp(id, "center") == 0) {
+		_hullNode->translateToOrigin();
+		updateTransform();
 	} else if(strcmp(id, "flipAxis") == 0) {
 		Quaternion rot(Vector3::unitY(), M_PI);
 		_hullNode->myRotate(rot);
@@ -282,6 +285,7 @@ bool HullMode::selectItem(const char *id) {
 	updateModel();
 	_scene->addNode(_hullNode);
 	updateTransform();
+	_hullNode->addPhysics();
 	app->_componentMenu->setVisible(false);
 	return true;
 }

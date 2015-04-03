@@ -131,9 +131,11 @@ public:
 	void clearMesh();
 	std::vector<MyNode*> getAllNodes();
 	void addComponentInstance(std::string id, const std::vector<unsigned short> &instance);
+	void printTree(short level = 0);
 
 	//physics
 	float getMass(bool recur = true);
+	unsigned short nh();
 	void addHullFace(ConvexHull *hull, short f);
 	void setOneHull();
 	bool isStatic();

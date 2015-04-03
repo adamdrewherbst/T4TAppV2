@@ -105,6 +105,8 @@ public:
 	void addEdge(unsigned short e1, unsigned short e2, short faceInd = -1);
 	short getEdgeFace(unsigned short e1, unsigned short e2);
 	void updateAll();
+	virtual void scaleModel(float scale);
+	virtual void shiftModel(float x, float y, float z);
 	virtual void updateTransform();
 	virtual void updateEdges();
 	virtual void setNormals();

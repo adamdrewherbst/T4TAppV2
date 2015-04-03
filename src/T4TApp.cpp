@@ -71,7 +71,7 @@ void T4TApp::initialize()
     _titleStyle = _theme->getStyle("title");
 
 	/*********************** GUI SETUP ***********************/
-	
+
 	//root menu node for finding controls by ID
 	_mainMenu = Form::create("res/common/main.form");
 	_sideMenu = (Container*)_mainMenu->getControl("sideMenu");
@@ -126,6 +126,7 @@ void T4TApp::initialize()
 	//link submittable forms to their callbacks
 	_loginForm = new AppForm("loginDialog");
 	_loginForm->_url = "http://www.t4t.org/nasa-app/login/index.php";
+	_loginForm->_callback = &T4TApp::processLogin;
 	_forms.push_back(_loginForm);
 	_registerForm = new AppForm("registerDialog");
 	_registerForm->_url = "http://www.t4t.org/nasa-app/login/register.php";
@@ -151,6 +152,7 @@ void T4TApp::initialize()
 	addItem("nose_cone", 1, "general");
 	addItem("peepee_cap", 1, "general");
 	addItem("plastic_cone", 1, "general");
+	//addItem("EnginePropellerThing", 1, "general");
 
 	_drawDebugCheckbox = (CheckBox*) _sideMenu->getControl("drawDebug");
 	//_drawDebugCheckbox = addControl <CheckBox> (_sideMenu, "drawDebug");
@@ -275,29 +277,33 @@ void T4TApp::render(float elapsedTime)
 	_mainMenu->draw();
 }
 
-bool T4TApp::login(void (T4TApp::*callback)(AppForm*)) {
+bool T4TApp::login() {
 	if(_userEmail.length() > 0) {
-		if(callback) {
-			_loginForm->_fields["email"] = _userEmail;
-			(this->*callback)(_loginForm);
-		}
 		return false;
 	}
-	_loginForm->_callback = callback;
 	_loginForm->show();
 	return true;
 }
 
 void T4TApp::processLogin(AppForm *form) {
-	_userEmail = form->_fields["email"];
-	short i, n = _modes.size();
-	for(i = 0; i < n; i++) {
-		Project *project = dynamic_cast<Project*>(_modes[i]);
-		if(!project) continue;
-		std::string dir = "http://www.t4t.org/nasa-app/upload/" + _userEmail + "/";
-		project->_rootNode->loadData(dir.c_str());
-		project->_rootNode->setRest();
-	}	
+	if(form->_response.empty()) return;
+	std::string &code = form->_response[0];
+	if(code.compare("LOGIN_OK") == 0) {
+		_userEmail = form->_fields["email"];
+		_userPass = form->_response[1];
+		form->hide();
+		std::ostringstream os;
+		os << "Now logged in as " << _userEmail;
+		message(os.str().c_str());
+		loadProjects();
+	} else if(code.compare("DB_CONNECT") == 0) {
+		message("Couldn't connect to the database");
+	} else if(code.compare("INVALID_PASSWORD") == 0) {
+		message("Password is incorrect");
+		TextBox *password = (TextBox*) form->_container->getControl("password");
+		password->setText("");
+		password->setFocus();
+	}
 }
 
 void T4TApp::processRegistration(AppForm *form) {
@@ -310,13 +316,31 @@ void T4TApp::processRegistration(AppForm *form) {
 		os << "Registration successful - logged in as " << _userEmail << ", " << _userPass;
 		message(os.str().c_str());
 		form->hide();
+		loadProjects(true);
 	} else if(code.compare("DB_CONNECT") == 0) {
 		message("Couldn't connect to database");
 	} else if(code.compare("EMAIL_INVALID") == 0) {
 		message("Please enter a valid email address");
+		TextBox *email = (TextBox*) form->_container->getControl("email");
+		email->setText("");
+		email->setFocus();
 	} else if(code.compare("PASSWORD_MISMATCH") == 0) {
 		message("Passwords do not match");
+		TextBox *password = (TextBox*) form->_container->getControl("password"),
+			*passwordConfirm = (TextBox*) form->_container->getControl("passwordConfirm");
+		password->setText("");
+		passwordConfirm->setText("");
+		password->setFocus();
 	}
+}
+
+void T4TApp::loadProjects(bool saveOnly) {
+	short i, n = _modes.size();
+	for(i = 0; i < n; i++) {
+		Project *project = dynamic_cast<Project*>(_modes[i]);
+		if(!project || (saveOnly && !project->_saveFlag)) continue;
+		project->sync();
+	}	
 }
 
 void T4TApp::redraw() {
@@ -823,16 +847,10 @@ void T4TApp::saveProject() {
 	if(_activeMode < 0) return;
 	Project *project = dynamic_cast<Project*>(_modes[_activeMode]);
 	if(!project) return;
-	login(&T4TApp::saveProjectHelper);
-}
-
-void T4TApp::saveProjectHelper(AppForm *form) {
-	processLogin(form);
-	Project *project = dynamic_cast<Project*>(_modes[_activeMode]);
-	project->_rootNode->uploadData("http://www.t4t.org/nasa-app/upload/index.php");
-	std::ostringstream os;
-	os << "Saved " << project->_id << " project";
-	message(os.str().c_str());
+	project->_saveFlag = true;
+	if(!login()) {
+		project->sync();
+	}
 }
 
 void T4TApp::doConfirm(const char *message, void (T4TApp::*callback)(bool)) {
@@ -1344,8 +1362,12 @@ void T4TApp::removeConstraints(MyNode *node, MyNode *otherNode, bool erase) {
 			if(c2->other.compare(node->getId()) == 0 && c2->type.compare(c1->type) == 0 && c2->id == c1->id) {
 				_constraints.erase(c1->id);
 				if(erase) {
+					cout << "erasing constraint " << c1->id << ", " << c1->type << " between " <<
+						node->getId() << " and " << (otherNode ? otherNode->getId() : "world") << endl;
 					node->_constraints.erase(node->_constraints.begin() + i);
 					other->_constraints.erase(other->_constraints.begin() + j);
+					i--;
+					break;
 				} else {
 					c1->id = -1;
 					c2->id = -1;
@@ -1488,7 +1510,7 @@ void AppForm::submit() {
 		CURLcode res;
 		curl_easy_setopt(curl, CURLOPT_URL, _url.c_str());
 		curl_easy_setopt(curl, CURLOPT_FAILONERROR, 1L);
-		curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);
+		//curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);
 		std::string postdata;
 		for(std::map<std::string, std::string>::const_iterator it = _fields.begin(); it != _fields.end(); it++) {
 			if(it != _fields.begin()) postdata += "&";

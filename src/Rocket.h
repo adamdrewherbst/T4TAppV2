@@ -32,6 +32,7 @@ public:
 	bool _deflating;
 
 	Rocket();
+	void sync();
 	void setActive(bool active);
 	bool setSubMode(short mode);
 	bool positionPayload();

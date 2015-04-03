@@ -437,6 +437,12 @@ form mainMenu {
 					width = 100%
 					height = 50
 				}
+				button center {
+					style = buttonStyle
+					autoWidth = true
+					height = 40
+					text = Center
+				}
 				button flipAxis {
 					style = buttonStyle
 					autoWidth = true

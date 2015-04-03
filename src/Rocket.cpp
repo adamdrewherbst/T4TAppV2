@@ -20,6 +20,10 @@ Rocket::Rocket() : Project::Project("rocket") {
 
 void Rocket::setActive(bool active) {
 	Project::setActive(active);
+	if(active) {
+	} else {
+		if(_straw->_constraint) _straw->_constraint->setEnabled(false);
+	}
 }
 
 bool Rocket::setSubMode(short mode) {
@@ -78,6 +82,8 @@ bool Rocket::removePayload() {
 
 void Rocket::launch() {
 	Project::launch();
+	_rootNode->setActivation(ACTIVE_TAG, true);
+	_rootNode->printTree();
 	_deflating = true;
 }
 
@@ -142,6 +148,7 @@ bool Rocket::touchEvent(Touch::TouchEvent evt, int x, int y, unsigned int contac
 Rocket::Straw::Straw(Project *project)
   : Project::Element::Element(project, NULL, "straw", "Straw") {
   	_filter = "straw";
+  	_constraint = NULL;
 }
   
 void Rocket::Straw::addPhysics(short n) {
@@ -189,7 +196,7 @@ Rocket::Balloon::Balloon(Project *project, Element *parent)
   : Project::Element::Element(project, parent, "balloon", "Balloon", true) {
   	_filter = "balloon";
 }
-  
+
 void Rocket::Balloon::placeNode(short n) {
 	Vector3 point = _project->getTouchPoint(_project->getLastTouchEvent());
 	//get the unit direction vector 
@@ -201,16 +208,12 @@ void Rocket::Balloon::placeNode(short n) {
 	trans -= strawAxis * trans.dot(strawAxis);
 	trans.normalize();
 	//constrain the balloon so it is fixed to the straw
-	MyNode *balloon = _nodes.back().get(), *anchor = MyNode::create(MyNode::concat(2, "anchor_", _currentNodeId));
+	MyNode *balloon = _nodes.back().get();
+	const char *id = balloon->getId();
+	MyNode *anchor = MyNode::create(MyNode::concat(2, "rocket_anchor_", &id[7]));
 	BoundingBox box = balloon->getModel()->getMesh()->getBoundingBox();
 	float balloonRadius = (box.max.x - box.min.x) / 2;
 	float anchorRadius = balloonRadius * 0.5f; //best fit to the balloon shape as it deflates?
-	if(_balloonRadius.size() <= n) {
-		_balloonRadius.resize(n+1);
-		_anchorRadius.resize(n+1);
-	}
-	_balloonRadius[n] = balloonRadius;
-	_anchorRadius[n] = anchorRadius;
 	anchor->setTranslation(point + trans * anchorRadius);
 	anchor->setRotation(straw->getRotation());
 	anchor->_objType = "sphere";
@@ -222,9 +225,26 @@ void Rocket::Balloon::placeNode(short n) {
 	balloon->setTranslation(trans * (balloonRadius - anchorRadius));
 }
 
+void Rocket::sync() {
+	bool saving = _saveFlag;
+	Project::sync();
+	if(saving) return;
+}
+
 void Rocket::Balloon::addPhysics(short n) {
 	MyNode *straw = ((Rocket*)_project)->_straw->getNode(), *balloon = _nodes[n].get(),
 	  *anchor = dynamic_cast<MyNode*>(balloon->getParent());
+
+	BoundingBox box = balloon->getModel()->getMesh()->getBoundingBox();
+	float balloonRadius = (box.max.x - box.min.x) / 2, anchorRadius = balloonRadius * 0.5f;
+	if(_balloonRadius.size() <= n) {
+		_balloonRadius.resize(n+1);
+		_anchorRadius.resize(n+1);
+	}
+	_balloonRadius[n] = balloonRadius;
+	_anchorRadius[n] = anchorRadius;
+	anchor->_radius = anchorRadius;
+
 	anchor->addPhysics(false);
 	app->addConstraint(straw, anchor, -1, "fixed", Vector3::zero(), Vector3::zero(), true);
 }

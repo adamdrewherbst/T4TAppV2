@@ -410,6 +410,22 @@ void Meshy::printTriangles(short face) {
 	}
 }
 
+void Meshy::shiftModel(float x, float y, float z) {
+	short i, n = nv();
+	for(i = 0; i < n; i++) {
+		_vertices[i].x += x;
+		_vertices[i].y += y;
+		_vertices[i].z += z;
+	}
+}
+
+void Meshy::scaleModel(float scale) {
+	short i, n = nv();
+	for(i = 0; i < n; i++) {
+		_vertices[i] *= scale;
+	}
+}
+
 void Meshy::updateAll() {
 	setNormals();
 	updateEdges();
@@ -941,6 +957,10 @@ float MyNode::getMass(bool recur) {
 	return mass;
 }
 
+unsigned short MyNode::nh() {
+	return _hulls.size();
+}
+
 void MyNode::addHullFace(MyNode::ConvexHull *hull, short f) {
 	hull->addFace(_faces[f]);
 }
@@ -970,7 +990,7 @@ std::string MyNode::resolveFilename(const char *filename) {
 		curl_easy_setopt(curl, CURLOPT_WRITEDATA, fd);
 		curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, fwrite);
 		curl_easy_setopt(curl, CURLOPT_FAILONERROR, 1L);
-		curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);
+		//curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);
 		cout << "loading node " << _id << endl;
 		res = curl_easy_perform(curl);
 		if(res != CURLE_OK) {
@@ -1004,37 +1024,43 @@ bool MyNode::loadData(const char *file, bool doPhysics)
 	
 	_typeCount = 0;
 
-	char *str, line[2048];
+	char line[2048];
+	std::string str;
 	short i, j, k, m, n;
     float x, y, z, w;
 	std::istringstream in;
 	str = stream->readLine(line, 2048);
+	in.clear();
 	in.str(str);
 	in >> _type;
 	if(_type.compare("root") != 0) { //this is a physical node, not just a root node
 		str = stream->readLine(line, 2048);
+		in.clear();
 		in.str(str);
 		in >> x >> y >> z >> w;
 		setRotation(Vector3(x, y, z), (float)(w*M_PI/180.0));
 		str = stream->readLine(line, 2048);
+		in.clear();
 		in.str(str);
 		in >> x >> y >> z;
 		setTranslation(x, y, z);
 		str = stream->readLine(line, 2048);
+		in.clear();
 		in.str(str);
 		in >> x >> y >> z;
 		setScale(x, y, z);
 		str = stream->readLine(line, 2048);
-		short nv = atoi(str);
+		short nv = atoi(str.c_str());
 		for(i = 0; i < nv; i++) {
 			str = stream->readLine(line, 2048);
+			in.clear();
 			in.str(str);
 			in >> x >> y >> z;
 			_vertices.push_back(Vector3(x, y, z));
 		}
 		//faces, along with their constituent triangles
 		str = stream->readLine(line, 2048);
-		short nf = atoi(str), faceSize, numHoles, holeSize, numTriangles;
+		short nf = atoi(str.c_str()), faceSize, numHoles, holeSize, numTriangles;
 		std::vector<unsigned short> hole;
 		Vector3 faceNormal, holeNormal;
 		_faces.resize(nf);
@@ -1043,6 +1069,7 @@ bool MyNode::loadData(const char *file, bool doPhysics)
 			face._mesh = this;
 			face._index = i;
 			str = stream->readLine(line, 2048);
+			in.clear();
 			in.str(str);
 			in >> faceSize;
 			face._border.resize(faceSize);
@@ -1051,6 +1078,7 @@ bool MyNode::loadData(const char *file, bool doPhysics)
 			in >> numTriangles;
 			face._triangles.resize(numTriangles);
 			str = stream->readLine(line, 2048);
+			in.clear();
 			in.str(str);
 			for(j = 0; j < faceSize; j++) {
 				in >> n;
@@ -1059,9 +1087,10 @@ bool MyNode::loadData(const char *file, bool doPhysics)
 			faceNormal = getNormal(face._border, true);
 			for(j = 0; j < numHoles; j++) {
 				str = stream->readLine(line, 2048);
-				holeSize = atoi(str);
+				holeSize = atoi(str.c_str());
 				hole.resize(holeSize);
 				str = stream->readLine(line, 2048);
+				in.clear();
 				in.str(str);
 				for(k = 0; k < holeSize; k++) {
 					in >> n;
@@ -1073,6 +1102,7 @@ bool MyNode::loadData(const char *file, bool doPhysics)
 			}
 			for(j = 0; j < numTriangles; j++) {
 				str = stream->readLine(line, 2048);
+				in.clear();
 				in.str(str);
 				face._triangles[j].resize(3);
 				for(k = 0; k < 3; k++) {
@@ -1084,16 +1114,18 @@ bool MyNode::loadData(const char *file, bool doPhysics)
 		//COLLADA components
 		_componentInd.resize(nv);
 		str = stream->readLine(line, 2048);
-		short nc = atoi(str), size;
+		short nc = atoi(str.c_str()), size;
 		std::string id;
 		for(i = 0; i < nc; i++) {
 			str = stream->readLine(line, 2048);
+			in.clear();
 			in.str(str);
 			in >> id >> size >> n;
 			_components[id].resize(n);
 			for(j = 0; j < n; j++) {
 				_components[id][j].resize(size);
 				str = stream->readLine(line, 2048);
+				in.clear();
 				in.str(str);
 				for(k = 0; k < size; k++) {
 					in >> m;
@@ -1104,33 +1136,36 @@ bool MyNode::loadData(const char *file, bool doPhysics)
 		}
 		//physics
 		str = stream->readLine(line, 2048);
+		in.clear();
 		in.str(str);
 		in >> _objType;
 		str = stream->readLine(line, 2048);
-		short nh = atoi(str);
+		short nh = atoi(str.c_str());
 		_hulls.resize(nh);
 		for(i = 0; i < nh; i++) {
 			str = stream->readLine(line, 2048);
-			nv = atoi(str);
+			nv = atoi(str.c_str());
 			_hulls[i] = new ConvexHull(this);
 			ConvexHull *hull = _hulls[i];
 			hull->_vertices.resize(nv);
 			for(j = 0; j < nv; j++) {
 				str = stream->readLine(line, 2048);
+				in.clear();
 				in.str(str);
 				in >> x >> y >> z;
 				hull->_vertices[j].set(x, y, z);
 			}
 			str = stream->readLine(line, 2048);
-			nf = atoi(str);
+			nf = atoi(str.c_str());
 			hull->_faces.resize(nf);
 			for(j = 0; j < nf; j++) {
 				Face &face = hull->_faces[j];
 				face._mesh = hull;
 				face._index = j;
 				str = stream->readLine(line, 2048);
-				faceSize = atoi(str);
+				faceSize = atoi(str.c_str());
 				str = stream->readLine(line, 2048);
+				in.clear();
 				in.str(str);
 				face.resize(faceSize);
 				for(k = 0; k < faceSize; k++) {
@@ -1139,13 +1174,14 @@ bool MyNode::loadData(const char *file, bool doPhysics)
 			}
 		}
 		str = stream->readLine(line, 2048);
-		nc = atoi(str);
+		nc = atoi(str.c_str());
 		_constraints.resize(nc);
 		std::string word;
 		short boolVal;
 		for(i = 0; i < nc; i++) {
 			_constraints[i] = new nodeConstraint();
 			str = stream->readLine(line, 2048);
+			in.clear();
 			in.str(str);
 			in >> word;
 			_constraints[i]->type = word.c_str();
@@ -1162,22 +1198,27 @@ bool MyNode::loadData(const char *file, bool doPhysics)
 			_constraints[i]->id = -1;
 		}
 		str = stream->readLine(line, 2048);
-		_mass = atof(str);
+		_mass = atof(str.c_str());
 		str = stream->readLine(line, 2048);
-		_staticObj = atoi(str) > 0;
+		_staticObj = atoi(str.c_str()) > 0;
 		str = stream->readLine(line, 2048);
-		if(_project != NULL && strlen(str) > 0) {
-			_element = _project->getElement(str);
-			if(_element) _element->setComplete(true);
+		if(_project != NULL && str.size() > 0) {
+			str.erase(str.find_last_not_of(" \n\r\t")+1);
+			_element = _project->getElement(str.c_str());
+			if(_element) {
+				_element->_nodes.push_back(std::shared_ptr<MyNode>(this));
+				_element->setComplete(true);
+			}
 		}
 	}
 	//see if this node has any children
 	str = stream->readLine(line, 2048);
-	int numChildren = atoi(str);
-	std::string childId;
+	int numChildren = atoi(str.c_str());
 	for(i = 0; i < numChildren; i++) {
 		str = stream->readLine(line, 2048);
+		in.clear();
 		in.str(str);
+		std::string childId;
 		in >> childId;
 		MyNode *child = MyNode::create(childId.c_str());
 		child->_project = _project;
@@ -1290,6 +1331,8 @@ void MyNode::writeData(const char *file, bool modelSpace) {
 		os.str("");
 		os << _constraints.size() << endl;
 		for(i = 0; i < _constraints.size(); i++) {
+			if(_project != NULL && _constraints[i]->other.compare(0, _project->_id.size()+1, _project->_id+"_") != 0)
+				continue;
 			os << _constraints[i]->type << "\t" << _constraints[i]->other << "\t";
 			os << _constraints[i]->rotation.x << "\t";
 			os << _constraints[i]->rotation.y << "\t";
@@ -1321,6 +1364,33 @@ void MyNode::writeData(const char *file, bool modelSpace) {
 	stream->write(line.c_str(), sizeof(char), line.length());
 	stream->close();
 	for(i = 0; i < children.size(); i++) children[i]->writeData(file);
+}
+
+void MyNode::printTree(short level) {
+	short n = _constraints.size(), i, j;
+	if(level == 0) cout << endl;
+	for(i = 0; i < level; i++) cout << "  ";
+	cout << _id << endl;
+	for(i = 0; i < n; i++) {
+		for(j = 0; j < level; j++) cout << "  ";
+		cout << " " << _constraints[i]->type << "  " << _constraints[i]->other << "  ";
+		PhysicsConstraint *constraint = NULL;
+		if(_constraints[i]->id >= 0 && app->_constraints.find(_constraints[i]->id) != app->_constraints.end())
+			constraint = app->_constraints[_constraints[i]->id].get();
+		if(constraint) {
+			cout << &constraint->_constraint->getRigidBodyA() << "  ";
+			if(constraint->_a) cout << constraint->_a->isEnabled() << "  ";
+			cout << &constraint->_constraint->getRigidBodyB() << "  ";
+			if(constraint->_b) cout << constraint->_b->isEnabled() << "  ";
+		}
+		cout << endl;
+	}
+	for(Node *node = getFirstChild(); node; node = node->getNextSibling()) {
+		MyNode *child = dynamic_cast<MyNode*>(node);
+		if(!child) continue;
+		child->printTree(level+1);
+	}
+	if(level == 0) cout << endl;
 }
 
 void MyNode::uploadData(const char *url, const char *rootId) {
@@ -1427,6 +1497,7 @@ void MyNode::setNormals() {
 }
 
 void MyNode::updateModel(bool doPhysics, bool doCenter) {
+	if(nv() == 0) return;
 	if(_type.compare("root") != 0) {
 		//must detach from parent while setting transformation since physics object is off
 		Node *parent = getParent();
@@ -1960,11 +2031,10 @@ void MyNode::setMyScale(const Vector3& scale) {
 }
 
 void MyNode::shiftModel(float x, float y, float z) {
-	short i, n = nv();
+	Meshy::shiftModel(x, y, z);
+	short n = nh(), i;
 	for(i = 0; i < n; i++) {
-		_vertices[i].x += x;
-		_vertices[i].y += y;
-		_vertices[i].z += z;
+		_hulls[i]->shiftModel(x, y, z);
 	}
 }
 
@@ -1976,9 +2046,10 @@ void MyNode::translateToOrigin() {
 }
 
 void MyNode::scaleModel(float scale) {
-	short i, n = nv();
+	Meshy::scaleModel(scale);
+	short n = nh(), i;
 	for(i = 0; i < n; i++) {
-		_vertices[i] *= scale;
+		_hulls[i]->scaleModel(scale);
 	}
 }
 
@@ -2121,16 +2192,18 @@ void MyNode::removePhysics(bool recur) {
 }
 
 void MyNode::enablePhysics(bool enable, bool recur) {
-	PhysicsCollisionObject *obj = getCollisionObject();
-	if(obj != NULL && obj->isEnabled() == enable) return;
-	PhysicsRigidBody *body = NULL;
-	if(obj) body = obj->asRigidBody();
 	if(recur) {
 		//first enable/disable physics on all child nodes
 		for(MyNode *node = dynamic_cast<MyNode*>(getFirstChild()); node; node = dynamic_cast<MyNode*>(node->getNextSibling())) {
 			node->enablePhysics(enable);
 		}
 	}
+
+	PhysicsCollisionObject *obj = getCollisionObject();
+	if(obj != NULL && obj->isEnabled() == enable) return;
+	PhysicsRigidBody *body = NULL;
+	if(obj) body = obj->asRigidBody();
+
 	//then handle my own constraints and collision object
 	if(enable) {
 		if(obj == NULL) {

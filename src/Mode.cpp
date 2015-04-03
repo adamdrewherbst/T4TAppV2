@@ -67,7 +67,7 @@ void Mode::setActive(bool active) {
 	} else {
 		app->message(NULL);
 		app->cameraPop();
-		app->showScene();
+		//app->showScene();
 	}
 }
 

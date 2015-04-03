@@ -14,6 +14,7 @@ Project::Project(const char* id) : Mode::Mode(id) {
 	_nodeId = _id;
 	_rootNode = MyNode::create(_nodeId.c_str());
 	_rootNode->_type = "root";
+	_rootNode->_project = this;
 	_buildAnchor = NULL;
 
 	_payloadId = NULL;
@@ -24,6 +25,7 @@ Project::Project(const char* id) : Mode::Mode(id) {
 	_currentElement = 0;
 	_moveMode = 0;
 	_launching = false;
+	_saveFlag = false;
 
 	_subModes.push_back("build");
 	_subModes.push_back("test");
@@ -31,17 +33,17 @@ Project::Project(const char* id) : Mode::Mode(id) {
 
 void Project::setupMenu() {
 	_numElements = _elements.size();
-	
+
 	_container = app->addControl <Container> (app->_stage, MyNode::concat(2, "mode_", _id.c_str()), "hiddenContainer");
 	_container->setAutoSize(Control::AUTO_SIZE_BOTH);
 	_container->setLayout(Layout::LAYOUT_ABSOLUTE);
-	
+
 	_controls = app->addControl <Container> (_container, "controls", "basicContainer", 180, -1);
 	_controls->setPosition(20, 10);
 	_controls->setLayout(Layout::LAYOUT_VERTICAL);
 	_controls->setConsumeInputEvents(true);
 	_controls->setZIndex(5);
-	
+
 	_subModePanel = app->addControl <Container> (_controls, "subMode", "hiddenContainer");
 	_subModePanel->setLayout(Layout::LAYOUT_VERTICAL);
 	Button *button = app->addControl <Button> (_subModePanel, "build", NULL, -1, 40);
@@ -52,7 +54,7 @@ void Project::setupMenu() {
 	//add a launch button
 	_launchButton = app->addControl <Button> (_controls, "launch", NULL, -1, 40);
 	_launchButton->setText("Launch");
-	
+
 	//add a button for each element to choose its item and edit it
 	short i, j, n;
 	_elementContainer = app->addControl <Container> (_controls, "elements", "hiddenContainer");
@@ -380,6 +382,28 @@ void Project::update() {
 			_broken = true;
 			app->message("Oh no! Something broke! Click 'Build' to fix your model.");
 		}
+	}
+}
+
+void Project::sync() {
+	if(_saveFlag) {
+		setSubMode(0); //need to store rest position - would be good if we could do this behind the scenes...
+		_rootNode->uploadData("http://www.t4t.org/nasa-app/upload/index.php");
+		_saveFlag = false;
+		std::ostringstream os;
+		os << "Your " << _id << " has been saved";
+		app->message(os.str().c_str());
+	} else {
+		std::string dir = "http://www.t4t.org/nasa-app/upload/" + app->_userEmail + "/";
+		if(!_rootNode->loadData(dir.c_str())) return;
+		_rootNode->setRest();
+		short n = _elements.size(), i;
+		for(i = 0; i < n; i++) {
+			Element *el = _elements[i].get();
+			short m = el->_nodes.size(), j;
+			for(j = 0; j < m; j++) el->addPhysics((j+1)%m); //"other" is first in list but should be done last
+		}
+		_rootNode->enablePhysics(false);
 	}
 }
 

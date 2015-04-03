@@ -185,9 +185,10 @@ public:
 
     T4TApp();
     T4TApp* getInstance();
-    bool login(void (T4TApp::*callback)(AppForm*));
+    bool login();
     void processLogin(AppForm *form);
     void processRegistration(AppForm *form);
+    void loadProjects(bool saveOnly = false);
 	void generateModels();
 	MyNode* generateModel(const char *id, const char *type, ...);
 	void loadModels(const char *filename);
@@ -243,7 +244,6 @@ public:
     Project* getProject(const char *id);
     MyNode* getProjectNode(const char *id);
     void saveProject();
-    void saveProjectHelper(AppForm *form);
 
     Camera* getCamera();
     Node* getCameraNode();
