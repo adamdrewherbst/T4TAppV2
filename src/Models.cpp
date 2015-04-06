@@ -1,11 +1,32 @@
 #include "T4TApp.h"
 #include "MyNode.h"
 
+#define USE_ONLINE_MODELS 1
+
 namespace T4T {
 
 //using namespace pugi;
 
 void T4TApp::generateModels() {
+
+#ifdef USE_ONLINE_MODELS
+
+	std::string modelDir = "http://www.t4t.org/nasa-app/models/", url = modelDir + "models.list", file;
+	char *text = curlFile(url.c_str());
+	if(!text) return;
+	std::string modelList = text, modelStr;
+	std::istringstream in(modelList);
+	while(in) {
+		in >> modelStr;
+		if(!modelStr.empty()) {
+			url = modelDir + modelStr + ".node";
+			file = "res/models/" + modelStr + ".node";
+			curlFile(url.c_str(), file.c_str());
+		}
+	}
+
+#else
+
 	generateModel("box", "box", 4.0f, 2.0f, 6.0f);
 	generateModel("sphere", "sphere", 1.0f, 10);
 	generateModel("cylinder", "cylinder", 1.0f, 4.0f, 20);
@@ -68,6 +89,9 @@ void T4TApp::generateModels() {
 	_robot->writeData("res/common/");
 	
 	loadModels("res/common/models.list");
+	
+#endif
+
 }
 
 void T4TApp::loadModels(const char *filename) {
