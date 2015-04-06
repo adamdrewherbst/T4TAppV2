@@ -83,6 +83,7 @@ bool Rocket::removePayload() {
 void Rocket::launch() {
 	Project::launch();
 	_rootNode->setActivation(ACTIVE_TAG, true);
+	cout << endl << "straw constraint: " << _straw->_constraint->_constraint << endl;
 	_rootNode->printTree();
 	_deflating = true;
 }
@@ -148,7 +149,6 @@ bool Rocket::touchEvent(Touch::TouchEvent evt, int x, int y, unsigned int contac
 Rocket::Straw::Straw(Project *project)
   : Project::Element::Element(project, NULL, "straw", "Straw") {
   	_filter = "straw";
-  	_constraint = NULL;
 }
   
 void Rocket::Straw::addPhysics(short n) {
@@ -164,13 +164,15 @@ void Rocket::Straw::addPhysics(short n) {
 	Vector3 trans = Vector3::zero(), linearLow(0, 0, -rocket->_pathLength/2), linearHigh(0, 0, rocket->_pathLength/2),
 	  angularLow(0, -2*M_PI, -2*M_PI), angularHigh(angle, 2*M_PI, 2*M_PI);
 	MyNode *node = getNode();
-	node->addPhysics();
+	node->addPhysics(false);
 	_project->_rootNode->addChild(node);
-	_constraint = app->getPhysicsController()->createGenericConstraint(node->getCollisionObject()->asRigidBody(), rot, trans);
-	_constraint->setLinearLowerLimit(linearLow);
-	_constraint->setLinearUpperLimit(linearHigh);
-	_constraint->setAngularLowerLimit(angularLow);
-	_constraint->setAngularUpperLimit(angularHigh);
+	PhysicsGenericConstraint *constraint = app->getPhysicsController()->createGenericConstraint(
+		node->getCollisionObject()->asRigidBody(), rot, trans);
+	constraint->setLinearLowerLimit(linearLow);
+	constraint->setLinearUpperLimit(linearHigh);
+	constraint->setAngularLowerLimit(angularLow);
+	constraint->setAngularUpperLimit(angularHigh);
+	_constraint = ConstraintPtr(constraint);
 }
 
 bool Rocket::Straw::touchEvent(Touch::TouchEvent evt, int x, int y, unsigned int contactIndex) {

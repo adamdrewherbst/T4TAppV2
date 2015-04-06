@@ -10,7 +10,7 @@ class Rocket : public Project
 public:
 	class Straw : public Project::Element {
 		public:
-		PhysicsGenericConstraint *_constraint;
+		ConstraintPtr _constraint;
 
 		Straw(Project *project);
 		void addPhysics(short n);

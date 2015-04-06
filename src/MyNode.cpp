@@ -980,26 +980,16 @@ std::string MyNode::resolveFilename(const char *filename) {
 	if(filename == NULL) {
 		path = app->getSceneDir() + getId() + ".node";
 	} else if(strncmp(filename, "http", 4) == 0) {
-
-		path = "res/tmp/" + _id + ".node";
-		FILE *fd = FileSystem::openFile(path.c_str(), "wb");
-		CURL *curl = curl_easy_init();
-		CURLcode res;
-		std::string url = filename + _id + ".node";
-		curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
-		curl_easy_setopt(curl, CURLOPT_WRITEDATA, fd);
-		curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, fwrite);
-		curl_easy_setopt(curl, CURLOPT_FAILONERROR, 1L);
-		//curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);
 		cout << "loading node " << _id << endl;
-		res = curl_easy_perform(curl);
-		if(res != CURLE_OK) {
-			path = "";
-			GP_WARN("Couldn't load file %s: %s", url.c_str(), curl_easy_strerror(res));
+		std::string url = filename + _id + ".node";
+		path = "res/tmp/" + _id + ".node";
+		app->curlFile(url.c_str(), path.c_str());
+		//check that the file exists and has content
+		if(!FileSystem::fileExists(path.c_str())) path = "";
+		else {
+			std::unique_ptr<Stream> stream(FileSystem::open(path.c_str()));
+			if(stream.get() == nullptr || stream->length() < 1) path = "";
 		}
-		curl_easy_cleanup(curl);
-		fclose(fd);
-
 	} else if(filename[n-1] == '/') {
 		path = filename + _id + ".node";
 	} else if(strstr(filename, "/") == NULL) {
@@ -1010,18 +1000,33 @@ std::string MyNode::resolveFilename(const char *filename) {
 	return path;
 }
 
+void MyNode::clearNode() {
+	for(Node *node = getFirstChild(); node; node = node->getNextSibling()) {
+		MyNode *child = dynamic_cast<MyNode*>(node);
+		if(!child) continue;
+		child->clearNode();
+		removeChild(child);
+	}
+	app->removeConstraints(this, NULL, true);
+}
+
 bool MyNode::loadData(const char *file, bool doPhysics)
 {
+	//ensure the file is valid
 	std::string filename = resolveFilename(file);
 	if(filename.size() == 0) return false;
 	std::unique_ptr<Stream> stream(FileSystem::open(filename.c_str()));
-	if (stream.get() == NULL)
+	if (stream.get() == nullptr)
 	{
 		GP_ERROR("Failed to open file '%s'.", filename.c_str());
 		return false;
 	}
 	stream->rewind();
 	
+	//first clear any data currently in this node
+	clearNode();
+	
+	//then read the new data from the file
 	_typeCount = 0;
 
 	char line[2048];
@@ -1202,12 +1207,22 @@ bool MyNode::loadData(const char *file, bool doPhysics)
 		str = stream->readLine(line, 2048);
 		_staticObj = atoi(str.c_str()) > 0;
 		str = stream->readLine(line, 2048);
+		_radius = atof(str.c_str());
+		str = stream->readLine(line, 2048);
 		if(_project != NULL && str.size() > 0) {
 			str.erase(str.find_last_not_of(" \n\r\t")+1);
 			_element = _project->getElement(str.c_str());
 			if(_element) {
 				_element->_nodes.push_back(std::shared_ptr<MyNode>(this));
 				_element->setComplete(true);
+				for(i = 0; i < 3; i++) {
+					str = stream->readLine(line, 2048);
+					in.clear();
+					in.str(str);
+					in >> x >> y >> z;
+					Vector3 &vec = i == 0 ? _parentOffset : (i == 1 ? _parentAxis : _parentNormal);
+					vec.set(x, y, z);
+				}
 			}
 		}
 	}
@@ -1225,9 +1240,13 @@ bool MyNode::loadData(const char *file, bool doPhysics)
 		child->loadData(file, doPhysics);
 		addChild(child);
 	}
-    stream->close();
+	stream->close();
 	updateModel(doPhysics, false);
-	if(getCollisionObject() != NULL) getCollisionObject()->setEnabled(false);
+	if(_project != NULL) {
+		if(!doPhysics) addCollisionObject();
+	} else {
+		if(getCollisionObject() != NULL) getCollisionObject()->setEnabled(false);
+	}
 	return true;
 }
 
@@ -1329,8 +1348,10 @@ void MyNode::writeData(const char *file, bool modelSpace) {
 		line = os.str();
 		stream->write(line.c_str(), sizeof(char), line.length());
 		os.str("");
-		os << _constraints.size() << endl;
-		for(i = 0; i < _constraints.size(); i++) {
+		//if part of a project, this node's constraints will be added automatically => don't write them
+		short n = _project == NULL ? _constraints.size() : 0;
+		os << n << endl;
+		for(i = 0; i < n; i++) {
 			if(_project != NULL && _constraints[i]->other.compare(0, _project->_id.size()+1, _project->_id+"_") != 0)
 				continue;
 			os << _constraints[i]->type << "\t" << _constraints[i]->other << "\t";
@@ -1347,7 +1368,13 @@ void MyNode::writeData(const char *file, bool modelSpace) {
 		float mass = (getCollisionObject() != NULL) ? getCollisionObject()->asRigidBody()->getMass() : _mass;
 		os << mass << endl;
 		os << (_staticObj ? 1 : 0) << endl;
-		if(_element != NULL) os << _element->_id;
+		os << _radius << endl;
+		if(_element != NULL) {
+			os << _element->_id << endl;
+			os << _parentOffset.x << "\t" << _parentOffset.y << "\t" << _parentOffset.z << endl;
+			os << _parentAxis.x << "\t" << _parentAxis.y << "\t" << _parentAxis.z << endl;
+			os << _parentNormal.x << "\t" << _parentNormal.y << "\t" << _parentNormal.z;
+		}
 		os << endl;
 		line = os.str();
 		stream->write(line.c_str(), sizeof(char), line.length());
@@ -1378,6 +1405,7 @@ void MyNode::printTree(short level) {
 		if(_constraints[i]->id >= 0 && app->_constraints.find(_constraints[i]->id) != app->_constraints.end())
 			constraint = app->_constraints[_constraints[i]->id].get();
 		if(constraint) {
+			cout << constraint->_constraint << "  " << constraint->_constraint->isEnabled() << "  ";
 			cout << &constraint->_constraint->getRigidBodyA() << "  ";
 			if(constraint->_a) cout << constraint->_a->isEnabled() << "  ";
 			cout << &constraint->_constraint->getRigidBodyB() << "  ";
@@ -1505,7 +1533,7 @@ void MyNode::updateModel(bool doPhysics, bool doCenter) {
 			addRef();
 			parent->removeChild(this);
 		}
-		removePhysics();
+		removePhysics(false);
 
 		//update the mesh to contain the new coordinates
 		float radius = 0, f1;

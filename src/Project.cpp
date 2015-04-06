@@ -268,7 +268,7 @@ void Project::setActive(bool active) {
 		if(e < _numElements) promptNextElement();
 	}else {
 		removePayload();
-		if(_buildAnchor) _buildAnchor->setEnabled(false);
+		if(_buildAnchor.get() != nullptr) _buildAnchor->setEnabled(false);
 		if(_subMode == 0) _rootNode->setRest();
 		_rootNode->enablePhysics(false);
 		app->filterItemMenu();
@@ -301,6 +301,7 @@ bool Project::setSubMode(short mode) {
 		case 0: { //build
 			app->setCameraEye(30, -M_PI/3, M_PI/12);
 			removePayload();
+			_rootNode->enablePhysics(true);
 			break;
 		} case 1: { //place in test position
 			app->setCameraEye(40, 0, M_PI/12);
@@ -395,7 +396,7 @@ void Project::sync() {
 		app->message(os.str().c_str());
 	} else {
 		std::string dir = "http://www.t4t.org/nasa-app/upload/" + app->_userEmail + "/";
-		if(!_rootNode->loadData(dir.c_str())) return;
+		if(!_rootNode->loadData(dir.c_str(), false)) return;
 		_rootNode->setRest();
 		short n = _elements.size(), i;
 		for(i = 0; i < n; i++) {
@@ -403,7 +404,10 @@ void Project::sync() {
 			short m = el->_nodes.size(), j;
 			for(j = 0; j < m; j++) el->addPhysics((j+1)%m); //"other" is first in list but should be done last
 		}
-		_rootNode->enablePhysics(false);
+		if(app->getActiveMode() != this) {
+			_rootNode->enablePhysics(false);
+			if(_buildAnchor.get() != nullptr) _buildAnchor->setEnabled(false);
+		}
 	}
 }
 
@@ -581,7 +585,7 @@ void Project::Element::setComplete(bool complete) {
 
 void Project::Element::addPhysics(short n) {
 	MyNode *node = _nodes[n].get();
-	node->addPhysics();
+	node->addPhysics(false);
 	if(_parent == NULL && !_isOther) {
 		if(n == 0) _project->_buildAnchor = ConstraintPtr(app->getPhysicsController()->createFixedConstraint(
 		  node->getCollisionObject()->asRigidBody()));

@@ -1228,6 +1228,7 @@ void PhysicsController::addConstraint(PhysicsRigidBody* a, PhysicsRigidBody* b, 
     }
     
     _world->addConstraint(constraint->_constraint, _constraintNoCollide);
+    _constraintNoCollide = false;
 }
 
 bool PhysicsController::checkConstraintRigidBodies(PhysicsRigidBody* a, PhysicsRigidBody* b)

@@ -228,10 +228,24 @@ void T4TApp::resizeEvent(unsigned int width, unsigned int height) {
 	_message->setPosition(0.0f, height - _message->getHeight());
 }
 
+void T4TApp::free() {
+	while(!_constraints.empty()) _constraints.erase(_constraints.begin());
+	((Rocket*)getProject("rocket"))->_straw->_constraint.reset();
+	SAFE_RELEASE(_scene);
+	SAFE_RELEASE(_mainMenu);
+}
+
+T4TApp::~T4TApp() {
+	free();
+}
+
 void T4TApp::finalize()
 {
-    SAFE_RELEASE(_scene);
-    SAFE_RELEASE(_mainMenu);
+	free();
+}
+
+void T4TApp::exit() {
+	free();
 }
 
 int updateCount = 0;
@@ -336,11 +350,52 @@ void T4TApp::processRegistration(AppForm *form) {
 
 void T4TApp::loadProjects(bool saveOnly) {
 	short i, n = _modes.size();
+	//retrieve the list of completed projects for this user
+	std::vector<std::string> projects;
+	if(!saveOnly) {
+		std::string url = "http://www.t4t.org/nasa-app/upload/" + _userEmail + "/projects.list";
+		char *output = curlFile(url.c_str());
+		std::string listStr = output ? output : "", projectStr;
+		std::istringstream in(listStr);
+		while(in) {
+			in >> projectStr;
+			if(!projectStr.empty()) projects.push_back(projectStr);
+		}
+	}
+	//load each completed project or save it if it is tagged for saving
+	short p = projects.size(), j;
+	bool completed;
 	for(i = 0; i < n; i++) {
 		Project *project = dynamic_cast<Project*>(_modes[i]);
 		if(!project || (saveOnly && !project->_saveFlag)) continue;
-		project->sync();
+		completed = false;
+		if(!project->_saveFlag) for(j = 0; j < p; j++) if(projects[j].compare(project->_id) == 0) {
+			completed = true;
+			break;
+		}
+		if(completed || project->_saveFlag) project->sync();
 	}	
+}
+
+char* T4TApp::curlFile(const char *url, const char *filename) {
+	bool returnText = filename == NULL;
+	if(returnText) filename = "res/tmp/tmpfile";
+	FILE *fd = FileSystem::openFile(filename, "wb");
+	CURL *curl = curl_easy_init();
+	CURLcode res;
+	curl_easy_setopt(curl, CURLOPT_URL, url);
+	curl_easy_setopt(curl, CURLOPT_WRITEDATA, fd);
+	curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, fwrite);
+	curl_easy_setopt(curl, CURLOPT_FAILONERROR, 1L);
+	res = curl_easy_perform(curl);
+	if(res != CURLE_OK) {
+		GP_WARN("Couldn't load file %s: %s", url, curl_easy_strerror(res));
+		returnText = false;
+	}
+	curl_easy_cleanup(curl);
+	fclose(fd);
+	if(returnText) return FileSystem::readAll(filename);
+	else return NULL;
 }
 
 void T4TApp::redraw() {
@@ -756,6 +811,11 @@ bool T4TApp::showNode(Node *node) {
 	MyNode *n = dynamic_cast<MyNode*>(node);
 	if(n) n->enablePhysics(true);
 	return true;
+}
+
+Mode* T4TApp::getActiveMode() {
+	if(_activeMode >= 0 && _activeMode < _modes.size()) return _modes[_activeMode];
+	return NULL;
 }
 
 Project* T4TApp::getProject(const char *id) {

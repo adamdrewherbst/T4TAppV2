@@ -71,6 +71,7 @@ public:
 	bool loadData(const char *filename = NULL, bool doPhysics = true);
 	void writeData(const char *filename = NULL, bool modelSpace = true);
 	void uploadData(const char *url, const char *rootId = NULL);
+	void clearNode();
 	void loadAnimation(const char *filename, const char *id);
 	void playAnimation(const char *id, bool repeat = false, float speed = 1.0f);
 	void stopAnimation();

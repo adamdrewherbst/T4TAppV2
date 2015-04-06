@@ -184,11 +184,15 @@ public:
    	MyNode *_face, *_edge, *_vertex;
 
     T4TApp();
+    ~T4TApp();
+    void free();
+    void exit();
     T4TApp* getInstance();
     bool login();
     void processLogin(AppForm *form);
     void processRegistration(AppForm *form);
     void loadProjects(bool saveOnly = false);
+    char* curlFile(const char *url, const char *filename = NULL);
 	void generateModels();
 	MyNode* generateModel(const char *id, const char *type, ...);
 	void loadModels(const char *filename);
@@ -240,7 +244,8 @@ public:
 	bool showNode(Node *node);
     void setActiveScene(Scene *scene);
     std::string _sceneName;
-    
+
+	Mode* getActiveMode();    
     Project* getProject(const char *id);
     MyNode* getProjectNode(const char *id);
     void saveProject();
