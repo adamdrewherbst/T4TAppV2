@@ -19,9 +19,12 @@ void T4TApp::generateModels() {
 	while(in) {
 		in >> modelStr;
 		if(!modelStr.empty()) {
+			cout << "loading model " << modelStr << endl;
 			url = modelDir + modelStr + ".node";
 			file = "res/models/" + modelStr + ".node";
-			curlFile(url.c_str(), file.c_str());
+			if(!curlFile(url.c_str(), file.c_str())) {
+				GP_WARN("Couldn't load model %s", modelStr.c_str());
+			}
 		}
 	}
 
@@ -59,7 +62,7 @@ void T4TApp::generateModels() {
 	for(short i = 0; i < 2; i++) {
 		bands[0]->_objType = "sphere";
 		bands[0]->_radius = 0.3f;
-		bands[0]->writeData("res/common/");
+		bands[0]->writeData("res/models/");
 	}
 	
 	//robot
@@ -86,11 +89,11 @@ void T4TApp::generateModels() {
 	MyNode *_robot = MyNode::create("robot");
 	_robot->_type = "root";
 	_robot->addChild(robot[0]);
-	_robot->writeData("res/common/");
-	
-	loadModels("res/common/models.list");
-	
+	_robot->writeData("res/models/");
+
 #endif
+
+	loadModels("res/common/models.list");
 
 }
 
@@ -349,7 +352,7 @@ MyNode* T4TApp::generateModel(const char *id, const char *type, ...) {
 		}
 		node->_hulls.push_back(hull);
 	}
-	node->writeData("res/common/");
+	node->writeData("res/models/");
 	return node;
 }
 
@@ -405,7 +408,7 @@ void T4TApp::loadObj(const char *filename) {
 				node->_vertices[i].z *= scale.z;
 			}
 			node->setOneHull();
-			node->writeData("res/common/");
+			node->writeData("res/models/");
 			node->clearMesh();
 			//vOffset += n;
 		}
@@ -558,7 +561,7 @@ void T4TApp::loadDAE(const char *filename) {
 	node->translateToOrigin();
 	if(scale != 1) node->scaleModel(scale);
 
-	node->writeData("res/common/");
+	node->writeData("res/models/");
 }
 
 void T4TApp::loadXMLNode(xml_document &doc, xml_node &xnode, Matrix world, MyNode *node, std::vector<Meshy*> &meshes) {

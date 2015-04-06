@@ -7,9 +7,16 @@ namespace T4T {
 Project::Project(const char* id) : Mode::Mode(id) {
 
 	_typeCount = -1;
-	_scene = Scene::load("res/common/scene.gpb");
+	_scene = Scene::load("res/common/game.scene");
 	_camera = _scene->getActiveCamera();
-    _camera->setAspectRatio(app->getAspectRatio());
+	_camera->setAspectRatio(app->getAspectRatio());
+	Node *lightNode = _scene->findNode("lightNode");
+	Light *light = lightNode->getLight();
+	Quaternion lightRot;
+	Quaternion::createFromAxisAngle(Vector3(0, 1, 0), 60 * M_PI/180, &lightRot);
+	lightNode->setRotation(lightRot);
+	light->setColor(0.6f, 0.6f, 0.6f);
+	_camera->getNode()->addChild(lightNode);
 
 	_nodeId = _id;
 	_rootNode = MyNode::create(_nodeId.c_str());
@@ -551,6 +558,7 @@ void Project::Element::addNode() {
 		else _nodes[i] = std::shared_ptr<MyNode>(node);
 		placeNode(offset + i);
 		addPhysics(offset + i);
+		node->updateMaterial();
 	}
 	_currentNodeId = NULL;
 	setComplete(true);

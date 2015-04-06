@@ -121,7 +121,7 @@ void HullMode::controlEvent(Control *control, EventType evt) {
 			n = hull->nv();
 			for(j = 0; j < n; j++) world.transformPoint(&hull->_vertices[j]);
 		}
-		_hullNode->writeData("res/common/", false);
+		_hullNode->writeData("res/models/", false);
 	}
 }
 

@@ -18,7 +18,7 @@ Buggy::Buggy() : Project::Project("buggy") {
 	setupMenu();
 
 	_ramp = MyNode::create("buggyRamp");
-	_ramp->loadData("res/common/", false);
+	_ramp->loadData("res/models/", false);
 	_ramp->setTranslation(0, 0, -7.5f);
 	_ramp->setStatic(true);
 	_ramp->addPhysics();

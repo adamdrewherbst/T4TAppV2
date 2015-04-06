@@ -152,6 +152,7 @@ void T4TApp::initialize()
 	addItem("nose_cone", 1, "general");
 	addItem("peepee_cap", 1, "general");
 	addItem("plastic_cone", 1, "general");
+	addItem("foam_roof", 1, "general");
 	//addItem("EnginePropellerThing", 1, "general");
 
 	_drawDebugCheckbox = (CheckBox*) _sideMenu->getControl("drawDebug");
@@ -388,14 +389,15 @@ char* T4TApp::curlFile(const char *url, const char *filename) {
 	curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, fwrite);
 	curl_easy_setopt(curl, CURLOPT_FAILONERROR, 1L);
 	res = curl_easy_perform(curl);
-	if(res != CURLE_OK) {
-		GP_WARN("Couldn't load file %s: %s", url, curl_easy_strerror(res));
-		returnText = false;
-	}
 	curl_easy_cleanup(curl);
 	fclose(fd);
+	
+	if(res != CURLE_OK) {
+		GP_WARN("Couldn't load file %s: %s", url, curl_easy_strerror(res));
+		return NULL;
+	}
 	if(returnText) return FileSystem::readAll(filename);
-	else return NULL;
+	else return const_cast<char*>("");
 }
 
 void T4TApp::redraw() {
@@ -665,7 +667,7 @@ void T4TApp::addItem(const char *type, short numTags, ...) {
 	va_start(args, numTags);
 	MyNode *node = MyNode::create(type);
 	node->_type = type;
-	node->loadData("res/common/", false);
+	node->loadData("res/models/", false);
 	node->setTranslation(Vector3(1000.0f,0.0f,0.0f));
 	for(short i = 0; i < numTags; i++) {
 		const char *tag = va_arg(args, const char*);

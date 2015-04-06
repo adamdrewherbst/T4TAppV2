@@ -6,7 +6,7 @@ namespace T4T {
 
 Robot::Robot() : Project::Project("robot") {
 	_robot = MyNode::create("robot");
-	_robot->loadData("res/common/", false);
+	_robot->loadData("res/models/", false);
 	_robotBox = _robot->getBoundingBox(true);
 	//load robot animations
 	_animations.push_back("walk");

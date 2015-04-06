@@ -15,7 +15,7 @@ StringMode::StringMode() : Mode::Mode("string") {
 	_stringTemplate->_type = "root";
 	
 	_linkTemplate = MyNode::create("stringLink");
-	_linkTemplate->loadData("res/common/", false);
+	_linkTemplate->loadData("res/models/", false);
 	Mesh *mesh = _linkTemplate->getModel()->getMesh();
 	BoundingBox box = mesh->getBoundingBox();
 	_linkLength = (box.max.z - box.min.z) * 0.8f;

@@ -320,6 +320,14 @@ material plastic_cone : colored {
 	}
 }
 
+material foam_roof : colored {
+	technique {
+		pass {
+			u_ambientColor = 0.5, 1.0, 0.8
+		}
+	}
+}
+
 material EnginePropellerThing : colored {
 	technique {
 		pass {

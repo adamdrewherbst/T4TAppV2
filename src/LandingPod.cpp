@@ -18,12 +18,12 @@ LandingPod::LandingPod() : Project::Project("landingPod") {
 	_ramp = MyNode::create("podRamp");
 	_ramp->_type = "root";
 	MyNode *ramp = MyNode::create("buggyRamp");
-	ramp->loadData("res/common/", false);
+	ramp->loadData("res/models/", false);
 	ramp->setTranslation(0.0f, 0.0f, -7.5f);
 	ramp->setStatic(true);
 	ramp->setColor(0.0f, 1.0f, 0.0f);
 	MyNode *platform = MyNode::create("buggyPlatform");
-	platform->loadData("res/common/", false);
+	platform->loadData("res/models/", false);
 	platform->setTranslation(0.0f, 2.5f, -22.5f);
 	platform->setStatic(true);
 	platform->setColor(0.0f, 1.0f, 0.0f);

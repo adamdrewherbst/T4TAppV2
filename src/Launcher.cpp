@@ -13,7 +13,7 @@ Launcher::Launcher() : Project::Project("launcher") {
 	setupMenu();
 
 	_table = MyNode::create("table1");
-	_table->loadData("res/common/", false);
+	_table->loadData("res/models/", false);
 	_table->setStatic(true);
 	BoundingBox tableBox = _table->getBoundingBox(true);
 	Vector3 tablePos(0, -tableBox.min.y, -tableBox.max.z);
@@ -22,7 +22,7 @@ Launcher::Launcher() : Project::Project("launcher") {
 	_clampWidth = 8.0f;
 	for(short i = 0; i < 2; i++) {
 		_clamps[i] = MyNode::create("clamp");
-		_clamps[i]->loadData("res/common/", false);
+		_clamps[i]->loadData("res/models/", false);
 		_clamps[i]->setStatic(true);
 		os.str("");
 		os << "clamp" << (i+1);
