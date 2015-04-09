@@ -1,12 +1,12 @@
 #include "T4TApp.h"
 #include "MyNode.h"
 #include "NavigateMode.h"
-#include "PositionMode.h"
-#include "ConstraintMode.h"
-#include "StringMode.h"
-#include "TestMode.h"
-#include "TouchMode.h"
-#include "ToolMode.h"
+//#include "PositionMode.h"
+//#include "ConstraintMode.h"
+//#include "StringMode.h"
+//#include "TestMode.h"
+//#include "TouchMode.h"
+//#include "ToolMode.h"
 #include "Satellite.h"
 #include "Buggy.h"
 #include "Rocket.h"
@@ -73,7 +73,7 @@ void T4TApp::initialize()
 	/*********************** GUI SETUP ***********************/
 
 	//root menu node for finding controls by ID
-	_mainMenu = Form::create("res/common/main.form");
+	_mainMenu = Form::create("res/common/main.form#mainMenu");
 	_sideMenu = (Container*)_mainMenu->getControl("sideMenu");
 	_stage = (Container*)_mainMenu->getControl("stage");
 	_sceneMenu = (Container*)_mainMenu->getControl("submenu_sceneMenu");
@@ -85,7 +85,7 @@ void T4TApp::initialize()
 	itemImage->setVisible(false);
 
 	//for selecting items	
-	_componentMenu = (Container*)_mainMenu->getControl("submenu_componentMenu");
+	_componentMenu = Form::create("res/common/main.form#componentMenu");
 	_componentContainer = (Container*) _componentMenu->getControl("components");
 
 	//dialogs
@@ -107,10 +107,12 @@ void T4TApp::initialize()
 	_overlay = (Container*)_mainMenu->getControl("overlay");
 	_overlay->setVisible(false);
 	
-	_undo = (Button*)_mainMenu->getControl("undo");
+	_undo = NULL;
+	_redo = NULL;
+	/*_undo = (Button*)_mainMenu->getControl("undo");
 	_redo = (Button*)_mainMenu->getControl("redo");
 	_undo->setEnabled(false);
-	_redo->setEnabled(false);
+	_redo->setEnabled(false);//*/
     
 	//identify all submenus so we can close any open ones when another is clicked
 	std::vector<Control*> controls = _mainMenu->getControls();
@@ -134,8 +136,14 @@ void T4TApp::initialize()
 	_forms.push_back(_registerForm);
 	
 	short n = _forms.size(), i;
-	for(i = 0; i < n; i++) _forms[i]->_container->setVisible(false);
+	for(i = 0; i < n; i++) {
+		_forms[i]->_container->setVisible(false);
+		addListener(_forms[i]->_container, this);
+	}
 	
+    addListener(_mainMenu, this);
+    addListener(_componentMenu, this);
+
 	// populate catalog of items
 	_models = Scene::create("models");
 	addItem("box", 2, "general", "body");
@@ -159,13 +167,12 @@ void T4TApp::initialize()
 	//_drawDebugCheckbox = addControl <CheckBox> (_sideMenu, "drawDebug");
 	//Button *debugButton = addControl <Button> (_sideMenu, "debugButton");
 	
-    addListener(_mainMenu, this);
     //addListener(_textName, this, Control::Listener::TEXT_CHANGED);
 	
 	//interactive modes
 	_modes.push_back(new NavigateMode());
-	_modes.push_back(new PositionMode());
-	_modes.push_back(new ConstraintMode());
+	//_modes.push_back(new PositionMode());
+	//_modes.push_back(new ConstraintMode());
 	_modes.push_back(new Satellite());
 	_modes.push_back(new Rocket());
 	_modes.push_back(new Buggy());
@@ -174,10 +181,10 @@ void T4TApp::initialize()
 	_modes.push_back(new CEV());
 	_modes.push_back(new Launcher());
 	_modes.push_back(new HullMode());
-	_modes.push_back(new StringMode());
-	_modes.push_back(new ToolMode());
-	_modes.push_back(new TestMode());
-	_modes.push_back(new TouchMode());
+	//_modes.push_back(new StringMode());
+	//_modes.push_back(new ToolMode());
+	//_modes.push_back(new TestMode());
+	//_modes.push_back(new TouchMode());
 
 	//simple machines
     //_modes.push_back(new Lever());
@@ -290,6 +297,9 @@ void T4TApp::render(float elapsedTime)
     _font->finish();
 //*/
 	_mainMenu->draw();
+	_componentMenu->draw();
+	short n = _forms.size(), i;
+	for(i = 0; i < n; i++) _forms[i]->_container->draw();
 }
 
 bool T4TApp::login() {
@@ -307,6 +317,8 @@ void T4TApp::processLogin(AppForm *form) {
 		_userEmail = form->_fields["email"];
 		_userPass = form->_response[1];
 		form->hide();
+		_login->setText("Logout");
+		_register->setEnabled(false);
 		std::ostringstream os;
 		os << "Now logged in as " << _userEmail;
 		message(os.str().c_str());
@@ -424,10 +436,29 @@ void T4TApp::controlEvent(Control* control, Control::Listener::EventType evt)
 	cout << "CLICKED " << id << endl;
 
 	//login/register
-	if(strcmp(id, "login") == 0) {
-		_loginForm->show();
-	} else if(strcmp(id, "register") == 0) {
+	if(control == _login) {
+		if(strcmp(_login->getText(), "Login") == 0) {
+			_loginForm->show();
+		} else {
+			_userEmail = "";
+			_userPass = "";
+			message(NULL);
+			_login->setText("Login");
+			_register->setEnabled(true);
+		}
+	} else if(control == _register) {
 		_registerForm->show();
+	} else if(strcmp(id, "signup") == 0) {
+		_loginForm->hide();
+		_registerForm->show();
+	} else if(strcmp(id, "saveAll") == 0) {
+		short n = _modes.size(), i;
+		for(i = 0; i < n; i++) {
+			Project *project = dynamic_cast<Project*>(_modes[i]);
+			if(!project) continue;
+			if(project->_rootNode->getChildCount() > 0) project->_saveFlag = true;
+			if(!login()) loadProjects(true);
+		}
 	}
 	//scene operations
 	else if(_sceneMenu->getControl(id) == control) {
@@ -509,13 +540,18 @@ void T4TApp::controlEvent(Control* control, Control::Listener::EventType evt)
 	}
 	else if(_componentMenu->getControl(id) == control && strncmp(id, "comp_", 5) == 0) {
 		bool consumed = false;
+		_componentMenu->setVisible(false);
 		if(_activeMode >= 0) consumed = _modes[_activeMode]->selectItem(id+5);
 		if(!consumed) {
 			MyNode *node = addModelNode(id+5);
 			setAction("addNode", node);
 			commitAction();
 		}
+	}
+	else if(strcmp(id, "componentCancel") == 0) {
 		_componentMenu->setVisible(false);
+		Project *project = getProject();
+		if(project) project->_inSequence = false;
 	}
 	else if(strcmp(id, "debugButton") == 0) {
 		debugTrigger();
@@ -534,7 +570,7 @@ void T4TApp::controlEvent(Control* control, Control::Listener::EventType evt)
 
 	//close a submenu when one of its items is clicked
 	Container *next = parent;
-	while(next != NULL && strncmp(next->getId(), "submenu_", 8) == 0) {
+	if(!dynamic_cast<Container*>(control)) while(next != NULL && strncmp(next->getId(), "submenu_", 8) == 0) {
 		next->setVisible(false);
 		Control *handle = _mainMenu->getControl(MyNode::concat(2, "parent_", next->getId()));
 		//if(handle != NULL) handle->setState(Control::NORMAL);
@@ -560,13 +596,11 @@ Container* T4TApp::getContainer(Control *control) {
 }
 
 AppForm* T4TApp::getForm(Control *control) {
-	Control *parent = control;
-	while(parent && (!parent->isContainer() || strncmp(parent->getId(), "form_", 5) != 0))
-		parent = parent->getParent();
-	if(!parent) return NULL;
+	Control *current = control, *parent;
+	while(parent = current->getParent()) current = parent;
 	short n = _forms.size(), i;
 	for(i = 0; i < n; i++) {
-		if(_forms[i]->_container == parent) return _forms[i];
+		if(_forms[i]->_container == current) return _forms[i];
 	}
 	return NULL;
 }
@@ -680,6 +714,7 @@ void T4TApp::addItem(const char *type, short numTags, ...) {
 	itemImage->setText(type);
 	itemImage->setZIndex(_componentMenu->getZIndex());
 	//itemImage->setImage("res/png/cowboys-helmet-nobkg.png");
+	addListener(itemImage, this, Control::Listener::CLICK);
 }
 
 void T4TApp::filterItemMenu(const char *tag) {
@@ -821,6 +856,13 @@ Mode* T4TApp::getActiveMode() {
 }
 
 Project* T4TApp::getProject(const char *id) {
+	if(id == NULL) {
+		Mode *mode = getActiveMode();
+		if(!mode) return NULL;
+		Project *project = dynamic_cast<Project*>(mode);
+		if(project) return project;
+		return NULL;
+	}
 	short i, n = _modes.size();
 	for(i = 0; i < n; i++) {
 		Project *project = dynamic_cast<Project*>(_modes[i]);
@@ -884,9 +926,13 @@ void T4TApp::enableListener(bool enable, Control *control, Control::Listener *li
 	if(container) {
 		std::vector<Control*> controls = container->getControls();
 		for(int i = 0; i < controls.size(); i++) {
-			const char *id = controls[i]->getId(), *submenuID;
+			const char *id = controls[i]->getId(), *submenuID, *parentID;
 			if(strncmp(id, "submenu_", 8) != 0) {
 				enableListener(enable, controls[i], listener, evtFlags);
+			} else {
+				parentID = MyNode::concat(2, "parent_", id+8);
+				if(_mainMenu->getControl(parentID) == NULL)
+					enableListener(enable, controls[i], listener, evtFlags);
 			}
 			if(strncmp(id, "parent_", 7) == 0) {
 				submenuID = MyNode::concat(2, "submenu_", id+7);
@@ -1526,8 +1572,7 @@ AppForm::AppForm(const char *id) {
 	app = (T4TApp*) Game::getInstance();
 	_id = id;
 	_url = "";
-	std::string containerId = std::string("form_") + id;
-	_container = (Container*)app->_mainMenu->getControl(containerId.c_str());
+	_container = Form::create(MyNode::concat(2, "res/common/main.form#", id));
 }
 
 void AppForm::show() {
@@ -1654,8 +1699,8 @@ void T4TApp::commitAction() {
 	delAll(_undone); //can't redo anything once something else is done
 	_history.push_back(_action);
 	_action = NULL;
-	_undo->setEnabled(true);
-	_redo->setEnabled(false);
+	if(_undo) _undo->setEnabled(true);
+	if(_redo) _redo->setEnabled(false);
 }
 
 void T4TApp::undoLastAction() {
@@ -1707,9 +1752,9 @@ void T4TApp::undoLastAction() {
 	}
 	if(allowRedo) {
 		_undone.push_back(action);
-		_redo->setEnabled(true);
+		if(_redo) _redo->setEnabled(true);
 	}
-	if(_history.empty()) _undo->setEnabled(false);
+	if(_undo && _history.empty()) _undo->setEnabled(false);
 }
 
 void T4TApp::redoLastAction() {
@@ -1756,8 +1801,8 @@ void T4TApp::redoLastAction() {
 		action->nodes[0] = dropBall(ref->getTranslationWorld());
 	}
 	_history.push_back(action);
-	_undo->setEnabled(true);
-	if(_undone.empty()) _redo->setEnabled(false);
+	if(_undo) _undo->setEnabled(true);
+	if(_redo && _undone.empty()) _redo->setEnabled(false);
 }
 
 void T4TApp::swapTransform(MyNode *n1, MyNode *n2) {

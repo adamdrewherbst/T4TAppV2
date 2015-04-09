@@ -1,6 +1,8 @@
 #ifndef MYNODE_H_
 #define MYNODE_H_
 
+#define NODE_FILE_VERSION "1.0"
+
 #include "Project.h"
 #include <curl/curl.h>
 
@@ -18,6 +20,7 @@ public:
 	};
 
 	std::string _type; //which item this is from the catalog
+	std::string _version; //current version of this model
 	int _typeCount; //number of clones of this model currently in the simulation
 	bool _wireframe, //drawing option for debugging
 		_chain, _loop; //whether node is treated as vertex chain or triangle mesh
@@ -68,6 +71,7 @@ public:
 	static MyNode* cloneNode(Node *node);
 	
 	std::string resolveFilename(const char *filename = NULL);
+	static std::vector<std::string> getVersions(const char *filename);
 	bool loadData(const char *filename = NULL, bool doPhysics = true);
 	void writeData(const char *filename = NULL, bool modelSpace = true);
 	void uploadData(const char *url, const char *rootId = NULL);
@@ -82,7 +86,7 @@ public:
 	void updateCamera(bool doPatches = true);
 	void mergeVertices(float threshold);
 	void calculateHulls();
-	void setColor(float r, float g, float b);
+	void setColor(float r, float g, float b, bool save = true, bool recur = false);
 	Project::Element* getElement();
 	Project::Element* getBaseElement();
 

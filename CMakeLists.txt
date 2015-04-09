@@ -157,14 +157,14 @@ set(GAME_SRC
 	src/HullMode.cpp
 	#src/Lever.cpp
 	#src/Pulley.cpp
-	src/ToolMode.cpp
+	#src/ToolMode.cpp
 	#src/ToolCGAL.cpp
 	src/NavigateMode.cpp
-	src/PositionMode.cpp
-	src/ConstraintMode.cpp
-	src/StringMode.cpp
-	src/TestMode.cpp
-	src/TouchMode.cpp
+	#src/PositionMode.cpp
+	#src/ConstraintMode.cpp
+	#src/StringMode.cpp
+	#src/TestMode.cpp
+	#src/TouchMode.cpp
 )
 
 add_executable(${GAME_NAME}

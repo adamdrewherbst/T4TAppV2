@@ -518,6 +518,7 @@ MyNode* MyNode::create(const char *id) {
 
 void MyNode::init() {
 	_node = this;
+	_version = "1.0";
 	_project = NULL;
 	_element = NULL;
     app = (T4TApp*) Game::getInstance();
@@ -1010,6 +1011,43 @@ void MyNode::clearNode() {
 	app->removeConstraints(this, NULL, true);
 }
 
+std::vector<std::string> MyNode::getVersions(const char *filename) {
+	std::vector<std::string> versions;
+
+	std::unique_ptr<Stream> stream(FileSystem::open(filename));
+	if (stream.get() == nullptr) return versions;
+	stream->rewind();
+	
+	std::string str, token;
+	char line[2048];
+	std::istringstream in;
+	
+	str = stream->readLine(line, 2048);
+	in.clear();
+	in.str(str);
+	in >> token;
+	if(token.compare("file_version") != 0) {
+		stream->close();
+		return versions;
+	}
+	in >> token;
+	versions.push_back(token);
+	
+	str = stream->readLine(line, 2048);
+	in.clear();
+	in.str(str);
+	in >> token;
+	if(token.compare("model_version") != 0) {
+		stream->close();
+		return versions;
+	}
+	in >> token;
+	versions.push_back(token);
+	
+	stream->close();
+	return versions;
+}
+
 bool MyNode::loadData(const char *file, bool doPhysics)
 {
 	//ensure the file is valid
@@ -1030,15 +1068,48 @@ bool MyNode::loadData(const char *file, bool doPhysics)
 	_typeCount = 0;
 
 	char line[2048];
-	std::string str;
+	std::string str, token;
 	short i, j, k, m, n;
     float x, y, z, w;
 	std::istringstream in;
+	
+	//check the file version is the latest
 	str = stream->readLine(line, 2048);
 	in.clear();
 	in.str(str);
-	in >> _type;
+	in >> token;
+	bool sameVersion = false;
+	if(token.compare("file_version") == 0) {
+		in >> token;
+		if(token.compare(NODE_FILE_VERSION) == 0) sameVersion = true;
+	}
+	if(!sameVersion) {
+		GP_WARN("Node file %s is not version %s", filename.c_str(), NODE_FILE_VERSION);
+		stream->close();
+		return false;
+	}
+	
+	//get the version # of this particular model
+	str = stream->readLine(line, 2048);
+	in.clear();
+	in.str(str);
+	in >> token;
+	if(token.compare("model_version") == 0) {
+		in >> _version;
+		str = stream->readLine(line, 2048);
+		in.clear();
+		in.str(str);
+		in >> token;
+	}
+	_type = token;
+	
+	//read the node data
 	if(_type.compare("root") != 0) { //this is a physical node, not just a root node
+		str = stream->readLine(line, 2048);
+		in.clear();
+		in.str(str);
+		in >> x >> y >> z;
+		_color.set(x, y, z);
 		str = stream->readLine(line, 2048);
 		in.clear();
 		in.str(str);
@@ -1262,11 +1333,14 @@ void MyNode::writeData(const char *file, bool modelSpace) {
 	std::string line;
 	std::ostringstream os;
 	Vector3 vec;
+	os << "file_version " << NODE_FILE_VERSION << endl; //version
+	os << "model_version " << _version << endl;
 	os << _type << endl;
 	line = os.str();
 	stream->write(line.c_str(), sizeof(char), line.length());
 	if(_type.compare("root") != 0) {
 		os.str("");
+		os << _color.x << "\t" << _color.y << "\t" << _color.z << endl;
 		Vector3 axis, vec, translation, scale;
 		Quaternion rotation;
 		if(getParent() != NULL && isStatic()) {
@@ -1844,8 +1918,8 @@ bool MyNode::getTouchPoint(int x, int y, Vector3 *point, Vector3 *normal) {
 	return false;
 }
 
-void MyNode::setColor(float r, float g, float b) {
-	_color.set(r, g, b);
+void MyNode::setColor(float r, float g, float b, bool save, bool recur) {
+	Vector3 color(r, g, b);
 	Model *model = getModel();
 	if(model) {
 		Material *mat = model->getMaterial();
@@ -1858,13 +1932,14 @@ void MyNode::setColor(float r, float g, float b) {
 					if(effect) {
 						Uniform *amb = effect->getUniform("u_ambientColor");
 						if(amb) {
-							pass->getParameter("u_ambientColor")->setValue(_color);
+							pass->getParameter("u_ambientColor")->setValue(color);
 						}
 					}
 				}
 			}
 		}
 	}
+	if(save) _color = color;
 }
 
 bool MyNode::isStatic() {
@@ -2115,16 +2190,21 @@ void MyNode::updateMaterial() {
 	if(scene == NULL) return;
 	Node *lightNode = scene->findNode("lightNode");
 	if(lightNode == NULL) return;
+	Light *light = lightNode->getLight();
+	if(light == NULL) return;
 	Technique *technique = getModel()->getMaterial()->getTechnique();
 	if(technique == NULL) return;
-	technique->getParameter("u_directionalLightColor[0]")->setValue(Vector3(1.0f, 1.0f, 1.0f));
+	technique->getParameter("u_directionalLightColor[0]")->setValue(light->getColor());
 	technique->getParameter("u_directionalLightDirection[0]")->bindValue(lightNode, &Node::getForwardVectorView);
 }
 
 void MyNode::setBase() {
 	_baseTranslation = getTranslation();
-	_baseRotation = getRotation();
 	_baseScale = getScale();
+	//baseRotation * groundRotation = getRotation() => baseRotation = getRotation() * groundRotationInv
+	Quaternion groundRotInv;
+	_groundRotation.inverse(&groundRotInv);
+	_baseRotation = getRotation() * groundRotInv;
 }
 
 void MyNode::baseTranslate(const Vector3& delta) {

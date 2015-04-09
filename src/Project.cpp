@@ -15,7 +15,7 @@ Project::Project(const char* id) : Mode::Mode(id) {
 	Quaternion lightRot;
 	Quaternion::createFromAxisAngle(Vector3(0, 1, 0), 60 * M_PI/180, &lightRot);
 	lightNode->setRotation(lightRot);
-	light->setColor(0.6f, 0.6f, 0.6f);
+	light->setColor(0.8f, 0.8f, 0.8f);
 	_camera->getNode()->addChild(lightNode);
 
 	_nodeId = _id;
@@ -39,6 +39,9 @@ Project::Project(const char* id) : Mode::Mode(id) {
 }
 
 void Project::setupMenu() {
+
+	float zIndex = 5;
+	
 	_numElements = _elements.size();
 
 	_container = app->addControl <Container> (app->_stage, MyNode::concat(2, "mode_", _id.c_str()), "hiddenContainer");
@@ -49,18 +52,21 @@ void Project::setupMenu() {
 	_controls->setPosition(20, 10);
 	_controls->setLayout(Layout::LAYOUT_VERTICAL);
 	_controls->setConsumeInputEvents(true);
-	_controls->setZIndex(5);
+	_controls->setZIndex(zIndex);
 
 	_subModePanel = app->addControl <Container> (_controls, "subMode", "hiddenContainer");
 	_subModePanel->setLayout(Layout::LAYOUT_VERTICAL);
 	Button *button = app->addControl <Button> (_subModePanel, "build", NULL, -1, 40);
 	button->setText("Build");
+	button->setZIndex(zIndex);
 	button = app->addControl <Button> (_subModePanel, "test", NULL, -1, 40);
 	button->setText("Test");
+	button->setZIndex(zIndex);
 
 	//add a launch button
 	_launchButton = app->addControl <Button> (_controls, "launch", NULL, -1, 40);
 	_launchButton->setText("Launch");
+	_launchButton->setZIndex(zIndex);
 
 	//add a button for each element to choose its item and edit it
 	short i, j, n;
@@ -70,6 +76,7 @@ void Project::setupMenu() {
 		j = (i+1) % _numElements;
 		button = app->addControl <Button> (_elementContainer, _elements[j]->_id.c_str(), NULL, -1, 40);
 		button->setText(_elements[j]->_name.c_str());
+		button->setZIndex(zIndex);
 		if(_elements[j]->_parent) button->setEnabled(false);
 	}
 
@@ -85,6 +92,7 @@ void Project::setupMenu() {
 		ImageControl *button = app->addControl <ImageControl> (_moveContainer, _moveModes[i].c_str(),
 			"imageSquare", 50.0f, 50.0f);
 		button->setImage(MyNode::concat(3, "res/png/", _moveModes[i].c_str(), ".png"));
+		button->setZIndex(zIndex);
 	}
 
 	//add a button for each action that any element has - we will enable them on the fly for the selected element
@@ -98,6 +106,7 @@ void Project::setupMenu() {
 			if(_actionContainer->getControl(action) != NULL) continue;
 			ImageControl *button = app->addControl <ImageControl> (_actionContainer, action, "imageSquare", 50.0f, 50.0f);
 			button->setImage(MyNode::concat(3, "res/png/", action, ".png"));
+			button->setZIndex(zIndex);
 			_numActions++;
 		}
 	}
@@ -105,6 +114,7 @@ void Project::setupMenu() {
 	
 	button = app->addControl <Button> (_controls, "save", NULL, -1, 40);
 	button->setText("Save");
+	button->setZIndex(zIndex);
 	
 	app->addListener(_controls, this);
 	_container->setVisible(false);
@@ -126,13 +136,6 @@ void Project::controlEvent(Control *control, Control::Listener::EventType evt) {
 			_moveMode = -1;
 			break;
 		}
-	} else if(strncmp(id, "comp_", 5) == 0) {
-		app->_componentMenu->setVisible(false);
-		if(element) element->setNode(id+5);
-		else _currentNodeId = id+5;
-	} else if(strcmp(id, "componentCancel") == 0) {
-		app->_componentMenu->setVisible(false);
-		_inSequence = false;
 	} else if(_moveContainer->getControl(id) == control) {
 		short n = _moveModes.size(), i;
 		for(i = 0; i < n; i++) {
@@ -156,6 +159,23 @@ void Project::controlEvent(Control *control, Control::Listener::EventType evt) {
 	}
 }
 
+bool Project::selectItem(const char *id) {
+	Element *element = getEl();
+	if(element) element->setNode(id);
+	else _currentNodeId = id;
+	return true;
+}
+
+bool Project::setSelectedNode(MyNode *node, Vector3 point) {
+	bool changed = Mode::setSelectedNode(node, point);
+	//enable all the appropriate buttons for the selected element
+	/*if(node == NULL) return changed;
+	Element *element = node->_element;
+	if(!element) return changed;
+	short n = _elements.size(), i;
+	for(i = 0; i < n; i++) if(_elements[i].get() == element) setCurrentElement(i);*/
+}
+
 bool Project::touchEvent(Touch::TouchEvent evt, int x, int y, unsigned int contactIndex) {
 	MyNode *touchNode = getTouchNode(); //get the current node first in case we release and thus set it to null
 	Mode::touchEvent(evt, x, y, contactIndex);
@@ -166,6 +186,7 @@ bool Project::touchEvent(Touch::TouchEvent evt, int x, int y, unsigned int conta
 		Element *current = getEl();
 		if(evt == Touch::TOUCH_PRESS && current && current->_currentNodeId
 		  && (current->_isOther || current->_parent == touchNode->getBaseElement())) {
+			setSelectedNode(NULL);
 			current->addNode();
 		}
 		//otherwise just trigger whatever node we clicked
@@ -261,8 +282,6 @@ void Project::setActive(bool active) {
 		app->_ground->setVisible(false);
 		app->_componentMenu->setFocus();
 		app->filterItemMenu();
-		app->removeListener(app->_componentMenu, app);
-		app->addListener(app->_componentMenu, this);
 		Control *finish = _controls->getControl("finishElement");
 		if(finish) finish->setEnabled(true);
 		app->getPhysicsController()->setGravity(Vector3::zero());
@@ -279,8 +298,6 @@ void Project::setActive(bool active) {
 		if(_subMode == 0) _rootNode->setRest();
 		_rootNode->enablePhysics(false);
 		app->filterItemMenu();
-		app->removeListener(app->_componentMenu, this);
-		app->addListener(app->_componentMenu, app);
 		app->getPhysicsController()->setGravity(app->_gravity);
 		app->getPhysicsController()->removeStatusListener(this);
 	}
@@ -585,6 +602,7 @@ void Project::Element::setComplete(bool complete) {
 	_complete = complete;
 	cout << _id << " complete" << endl;
 	for(short i = 0; i < _children.size(); i++) {
+		if(!complete) _children[i]->setComplete(false);
 		cout << "\tenabling " << _children[i]->_id << endl;
 		Control *button = _project->_elementContainer->getControl(_children[i]->_id.c_str());
 		if(button) button->setEnabled(complete);
@@ -630,7 +648,7 @@ bool Project::Element::touchEvent(Touch::TouchEvent evt, int x, int y, unsigned 
 	if(_touchInd >= 0) node = _nodes[_touchInd].get();
 	if(node) parent = dynamic_cast<MyNode*>(node->getParent());
 	//move the node as needed
-	if(node && parent && _project->_moveMode >= 0) {
+	if(node && parent && parent != _project->_rootNode && _project->_moveMode >= 0) {
 		switch(_project->_moveMode) {
 			case 0: { //translate in plane
 				switch(evt) {
@@ -685,6 +703,9 @@ bool Project::Element::touchEvent(Touch::TouchEvent evt, int x, int y, unsigned 
 						float deltaAngle = _project->_touchPt.deltaPix().x * 2 * M_PI / 400.0f;
 						Quaternion rot(node->getJointNormal(), deltaAngle);
 						node->baseRotate(rot);
+						cout << "base rotating " << node->getId() << " from "
+							<< app->pq(node->_baseRotation) << " by " << app->pq(rot) << endl;
+						cout << "  now at " << app->pq(node->getRotation()) << endl;
 						break;
 					} case Touch::TOUCH_RELEASE: {
 						addPhysics(_touchInd);

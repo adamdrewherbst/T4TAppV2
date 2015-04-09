@@ -81,8 +81,18 @@ bool Mode::setSubMode(short mode) {
 
 bool Mode::setSelectedNode(MyNode *node, Vector3 point) {
 	bool changed = _selectedNode != node;
+	//unhighlight the currently selected node
+	if(_selectedNode) {
+		Vector3 prev = _selectedNode->_color;
+		_selectedNode->setColor(prev.x, prev.y, prev.z, true, true);
+		cout << "setting " << _selectedNode->getId() << " color back to " << app->pv(prev) << endl;
+	}
 	_selectedNode = node;
 	_selectPoint = point;
+	//highlight the selected node and its children by changing their color
+	if(_selectedNode) {
+		_selectedNode->setColor(0.6f, 1.0f, 0.6f, false, true);
+	}
 	return changed;
 }
 

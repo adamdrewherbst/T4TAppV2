@@ -14,14 +14,31 @@ void T4TApp::generateModels() {
 	std::string modelDir = "http://www.t4t.org/nasa-app/models/", url = modelDir + "models.list", file;
 	char *text = curlFile(url.c_str());
 	if(!text) return;
-	std::string modelList = text, modelStr;
+	std::string modelList = text, modelStr, token, version;
 	std::istringstream in(modelList);
+	in >> token;
+	bool sameVersion = false;
+	if(token.compare("file_version") == 0) {
+		in >> version;
+		if(version.compare(NODE_FILE_VERSION) == 0) sameVersion = true;
+	}
+	if(!sameVersion) {
+		GP_ERROR("Online model list is not version %s", NODE_FILE_VERSION);
+		return;
+	}
 	while(in) {
 		in >> modelStr;
-		if(!modelStr.empty()) {
-			cout << "loading model " << modelStr << endl;
+		if(in.good() && !modelStr.empty()) {
+			cout << "loading model " << modelStr << " [version " << version << "]" << endl;
 			url = modelDir + modelStr + ".node";
 			file = "res/models/" + modelStr + ".node";
+			in >> version;
+			std::vector<std::string> versions = MyNode::getVersions(file.c_str());
+			if(versions.size() == 2
+			  && versions[0].compare(NODE_FILE_VERSION) == 0 && versions[1].compare(version) == 0) {
+				cout << "  already loaded and latest version" << endl;
+				continue;
+			}
 			if(!curlFile(url.c_str(), file.c_str())) {
 				GP_WARN("Couldn't load model %s", modelStr.c_str());
 			}

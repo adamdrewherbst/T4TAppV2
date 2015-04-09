@@ -92,7 +92,7 @@ public:
 	T4TApp *app;
 	std::string _id, _url;
 	std::vector<std::string> _response;
-	Container *_container;
+	Form *_container;
 	std::map<std::string, std::string> _fields;
 	void (T4TApp::*_callback)(AppForm *form);
 	
@@ -158,9 +158,9 @@ public:
     int _tmpCount; //number of nodes whose info has been temporarily saved to disk
     
     //user interface
-    Form *_mainMenu;
+    Form *_mainMenu, *_componentMenu;
     Container *_sideMenu, *_stage, *_sceneMenu, *_machineMenu, *_modePanel,
-      *_textDialog, *_confirmDialog, *_overlay, *_cameraMenu, *_componentMenu, *_componentContainer;
+      *_textDialog, *_confirmDialog, *_overlay, *_cameraMenu, *_componentContainer;
     MenuFilter *_itemFilter;
     Label *_message, *_textPrompt, *_confirmMessage;
     TextBox *_textName;
@@ -246,8 +246,8 @@ public:
     std::string _sceneName;
 
 	Mode* getActiveMode();    
-    Project* getProject(const char *id);
-    MyNode* getProjectNode(const char *id);
+    Project* getProject(const char *id = NULL);
+    MyNode* getProjectNode(const char *id = NULL);
     void saveProject();
 
     Camera* getCamera();

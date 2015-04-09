@@ -94,6 +94,8 @@ public:
 	virtual void setupMenu();
 	void setActive(bool active);
 	bool setSubMode(short mode);
+	bool selectItem(const char *id);
+	bool setSelectedNode(MyNode *node, Vector3 point = Vector3::zero());
 	virtual void update();
 	Element* addElement(Element *element);
 	Element* getEl(short n = -1);

@@ -32,7 +32,7 @@ form mainMenu {
 			height = 50
 			text = Register
 		}
-		button parent_sceneMenu {
+		/*button parent_sceneMenu {
 			style = buttonStyle
 			autoWidth = true
 			height = 50
@@ -49,11 +49,11 @@ form mainMenu {
 			autoWidth = true
 			height = 50
 			text = Add Machine >>			
-		}
+		}*/
 		container modePanel {
 			style = hiddenContainer
 			autoWidth = true
-			height = 480
+			autoSize = AUTO_SIZE_HEIGHT
 			layout = LAYOUT_VERTICAL
 			scroll = SCROLL_VERTICAL
 
@@ -62,6 +62,10 @@ form mainMenu {
 				autoWidth = true
 				height = 40
 				text = Satellite
+				padding {
+					top = 0
+					bottom = 0
+				}
 			}
 			button rocket {
 				style = buttonStyle
@@ -105,7 +109,7 @@ form mainMenu {
 				height = 40
 				text = Hull
 			}
-			image navigate {
+			/*image navigate {
 				style = buttonStyle
 				autoWidth = true
 				height = 100
@@ -146,7 +150,13 @@ form mainMenu {
 				autoWidth = true
 				height = 100
 				path = res/png/string.png
-			}
+			}*/
+		}
+		button saveAll {
+			style = buttonStyle
+			autoWidth = true
+			height = 50
+			text = Save All
 		}
 		checkbox drawDebug {	
 			style = buttonStyle
@@ -158,7 +168,7 @@ form mainMenu {
 	}
 
 	//no more room on the side menu!
-	container floatPanel {
+	/*container floatPanel {
 		style = basicContainer
 		position = 220, 540
 		size = 165, 90
@@ -176,7 +186,7 @@ form mainMenu {
 			size = 70, 70
 			path = res/png/redo.png
 		}
-	}
+	}*/
 	
 	//the region of the screen where graphics are drawn and touches are handled
 	container stage {
@@ -251,116 +261,6 @@ form mainMenu {
 			layout = LAYOUT_ABSOLUTE
 		}
 		
-		container mode_position {
-			style = hiddenContainer
-			autoWidth = true
-			autoHeight = true
-			layout = LAYOUT_ABSOLUTE
-			
-			container controls {
-				style = basicContainer
-				position = 20, 10
-				size = 150, 420
-				layout = LAYOUT_VERTICAL
-				consumeInputEvents = true
-				zIndex = 5
-
-				container subMode {
-					style = hiddenContainer
-					autoWidth = true
-					height = 240
-					layout = LAYOUT_VERTICAL
-					
-					image translate {
-						style = imageWide
-						autoWidth = true
-						height = 80
-						path = res/png/translate.png
-					}
-					image rotate {
-						style = imageWide
-						autoWidth = true
-						height = 80
-						path = res/png/rotate.png
-					}
-					image groundFace {
-						style = imageWide
-						autoWidth = true
-						height = 80
-						path = res/png/groundFace.png
-					}
-				}
-				checkbox static {
-					style = buttonStyle
-					autoWidth = true
-					height = 50
-					text = Static
-					value = false
-				}
-				checkbox snap {
-					style = buttonStyle
-					autoWidth = true
-					height = 50
-					text = Snap to Grid
-					value = false
-				}
-				button delete {
-					style = buttonStyle
-					autoWidth = true
-					height = 50
-					text = Delete
-				}
-			}
-		}
-
-		container mode_constraint {
-			style = hiddenContainer
-			autoWidth = true
-			autoHeight = true
-			layout = LAYOUT_ABSOLUTE
-			
-			container controls {
-				style = basicContainer
-				position = 20, 10
-				size = 180, 450
-				layout = LAYOUT_VERTICAL
-				consumeInputEvents = true
-				zIndex = 5
-
-				container subMode {
-					style = hiddenContainer
-					autoWidth = true
-					autoHeight = true
-					layout = LAYOUT_VERTICAL
-
-					image axle {
-						style = imageSquare
-						autoWidth = true
-						height = 100
-						path = res/png/axle.png
-					}
-					image socket {
-						style = imageSquare
-						autoWidth = true
-						height = 100
-						path = res/png/socket.png
-					}
-					image spring {
-						style = imageSquare
-						autoWidth = true
-						height = 100
-						path = res/png/spring.png
-					}
-					image glue {
-						style = imageSquare
-						autoWidth = true
-						height = 100
-						path = res/png/glue.png
-					}
-				}
-			}
-		}
-
 		container mode_hull {
 			style = hiddenContainer
 			autoSize = AUTO_SIZE_BOTH
@@ -433,7 +333,7 @@ form mainMenu {
 					value = 1.0
 				}
 				textbox scaleText {
-					style = basic
+					style = TextBox
 					width = 100%
 					height = 50
 				}
@@ -476,10 +376,117 @@ form mainMenu {
 			}
 		}
 
+		/*container mode_position {
+			style = hiddenContainer
+			autoSize = AUTO_SIZE_BOTH
+			layout = LAYOUT_ABSOLUTE
+			
+			container controls {
+				style = basicContainer
+				position = 20, 10
+				size = 150, 420
+				layout = LAYOUT_VERTICAL
+				consumeInputEvents = true
+				zIndex = 5
+
+				container subMode {
+					style = hiddenContainer
+					autoWidth = true
+					height = 240
+					layout = LAYOUT_VERTICAL
+					
+					image translate {
+						style = imageWide
+						autoWidth = true
+						height = 80
+						path = res/png/translate.png
+					}
+					image rotate {
+						style = imageWide
+						autoWidth = true
+						height = 80
+						path = res/png/rotate.png
+					}
+					image groundFace {
+						style = imageWide
+						autoWidth = true
+						height = 80
+						path = res/png/groundFace.png
+					}
+				}
+				checkbox static {
+					style = buttonStyle
+					autoWidth = true
+					height = 50
+					text = Static
+					value = false
+				}
+				checkbox snap {
+					style = buttonStyle
+					autoWidth = true
+					height = 50
+					text = Snap to Grid
+					value = false
+				}
+				button delete {
+					style = buttonStyle
+					autoWidth = true
+					height = 50
+					text = Delete
+				}
+			}
+		}
+
+		container mode_constraint {
+			style = hiddenContainer
+			autoSize = AUTO_SIZE_BOTH
+			layout = LAYOUT_ABSOLUTE
+			
+			container controls {
+				style = basicContainer
+				position = 20, 10
+				size = 180, 450
+				layout = LAYOUT_VERTICAL
+				consumeInputEvents = true
+				zIndex = 5
+
+				container subMode {
+					style = hiddenContainer
+					autoWidth = true
+					autoHeight = true
+					layout = LAYOUT_VERTICAL
+
+					image axle {
+						style = imageSquare
+						autoWidth = true
+						height = 100
+						path = res/png/axle.png
+					}
+					image socket {
+						style = imageSquare
+						autoWidth = true
+						height = 100
+						path = res/png/socket.png
+					}
+					image spring {
+						style = imageSquare
+						autoWidth = true
+						height = 100
+						path = res/png/spring.png
+					}
+					image glue {
+						style = imageSquare
+						autoWidth = true
+						height = 100
+						path = res/png/glue.png
+					}
+				}
+			}
+		}
+
 		container mode_tool {
 			style = hiddenContainer
-			autoWidth = true
-			autoHeight = true
+			autoSize = AUTO_SIZE_BOTH
 			layout = LAYOUT_ABSOLUTE
 
 			container controls {
@@ -552,8 +559,7 @@ form mainMenu {
 
 		container mode_string {
 			style = hiddenContainer
-			autoWidth = true
-			autoHeight = true
+			autoSize = AUTO_SIZE_BOTH
 			layout = LAYOUT_ABSOLUTE
 			
 			container controls {
@@ -594,15 +600,13 @@ form mainMenu {
 
 		container mode_test {
 			style = hiddenContainer
-			autoWidth = true
-			autoHeight = true
+			autoSize = AUTO_SIZE_BOTH
 			layout = LAYOUT_ABSOLUTE
 		}
 
 		container mode_touch {			
 			style = hiddenContainer
-			autoWidth = true
-			autoHeight = true
+			autoSize = AUTO_SIZE_BOTH
 			layout = LAYOUT_ABSOLUTE
 
 			container controls {
@@ -640,7 +644,7 @@ form mainMenu {
 					value = false
 				}
 			}
-		}
+		}*/
 	}
 
 	//submenus - hidden until called, then positioned next to handle
@@ -700,35 +704,6 @@ form mainMenu {
 		}
 	}
 	
-	container submenu_componentMenu {
-		style = basicContainer
-		layout = LAYOUT_VERTICAL
-		zIndex = 20
-		consumeInputEvents = true
-		
-		container components {
-			style = hiddenContainer
-			layout = LAYOUT_FLOW
-			scroll = SCROLL_VERTICAL
-			width = 100%
-			height = 90%
-		}
-		container controls {
-			style = hiddenContainer
-			layout = LAYOUT_FLOW
-			alignment = ALIGN_BOTTOM_RIGHT
-			autoSize = AUTO_SIZE_WIDTH
-			height = 10%
-			
-			button componentCancel {
-				style = buttonStyle
-				autoSize = AUTO_SIZE_WIDTH
-				height = 40
-				text = Cancel
-			}
-		}
-	}
-
 	//MODAL DIALOGS - use hidden overlay with intermediate z-index to block other controls
 	container overlay {
 		style = hiddenContainer
@@ -794,55 +769,196 @@ form mainMenu {
 			text = No
 		}
 	}
+}
 
-	container form_loginDialog {
+form componentMenu {
+	theme = res/common/default.theme
+	style = basicContainer
+	layout = LAYOUT_VERTICAL
+	zIndex = 50
+	consumeInputEvents = true
+	visible = false
+	
+	container components {
 		style = basicContainer
-		font = res/common/arial14.gpb
 		layout = LAYOUT_FLOW
-		alignment = ALIGN_VCENTER_HCENTER
-		width = 350
-		autoSize = AUTO_SIZE_HEIGHT
-		zIndex = 100
-		consumeInputEvents = true
+		scroll = SCROLL_VERTICAL
+		width = 100%
+		height = 90%
+	}
+	container controls {
+		style = hiddenContainer
+		layout = LAYOUT_FLOW
+		alignment = ALIGN_BOTTOM_RIGHT
+		autoSize = AUTO_SIZE_WIDTH
+		height = 10%
+		
+		button componentCancel {
+			style = buttonStyle
+			autoSize = AUTO_SIZE_WIDTH
+			height = 40
+			text = Cancel
+		}
+	}
+}
 
-		container prompts {
-			style = hiddenContainer
-			layout = LAYOUT_VERTICAL
-			width = 45%
-			autoSize = AUTO_SIZE_HEIGHT
-			
-			label emailPrompt {
-				style = noBorder
-				size = 100%, 40
-				text = Email
-			}
-			label passwordPrompt {
-				style = noBorder
-				size = 100%, 40
-				text = Password
-			}
+form loginDialog {
+	theme = res/common/default.theme
+	style = basicContainer
+	layout = LAYOUT_FLOW
+	alignment = ALIGN_VCENTER_HCENTER
+	width = 350
+	autoSize = AUTO_SIZE_HEIGHT
+	zIndex = 100
+	consumeInputEvents = true
+
+	container prompts {
+		style = hiddenContainer
+		layout = LAYOUT_VERTICAL
+		width = 45%
+		autoSize = AUTO_SIZE_HEIGHT
+		
+		label emailPrompt {
+			style = noBorder
+			size = 100%, 40
+			text = Email
 		}
-		container fields {
-			style = hiddenContainer
-			layout = LAYOUT_VERTICAL
-			width = 45%
-			autoSize = AUTO_SIZE_HEIGHT
-			
-			textBox email {
-				style = basic
-				size = 100%, 40
-			}
-			textBox password {
-				style = basic
-				size = 100%, 40
-				inputMode = PASSWORD
-			}
+		label passwordPrompt {
+			style = noBorder
+			size = 100%, 40
+			text = Password
 		}
-		container buttons {
+	}
+	container fields {
+		style = hiddenContainer
+		layout = LAYOUT_VERTICAL
+		width = 45%
+		autoSize = AUTO_SIZE_HEIGHT
+		
+		textBox email {
+			style = TextBox
+			size = 100%, 40
+		}
+		textBox password {
+			style = TextBox
+			size = 100%, 40
+			inputMode = PASSWORD
+		}
+	}
+	container buttons {
+		style = hiddenContainer
+		layout = LAYOUT_FLOW
+		alignment = ALIGN_RIGHT
+		size = 320,70
+		
+		button cancel {
+			style = buttonStyle
+			autoSize = AUTO_SIZE_WIDTH
+			height = 40
+			text = Cancel
+			alignment = ALIGN_BOTTOM
+		}
+		button signup {
+			style = buttonStyle
+			autoSize = AUTO_SIZE_WIDTH
+			height = 40
+			text = Register
+			alignment = ALIGN_BOTTOM
+		}
+		button submit {
+			style = buttonStyle
+			autoSize = AUTO_SIZE_WIDTH
+			height = 40
+			text = Submit
+			alignment = ALIGN_BOTTOM
+		}
+	}
+}
+
+form registerDialog {
+	theme = res/common/default.theme
+	style = basicContainer
+	layout = LAYOUT_FLOW
+	alignment = ALIGN_VCENTER_HCENTER
+	width = 350
+	autoSize = AUTO_SIZE_HEIGHT
+	zIndex = 100
+	consumeInputEvents = true
+
+	container prompts {
+		style = hiddenContainer
+		layout = LAYOUT_VERTICAL
+		width = 45%
+		autoSize = AUTO_SIZE_HEIGHT
+		
+		label firstNamePrompt {
+			style = noBorder
+			size = 100%, 40
+			text = First Name
+		}
+		label lastNamePrompt {
+			style = noBorder
+			size = 100%, 40
+			text = Last Name
+		}
+		label emailPrompt {
+			style = noBorder
+			size = 100%, 40
+			text = Email Address
+		}
+		label passwordPrompt {
+			style = noBorder
+			size = 100%, 40
+			text = Password
+		}
+		label confirmPasswordPrompt {
+			style = noBorder
+			size = 100%, 40
+			text = Re-enter Password
+		}
+	}
+	container fields {
+		style = hiddenContainer
+		layout = LAYOUT_VERTICAL
+		width = 45%
+		autoSize = AUTO_SIZE_HEIGHT
+		
+		textBox firstName {
+			style = TextBox
+			size = 100%, 40
+		}
+		textBox lastName {
+			style = TextBox
+			size = 100%, 40
+		}
+		textBox email {
+			style = TextBox
+			size = 100%, 40
+		}
+		textBox password {
+			style = TextBox
+			size = 100%, 40
+			inputMode = PASSWORD
+		}
+		textBox passwordConfirm {
+			style = TextBox
+			size = 100%, 40
+			inputMode = PASSWORD
+		}
+	}
+	container buttons {
+		style = hiddenContainer
+		layout = LAYOUT_FLOW
+		alignment = ALIGN_RIGHT
+		size = 100%, 70
+		
+		container buttonWrapper {
 			style = hiddenContainer
 			layout = LAYOUT_FLOW
-			alignment = ALIGN_RIGHT
-			
+			alignment = ALIGN_BOTTOM_RIGHT
+			width = 210
+			autoSize = AUTO_SIZE_HEIGHT
+		
 			button cancel {
 				style = buttonStyle
 				size = 100,40
@@ -855,104 +971,4 @@ form mainMenu {
 			}
 		}
 	}
-	
-	container form_registerDialog {
-		style = basicContainer
-		font = res/common/arial14.gpb
-		layout = LAYOUT_FLOW
-		alignment = ALIGN_VCENTER_HCENTER
-		width = 350
-		autoSize = AUTO_SIZE_HEIGHT
-		zIndex = 100
-		consumeInputEvents = true
-
-		container prompts {
-			style = hiddenContainer
-			layout = LAYOUT_VERTICAL
-			width = 45%
-			autoSize = AUTO_SIZE_HEIGHT
-			
-			label firstNamePrompt {
-				style = noBorder
-				size = 100%, 40
-				text = First Name
-			}
-			label lastNamePrompt {
-				style = noBorder
-				size = 100%, 40
-				text = Last Name
-			}
-			label emailPrompt {
-				style = noBorder
-				size = 100%, 40
-				text = Email Address
-			}
-			label passwordPrompt {
-				style = noBorder
-				size = 100%, 40
-				text = Password
-			}
-			label confirmPasswordPrompt {
-				style = noBorder
-				size = 100%, 40
-				text = Re-enter Password
-			}
-		}
-		container fields {
-			style = hiddenContainer
-			layout = LAYOUT_VERTICAL
-			width = 45%
-			autoSize = AUTO_SIZE_HEIGHT
-			
-			textBox firstName {
-				style = basic
-				size = 100%, 40
-			}
-			textBox lastName {
-				style = basic
-				size = 100%, 40
-			}
-			textBox email {
-				style = basic
-				size = 100%, 40
-			}
-			textBox password {
-				style = basic
-				size = 100%, 40
-				inputMode = PASSWORD
-			}
-			textBox passwordConfirm {
-				style = basic
-				size = 100%, 40
-				inputMode = PASSWORD
-			}
-		}
-		container buttons {
-			style = hiddenContainer
-			layout = LAYOUT_FLOW
-			alignment = ALIGN_RIGHT
-			size = 100%, 70
-			
-			container buttonWrapper {
-				style = hiddenContainer
-				layout = LAYOUT_FLOW
-				alignment = ALIGN_BOTTOM_RIGHT
-				width = 210
-				autoSize = AUTO_SIZE_HEIGHT
-			
-				button cancel {
-					style = buttonStyle
-					size = 100,40
-					text = Cancel
-				}
-				button submit {
-					style = buttonStyle
-					size = 100,40
-					text = Submit
-				}
-			}
-		}
-	}
 }
-
-
