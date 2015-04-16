@@ -4,7 +4,7 @@
 
 namespace T4T {
 
-CEV::CEV() : Project::Project("CEV") {
+CEV::CEV() : Project::Project("CEV", "Crew Exploration Vehicle") {
 
 	app->addItem("podBase", 2, "general", "body");
 	app->addItem("hatch1", 2, "general", "hatch");

@@ -5,7 +5,7 @@
 namespace T4T {
 
 NavigateMode::NavigateMode() 
-  : Mode::Mode("navigate") {
+  : Mode::Mode("navigate", "Navigate") {
 	_doSelect = false;
 }
 

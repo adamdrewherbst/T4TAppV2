@@ -4,7 +4,7 @@
 
 namespace T4T {
 
-Project::Project(const char* id) : Mode::Mode(id) {
+Project::Project(const char* id, const char *name) : Mode::Mode(id, name) {
 
 	_typeCount = -1;
 	_scene = Scene::load("res/common/game.scene");
@@ -129,8 +129,9 @@ void Project::controlEvent(Control *control, Control::Listener::EventType evt) {
 	if(_numElements > 0 && _elementContainer->getControl(id) == control) {
 		for(short i = 0; i < _elements.size(); i++) if(_elements[i]->_id.compare(id) == 0) {
 			setCurrentElement(i);
+			_inSequence = false;
 			if(!getEl()->_complete) {
-				app->promptItem(getEl()->_filter);
+				promptItem();
 				cout << "prompting for " << getEl()->_filter << endl;
 			}
 			_moveMode = -1;
@@ -208,6 +209,7 @@ void Project::deleteSelected() {
 	for(i = 0; i < n; i++) {
 		if(el->_nodes[i].get() == _selectedNode) {
 			el->deleteNode(i);
+			setSelectedNode(NULL);
 			break;
 		}
 	}
@@ -359,7 +361,13 @@ void Project::promptNextElement() {
 	}
 	else _inSequence = false;
 	if(!_inSequence) return;
-	app->promptItem(getEl()->_filter);
+	promptItem();
+}
+
+void Project::promptItem() {
+	std::ostringstream os;
+	os << _name << " - " << getEl()->_name;
+	app->promptItem(getEl()->_filter, os.str().c_str());
 }
 
 void Project::launch() {
@@ -545,7 +553,7 @@ void Project::Element::removeAction(const char *action) {
 
 void Project::Element::doAction(const char *action) {
 	if(strcmp(action, "add") == 0) {
-		app->promptItem(_filter);
+		_project->promptItem();
 	}
 }
 
@@ -592,7 +600,7 @@ void Project::Element::placeNode(short n) {
 		MyNode *parent = _project->getTouchNode(_project->getLastTouchEvent());
 			//_isOther ? _project->getTouchNode(_project->getLastTouchEvent()) : _parent->getNode();
 		if(parent && parent != node) {
-			cout << "attaching to " << parent->getId() << " at " << app->pv(point) << endl;
+			cout << "attaching to " << parent->getId() << " at " << app->pv(point) << " [" << app->pv(normal) << "]" << endl;
 			node->attachTo(parent, point, normal);
 		}
 	}

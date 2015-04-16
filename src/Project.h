@@ -88,12 +88,13 @@ public:
 	
 	bool _saveFlag; //whether this project needs to be saved
 
-	Project(const char* id);
+	Project(const char* id, const char *name);
 
 	virtual void sync();
 	virtual void setupMenu();
 	void setActive(bool active);
 	bool setSubMode(short mode);
+	void promptItem();
 	bool selectItem(const char *id);
 	bool setSelectedNode(MyNode *node, Vector3 point = Vector3::zero());
 	virtual void update();

@@ -87,6 +87,8 @@ void T4TApp::initialize()
 	//for selecting items	
 	_componentMenu = Form::create("res/common/main.form#componentMenu");
 	_componentContainer = (Container*) _componentMenu->getControl("components");
+	_componentHeader = (Container*) _componentMenu->getControl("header");
+	_componentTitle = (Label*) _componentHeader->getControl("title");
 
 	//dialogs
 	_login = (Button*)_sideMenu->getControl("login");
@@ -390,19 +392,27 @@ void T4TApp::loadProjects(bool saveOnly) {
 	}	
 }
 
+size_t curl_write(void *ptr, size_t size, size_t count, void *data) {
+	Stream *stream = (Stream*) data;
+	stream->write(ptr, size, count);
+	GP_WARN("curl wrote %d bytes to stream %d", count, stream);
+	return count;
+}
+
 char* T4TApp::curlFile(const char *url, const char *filename) {
 	bool returnText = filename == NULL;
 	if(returnText) filename = "res/tmp/tmpfile";
-	FILE *fd = FileSystem::openFile(filename, "wb");
+	Stream *stream = FileSystem::open(filename, FileSystem::WRITE);
+	GP_WARN("curling %s to %s with stream %d", url, filename, stream);
 	CURL *curl = curl_easy_init();
 	CURLcode res;
 	curl_easy_setopt(curl, CURLOPT_URL, url);
-	curl_easy_setopt(curl, CURLOPT_WRITEDATA, fd);
-	curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, fwrite);
+	curl_easy_setopt(curl, CURLOPT_WRITEDATA, stream);
+	curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, curl_write);
 	curl_easy_setopt(curl, CURLOPT_FAILONERROR, 1L);
 	res = curl_easy_perform(curl);
+	stream->close();
 	curl_easy_cleanup(curl);
-	fclose(fd);
 	
 	if(res != CURLE_OK) {
 		GP_WARN("Couldn't load file %s: %s", url, curl_easy_strerror(res));
@@ -726,8 +736,10 @@ void T4TApp::filterItemMenu(const char *tag) {
 	}
 }
 
-void T4TApp::promptItem(const char *tag) {
+void T4TApp::promptItem(const char *tag, const char *title) {
 	filterItemMenu(tag);
+	_componentTitle->setText(title);
+	if(!title) _componentHeader->setVisible(false);
 	_componentMenu->setVisible(true);
 }
 
@@ -1409,11 +1421,11 @@ PhysicsConstraint* T4TApp::addConstraint(MyNode *n1, MyNode *n2, int id, const c
 	for(i = 0; i < 2; i++) {
 		if(append) {
 			constraint = new nodeConstraint();
-			node[i]->_constraints.push_back(constraint);
+			node[i]->_constraints.push_back(std::unique_ptr<nodeConstraint>(constraint));
 		}
 		else {
 			for(j = 0; j < node[i]->_constraints.size() && node[i]->_constraints[j]->id != id; j++);
-			constraint = node[i]->_constraints[j];
+			constraint = node[i]->_constraints[j].get();
 		}
 		constraint->other = node[(i+1)%2]->getId();
 		constraint->type = type;
@@ -1440,12 +1452,12 @@ void T4TApp::addConstraints(MyNode *node) {
 	nodeConstraint *c1, *c2;
 	unsigned short i, j;
 	for(i = 0; i < node->_constraints.size(); i++) {
-		c1 = node->_constraints[i];
+		c1 = node->_constraints[i].get();
 		if(c1->id >= 0) continue;
 		MyNode *other = dynamic_cast<MyNode*>(_activeScene->findNode(c1->other.c_str()));
 		if(!other || !other->getCollisionObject()) continue;
 		for(j = 0; j < other->_constraints.size(); j++) {
-			c2 = other->_constraints[j];
+			c2 = other->_constraints[j].get();
 			if(c2->other.compare(node->getId()) == 0 && c2->type.compare(c1->type) == 0 && c2->id < 0) {
 				c1->id = _constraintCount;
 				c2->id = _constraintCount++;
@@ -1461,12 +1473,12 @@ void T4TApp::removeConstraints(MyNode *node, MyNode *otherNode, bool erase) {
 	nodeConstraint *c1, *c2;
 	unsigned short i, j;
 	for(i = 0; i < node->_constraints.size(); i++) {
-		c1 = node->_constraints[i];
+		c1 = node->_constraints[i].get();
 		if(c1->id < 0) continue;
 		MyNode *other = dynamic_cast<MyNode*>(_activeScene->findNode(c1->other.c_str()));
 		if(!other || (otherNode && other != otherNode)) continue;
 		for(j = 0; j < other->_constraints.size(); j++) {
-			c2 = other->_constraints[j];
+			c2 = other->_constraints[j].get();
 			if(c2->other.compare(node->getId()) == 0 && c2->type.compare(c1->type) == 0 && c2->id == c1->id) {
 				_constraints.erase(c1->id);
 				if(erase) {
@@ -1488,7 +1500,7 @@ void T4TApp::removeConstraints(MyNode *node, MyNode *otherNode, bool erase) {
 void T4TApp::enableConstraints(MyNode *node, bool enable) {
 	int id;
 	for(short i = 0; i < node->_constraints.size(); i++) {
-		nodeConstraint *constraint = node->_constraints[i];
+		nodeConstraint *constraint = node->_constraints[i].get();
 		id = constraint->id;
 		if(id < 0 || _constraints.find(id) == _constraints.end() || (!enable && !_constraints[id]->isEnabled())) continue;
 		_constraints[id]->setEnabled(enable);
@@ -1504,7 +1516,7 @@ void T4TApp::reloadConstraint(MyNode *node, nodeConstraint *constraint) {
 	if(!other) return;
 	nodeConstraint *otherConstraint;
 	for(short i = 0; i < other->_constraints.size(); i++) {
-		otherConstraint = other->_constraints[i];
+		otherConstraint = other->_constraints[i].get();
 		if(otherConstraint->id == id) {
 			addConstraint(node, other, id, constraint->type.c_str(), constraint->rotation, constraint->translation,
 			  otherConstraint->rotation, otherConstraint->translation, constraint->isChild || otherConstraint->isChild,
@@ -1684,7 +1696,7 @@ void T4TApp::setAction(const char *type, ...) {
 			node = action->nodes[i];
 			ref = action->refNodes[i];
 			ref->set(node);
-			ref->_constraints.push_back(constraint);
+			ref->_constraints.push_back(std::unique_ptr<nodeConstraint>(constraint));
 		}
 	} else if(strcmp(type, "tool") == 0) {
 		ref->copyMesh(node);
@@ -1721,7 +1733,7 @@ void T4TApp::undoLastAction() {
 	} else if(strcmp(type, "constraint") == 0) {
 		nodeConstraint *constraint[2];
 		short i;
-		for(i = 0; i < 2; i++) constraint[i] = action->nodes[i]->_constraints.back();
+		for(i = 0; i < 2; i++) constraint[i] = action->nodes[i]->_constraints.back().get();
 		if(constraint[0]->id < 0 || constraint[0]->id != constraint[1]->id) {
 			GP_WARN("ID mismatch undoing constraint: %d <> %d", constraint[0]->id, constraint[1]->id);
 			allowRedo = false;
@@ -1735,7 +1747,8 @@ void T4TApp::undoLastAction() {
 				for(i = 0; i < 2; i++) {
 					node = action->nodes[i];
 					ref = action->refNodes[i];
-					ref->_constraints.push_back(popBack(node->_constraints));
+					ref->_constraints.push_back(std::move(node->_constraints.back()));
+					node->_constraints.pop_back();
 					if(i == 1) {
 						_scene->addNode(node); //also removes it from its constraint parent
 						node->_constraintParent = NULL;
@@ -1782,13 +1795,13 @@ void T4TApp::redoLastAction() {
 			ref = action->refNodes[i];
 			swapTransform(node, ref);
 			//retrieve each side of the constraint from the reference node
-			nodeConstraint *constraint = popBack(ref->_constraints);
+			nodeConstraint *constraint = ref->_constraints.back().get();
 			type = constraint->type;
 			rot[i] = constraint->rotation;
 			trans[i] = constraint->translation;
 			parentChild = parentChild || constraint->isChild;
 			noCollide = constraint->noCollide;
-			delete constraint;
+			ref->_constraints.pop_back();
 		}
 		addConstraint(action->nodes[0], action->nodes[1], -1, type.c_str(), rot[0], trans[0], rot[1], trans[1],
 			parentChild, noCollide);

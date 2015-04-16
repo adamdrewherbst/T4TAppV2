@@ -4,13 +4,14 @@
 
 namespace T4T {
 
-Mode::Mode(const char* id) : _selectedNode(NULL), _doSelect(true) {
+Mode::Mode(const char* id, const char *name) : _selectedNode(NULL), _doSelect(true) {
 
 	app = dynamic_cast<T4TApp*>(Game::getInstance());
 	_scene = app->_scene;
 	_camera = app->getCamera();
 	
 	_id = id;
+	_name = name ? name : "";
 /*	_style = app->_theme->getStyle("hidden");
 	setAutoSize(Control::AUTO_SIZE_BOTH);
 	setConsumeInputEvents(true);

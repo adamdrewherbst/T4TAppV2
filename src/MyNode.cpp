@@ -894,16 +894,15 @@ void MyNode::copyMesh(Meshy *mesh) {
 	_hulls.clear();
 	_hulls.resize(nh);
 	for(i = 0; i < nh; i++) {
-		ConvexHull *hull = src->_hulls[i], *newHull = new ConvexHull(this);
+		ConvexHull *hull = src->_hulls[i].get(), *newHull = new ConvexHull(this);
 		newHull->copyMesh(hull);
-		_hulls[i] = newHull;
+		_hulls[i] = std::unique_ptr<ConvexHull>(newHull);
 	}
 	_objType = src->_objType;
 }
 
 void MyNode::clearMesh() {
 	Meshy::clearMesh();
-	for(std::vector<ConvexHull*>::iterator it = _hulls.begin(); it != _hulls.end(); it++) delete *it;
 	_hulls.clear();
 }
 
@@ -972,7 +971,7 @@ void MyNode::setOneHull() {
 	short i;
 	for(i = 0; i < nv(); i++) hull->addVertex(_vertices[i]);
 	for(i = 0; i < nf(); i++) addHullFace(hull, i);
-	_hulls.push_back(hull);
+	_hulls.push_back(std::unique_ptr<ConvexHull>(hull));
 }
 
 std::string MyNode::resolveFilename(const char *filename) {
@@ -1221,8 +1220,7 @@ bool MyNode::loadData(const char *file, bool doPhysics)
 		for(i = 0; i < nh; i++) {
 			str = stream->readLine(line, 2048);
 			nv = atoi(str.c_str());
-			_hulls[i] = new ConvexHull(this);
-			ConvexHull *hull = _hulls[i];
+			ConvexHull *hull = new ConvexHull(this);
 			hull->_vertices.resize(nv);
 			for(j = 0; j < nv; j++) {
 				str = stream->readLine(line, 2048);
@@ -1248,6 +1246,7 @@ bool MyNode::loadData(const char *file, bool doPhysics)
 					in >> face[k];
 				}
 			}
+			_hulls[i] = std::unique_ptr<ConvexHull>(hull);
 		}
 		str = stream->readLine(line, 2048);
 		nc = atoi(str.c_str());
@@ -1255,7 +1254,7 @@ bool MyNode::loadData(const char *file, bool doPhysics)
 		std::string word;
 		short boolVal;
 		for(i = 0; i < nc; i++) {
-			_constraints[i] = new nodeConstraint();
+			_constraints[i] = std::unique_ptr<nodeConstraint>(new nodeConstraint());
 			str = stream->readLine(line, 2048);
 			in.clear();
 			in.str(str);
@@ -1406,7 +1405,7 @@ void MyNode::writeData(const char *file, bool modelSpace) {
 		os << _objType << endl;
 		os << _hulls.size() << endl;
 		for(i = 0; i < _hulls.size(); i++) {
-			ConvexHull *hull = _hulls[i];
+			ConvexHull *hull = _hulls[i].get();
 			os << hull->_vertices.size() << endl;
 			for(j = 0; j < hull->_vertices.size(); j++) {
 				vec = modelSpace ? hull->_vertices[j] : hull->_worldVertices[j];
@@ -1683,7 +1682,7 @@ void MyNode::updateModel(bool doPhysics, bool doCenter) {
 				_hulls[i]->updateTransform();
 			}
 			for(i = 0; i < nc; i++) {
-				nodeConstraint *constraint = _constraints[i];
+				nodeConstraint *constraint = _constraints[i].get();
 				constraint->translation -= center;
 				MyNode *other = getConstraintNode(constraint);
 				if(other && other->_constraintParent == this) {
@@ -1722,7 +1721,7 @@ void MyNode::updateCamera(bool doPatches) {
 	_cameraPatches.clear();
 	short n, f, a, b;
 	std::set<unsigned short> faces, edges;
-	std::map<unsigned short, unsigned short> next;
+	std::map<unsigned short, unsigned short> next, oldNext;
 	for(i = 0; i < nf; i++) faces.insert(i);
 	while(!faces.empty()) {
 		edges.clear();
@@ -1748,12 +1747,15 @@ void MyNode::updateCamera(bool doPatches) {
 			if(_cameraNormals[f].z > 0) continue; //make sure neighbor also faces the camera
 			n = _faces[f].size();
 			//merge its edges into the edge map for the patch
+			oldNext = next; //copy the current patch border for reference
 			for(i = 0; i < n; i++) {
 				a = _faces[f][i];
 				b = _faces[f][(i+1)%n];
-				if(next.find(b) != next.end() && next[b] == a) {
-					next.erase(b);
-					edges.erase(b);
+				if(oldNext.find(b) != oldNext.end() && oldNext[b] == a) {
+					if(next.find(b) != next.end() && next[b] == a) {
+						next.erase(b);
+						edges.erase(b);
+					}
 				} else {
 					next[a] = b;
 					edges.insert(a);
@@ -2171,6 +2173,11 @@ void MyNode::attachTo(MyNode *parent, const Vector3 &point, const Vector3 &norm)
 		rot = Quaternion::identity();
 		if(fabs(normal.y) > 1e-3) rot *= MyNode::getVectorRotation(normalXZ, normal);
 		if(fabs(normal.x) > 1e-3) rot *= MyNode::getVectorRotation(Vector3::unitZ(), normalXZ);
+		else if(normal.z < 0) {
+			Quaternion rotY;
+			Quaternion::createFromAxisAngle(Vector3::unitY(), M_PI, &rotY);
+			rot *= rotY;
+		}
 	}
 	setMyRotation(rot);
 	//flush my bottom with the parent surface
@@ -2336,6 +2343,12 @@ void MyNode::enablePhysics(bool enable, bool recur) {
 	}
 }
 
+void MyNode::clearPhysics() {
+	app->removeConstraints(this, NULL, true);
+	removePhysics();
+	_hulls.clear();
+}
+
 bool MyNode::physicsEnabled() {
 	PhysicsCollisionObject *obj = getCollisionObject();
 	return obj != NULL && obj->isEnabled();
@@ -2390,7 +2403,7 @@ PhysicsConstraint* MyNode::getConstraint(MyNode *other) {
 
 nodeConstraint* MyNode::getNodeConstraint(MyNode *other) {
 	for(short i = 0; i < _constraints.size(); i++) {
-		if(_constraints[i]->other.compare(other->getId()) == 0) return _constraints[i];
+		if(_constraints[i]->other.compare(other->getId()) == 0) return _constraints[i].get();
 	}
 	return NULL;
 }

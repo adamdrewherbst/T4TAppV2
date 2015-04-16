@@ -97,6 +97,8 @@ void HullMode::controlEvent(Control *control, EventType evt) {
 		}
 	} else if(strcmp(id, "makeHull") == 0) {
 		makeHulls();
+	} else if(strcmp(id, "clearHulls") == 0) {
+		clearHulls();
 	} else if(_axisContainer->getControl(id) == control) {
 		Quaternion rot = Quaternion::identity();
 		if(id[0] == 'X') rot = MyNode::getVectorRotation(Vector3::unitX(), Vector3::unitZ());
@@ -117,11 +119,12 @@ void HullMode::controlEvent(Control *control, EventType evt) {
 		for(i = 0; i < n; i++) world.transformPoint(&_hullNode->_vertices[i]);
 		short nh = _hullNode->_hulls.size(), j;
 		for(i = 0; i < nh; i++) {
-			MyNode::ConvexHull *hull = _hullNode->_hulls[i];
+			MyNode::ConvexHull *hull = _hullNode->_hulls[i].get();
 			n = hull->nv();
 			for(j = 0; j < n; j++) world.transformPoint(&hull->_vertices[j]);
 		}
-		_hullNode->writeData("res/models/", false);
+		//_hullNode->writeData("res/models/", false);
+		_hullNode->uploadData("http://www.t4t.org/nasa-app/models/scripts/save.php");
 	}
 }
 
@@ -248,8 +251,8 @@ void HullMode::makeHulls() {
 		
 		n = hullSets.size();
 		for(j = 0; j < n; j++) {
-			_hullNode->_hulls.push_back(new MyNode::ConvexHull(_hullNode));
-			MyNode::ConvexHull *hull = _hullNode->_hulls.back();
+			_hullNode->_hulls.push_back(std::unique_ptr<MyNode::ConvexHull>(new MyNode::ConvexHull(_hullNode)));
+			MyNode::ConvexHull *hull = _hullNode->_hulls.back().get();
 			hullSet = hullSets[j];
 			for(it = hullSet.begin(); it != hullSet.end(); it++) {
 				cout << *it << " ";
@@ -263,6 +266,10 @@ void HullMode::makeHulls() {
 	_chain->clear();
 	_hullNode->removePhysics();
 	_hullNode->addPhysics();
+}
+
+void HullMode::clearHulls() {
+	_hullNode->clearPhysics();
 }
 
 void HullMode::updateTransform() {

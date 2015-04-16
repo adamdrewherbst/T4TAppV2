@@ -4,7 +4,7 @@
 
 namespace T4T {
 
-LandingPod::LandingPod() : Project::Project("landingPod") {
+LandingPod::LandingPod() : Project::Project("landingPod", "Landing Pod") {
 
 	app->addItem("podBase", 2, "general", "body");
 	app->addItem("hatch1", 2, "general", "hatch");

@@ -36,6 +36,7 @@ public:
 	void updateModel();
 	void updateTransform();
 	void makeHulls();
+	void clearHulls();
 	bool touchEvent(Touch::TouchEvent evt, int x, int y, unsigned int contactIndex);
 	void controlEvent(Control *control, Control::Listener::EventType evt);
 	bool keyEvent(Keyboard::KeyEvent evt, int key);

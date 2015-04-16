@@ -42,8 +42,8 @@ public:
 	std::string _objType; //mesh, box, sphere, capsule
 	float _mass, _radius;
 	bool _staticObj, _visible;
-	std::vector<ConvexHull*> _hulls;
-	std::vector<nodeConstraint*> _constraints;
+	std::vector<std::unique_ptr<ConvexHull> > _hulls;
+	std::vector<std::unique_ptr<nodeConstraint> > _constraints;
 	BoundingBox _boundingBox;
 	//for a compound object, store a rest position for each node so we have a rest configuration for the object
 	Matrix _restPosition;
@@ -149,6 +149,7 @@ public:
 	void addPhysics(bool recur = true);
 	void removePhysics(bool recur = true);
 	void enablePhysics(bool enable = true, bool recur = true);
+	void clearPhysics();
 	bool physicsEnabled();
 	void setVisible(bool visible, bool doPhysics = true);
 	void setActivation(int state, bool force = false);

@@ -14,9 +14,11 @@ void T4TApp::generateModels() {
 	std::string modelDir = "http://www.t4t.org/nasa-app/models/", url = modelDir + "models.list", file;
 	char *text = curlFile(url.c_str());
 	if(!text) return;
+	GP_WARN("Model list: %s", text);
 	std::string modelList = text, modelStr, token, version;
 	std::istringstream in(modelList);
 	in >> token;
+	GP_WARN("Model token: %s", token.c_str());
 	bool sameVersion = false;
 	if(token.compare("file_version") == 0) {
 		in >> version;
@@ -239,7 +241,7 @@ MyNode* T4TApp::generateModel(const char *id, const char *type, ...) {
 			hull->addFace(4, 1, 5, 7, 3);
 			hull->addFace(4, 0, 1, 3, 2);
 			hull->addFace(4, 4, 6, 7, 5);
-			node->_hulls.push_back(hull);
+			node->_hulls.push_back(std::unique_ptr<MyNode::ConvexHull>(hull));
 		}
 	}
 	else if(strcmp(type, "box") == 0) {
@@ -358,7 +360,7 @@ MyNode* T4TApp::generateModel(const char *id, const char *type, ...) {
 		for(n = 0; n < teeth; n++) {
 			hull = new MyNode::ConvexHull(node);
 			for(i = 0; i < 8; i++) hull->addVertex(node->_vertices[i + n*8]);
-			node->_hulls.push_back(hull);
+			node->_hulls.push_back(std::unique_ptr<MyNode::ConvexHull>(hull));
 		}
 		hull = new MyNode::ConvexHull(node);
 		for(n = 0; n < teeth; n++) {
@@ -367,7 +369,7 @@ MyNode* T4TApp::generateModel(const char *id, const char *type, ...) {
 			hull->addVertex(node->_vertices[4 + n*8]);
 			hull->addVertex(node->_vertices[5 + n*8]);
 		}
-		node->_hulls.push_back(hull);
+		node->_hulls.push_back(std::unique_ptr<MyNode::ConvexHull>(hull));
 	}
 	node->writeData("res/models/");
 	return node;

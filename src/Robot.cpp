@@ -4,7 +4,7 @@
 
 namespace T4T {
 
-Robot::Robot() : Project::Project("robot") {
+Robot::Robot() : Project::Project("robot", "Robot") {
 	_robot = MyNode::create("robot");
 	_robot->loadData("res/models/", false);
 	_robotBox = _robot->getBoundingBox(true);

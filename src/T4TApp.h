@@ -1,8 +1,8 @@
 #ifndef TEMPLATEGAME_H_
 #define TEMPLATEGAME_H_
 
-#define USE_GLU_TESS
-#define USE_COLLADA
+//#define USE_GLU_TESS
+//#define USE_COLLADA
 
 #include <cmath>
 #include <cstring>
@@ -160,9 +160,9 @@ public:
     //user interface
     Form *_mainMenu, *_componentMenu;
     Container *_sideMenu, *_stage, *_sceneMenu, *_machineMenu, *_modePanel,
-      *_textDialog, *_confirmDialog, *_overlay, *_cameraMenu, *_componentContainer;
+      *_textDialog, *_confirmDialog, *_overlay, *_cameraMenu, *_componentContainer, *_componentHeader;
     MenuFilter *_itemFilter;
-    Label *_message, *_textPrompt, *_confirmMessage;
+    Label *_componentTitle, *_message, *_textPrompt, *_confirmMessage;
     TextBox *_textName;
     Button *_login, *_register, *_textSubmit, *_textCancel, *_confirmYes, *_confirmNo, *_undo, *_redo;
     std::vector<Container*> _submenus; //submenus
@@ -203,7 +203,7 @@ public:
 	#endif
 	void addItem(const char *type, short numTags = 0, ...);
 	void filterItemMenu(const char *tag = NULL);
-	void promptItem(const char *tag = NULL);
+	void promptItem(const char *tag = NULL, const char *title = NULL);
 	
 	MyNode* loadNode(const char* id);
     MyNode* duplicateModelNode(const char* type, bool isStatic = false);

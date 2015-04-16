@@ -4,7 +4,7 @@
 
 namespace T4T {
 
-Launcher::Launcher() : Project::Project("launcher") {
+Launcher::Launcher() : Project::Project("launcher", "CEV Launcher") {
 
 	app->addItem("rubberBand1", 1, "launcherBand");
 	app->addItem("rubberBand2", 1, "launcherBand");

@@ -15,7 +15,7 @@ public:
 	Scene *_scene;
 	Camera *_camera;
 
-	std::string _id;
+	std::string _id, _name;
 	std::vector<std::string> _subModes;
 	short _subMode;
 	Container *_container, *_controls, *_subModePanel;
@@ -34,7 +34,7 @@ public:
 	Rectangle _viewportBase;
 	Vector3 _jointBase; //when free rotating a node, this is the vector from its joint to the touch point
 	
-	Mode(const char* id);
+	Mode(const char* id, const char *name = NULL);
 
 	const char *getId();
 		

@@ -4,7 +4,7 @@
 
 namespace T4T {
 
-Rocket::Rocket() : Project::Project("rocket") {
+Rocket::Rocket() : Project::Project("rocket", "Balloon Rocket") {
 
 	app->addItem("straw", 2, "general", "straw");
 	app->addItem("balloon_sphere", 2, "general", "balloon");

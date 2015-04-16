@@ -4,7 +4,7 @@
 
 namespace T4T {
 
-Satellite::Satellite() : Project::Project("satellite") {
+Satellite::Satellite() : Project::Project("satellite", "Satellite") {
 
 	app->addItem("solarPanel", 1, "instrument");
 	app->addItem("heatSensor", 2, "instrument", "seat");

@@ -4,7 +4,7 @@
 
 namespace T4T {
 
-Buggy::Buggy() : Project::Project("buggy") {
+Buggy::Buggy() : Project::Project("buggy", "Lunar Buggy") {
 
 	app->addItem("axle1", 2, "general", "axle");
 	app->addItem("wheel1", 2, "general", "wheel");

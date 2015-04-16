@@ -55,7 +55,6 @@ form mainMenu {
 			autoWidth = true
 			autoSize = AUTO_SIZE_HEIGHT
 			layout = LAYOUT_VERTICAL
-			scroll = SCROLL_VERTICAL
 
 			button satellite {
 				style = buttonStyle
@@ -366,6 +365,12 @@ form mainMenu {
 					autoWidth = true
 					height = 40
 					text = Make Hulls
+				}
+				button clearHulls {
+					style = buttonStyle
+					autoWidth = true
+					height = 40
+					text = Clear Hulls
 				}
 				button save {
 					style = buttonStyle
@@ -778,13 +783,27 @@ form componentMenu {
 	zIndex = 50
 	consumeInputEvents = true
 	visible = false
-	
+
+	container header {
+		style = hiddenContainer
+		layout = LAYOUT_FLOW
+		width = 100%
+		autoSize = AUTO_SIZE_HEIGHT
+		
+		label title {
+			style = noBorder
+			autoSize = AUTO_SIZE_WIDTH
+			height = 50
+			fontSize = 20
+			alignment = ALIGN_HCENTER
+		}
+	}	
 	container components {
 		style = basicContainer
 		layout = LAYOUT_FLOW
 		scroll = SCROLL_VERTICAL
 		width = 100%
-		height = 90%
+		height = 80%
 	}
 	container controls {
 		style = hiddenContainer
