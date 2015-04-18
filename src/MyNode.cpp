@@ -1052,7 +1052,7 @@ bool MyNode::loadData(const char *file, bool doPhysics)
 	//ensure the file is valid
 	std::string filename = resolveFilename(file);
 	if(filename.size() == 0) return false;
-	std::unique_ptr<Stream> stream(FileSystem::open(filename.c_str()));
+	std::unique_ptr<Stream> stream(FileSystem::open(filename.c_str(), FileSystem::READ, true));
 	if (stream.get() == nullptr)
 	{
 		GP_ERROR("Failed to open file '%s'.", filename.c_str());

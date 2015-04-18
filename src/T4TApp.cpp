@@ -394,9 +394,8 @@ void T4TApp::loadProjects(bool saveOnly) {
 
 size_t curl_write(void *ptr, size_t size, size_t count, void *data) {
 	Stream *stream = (Stream*) data;
-	stream->write(ptr, size, count);
-	GP_WARN("curl wrote %d bytes to stream %d", count, stream);
-	return count;
+	GP_WARN("curl writing %d bytes to stream %d", count, stream);
+	return stream->write(ptr, size, count);
 }
 
 char* T4TApp::curlFile(const char *url, const char *filename) {
@@ -418,7 +417,7 @@ char* T4TApp::curlFile(const char *url, const char *filename) {
 		GP_WARN("Couldn't load file %s: %s", url, curl_easy_strerror(res));
 		return NULL;
 	}
-	if(returnText) return FileSystem::readAll(filename);
+	if(returnText) return FileSystem::readAll(filename, NULL, FileSystem::WRITE);
 	else return const_cast<char*>("");
 }
 
