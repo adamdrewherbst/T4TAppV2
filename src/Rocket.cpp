@@ -70,6 +70,7 @@ bool Rocket::positionPayload() {
 		Vector3 joint = trans, dir = Vector3::unitY();
 		joint.y += satelliteBox.max.y;
 		app->addConstraint(straw, _payload, -1, "fixed", joint, dir, true);
+		_payload->updateMaterial();
 	}
 	return true;
 }

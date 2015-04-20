@@ -165,6 +165,20 @@ form mainMenu {
 			checked = true
 		}
 	}
+	
+	container exitMenu {
+		style = hiddenContainer
+		autoSize = AUTO_SIZE_BOTH
+		layout = LAYOUT_FLOW
+		alignment = ALIGN_BOTTOM_RIGHT
+		
+		button exit {
+			style = buttonStyle
+			autoSize = AUTO_SIZE_WIDTH
+			height = 50
+			text = Exit
+		}
+	}
 
 	//no more room on the side menu!
 	/*container floatPanel {
@@ -199,7 +213,7 @@ form mainMenu {
 		label message {
 			style = buttonStyle
 			position = 0, 700
-			autoWidth = true
+			width = 90%
 			height = 50
 			alignment = ALIGN_BOTTOM
 		}
@@ -298,6 +312,18 @@ form mainMenu {
 						height = 40
 						text = Select Chain
 					}
+				}
+				button oneHull {
+					style = buttonStyle
+					autoWidth = true
+					height = 40
+					text = One Hull
+				}
+				button boxOnly {
+					style = buttonStyle
+					autoWidth = true
+					height = 40
+					text = Box Only
 				}
 				container axisContainer {
 					style = hiddenContainer

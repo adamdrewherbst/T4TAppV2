@@ -115,7 +115,7 @@ void Mode::placeCamera() {
 			app->setCameraTarget(_cameraStateBase->target - (_newPoint - getTouchPoint()));
 			break;
 		} case 2: { //zoom
-			float deltaRadius = -delta.y / 40.0f;
+			float deltaRadius = delta.y / 40.0f;
 			radius = fmin(120.0f, fmax(3.0f, radius + deltaRadius));
 			app->setCameraZoom(radius);
 			break;

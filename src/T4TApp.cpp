@@ -81,6 +81,8 @@ void T4TApp::initialize()
 	_modePanel = (Container*)_sideMenu->getControl("modePanel");
 	_cameraMenu = (Container*)_stage->getControl("camera");
 	
+	_exit = (Button*) ((Container*)_mainMenu->getControl("exitMenu"))->getControl("exit");
+	
 	ImageControl* itemImage = addControl <ImageControl> (_sideMenu, "dummyImage");
 	itemImage->setVisible(false);
 
@@ -163,6 +165,7 @@ void T4TApp::initialize()
 	addItem("peepee_cap", 1, "general");
 	addItem("plastic_cone", 1, "general");
 	addItem("foam_roof", 1, "general");
+	addItem("astronaut", 1, "general");
 	//addItem("EnginePropellerThing", 1, "general");
 
 	_drawDebugCheckbox = (CheckBox*) _sideMenu->getControl("drawDebug");
@@ -217,7 +220,7 @@ void T4TApp::initialize()
 	_activeMode = -1;
 	setMode(0);
 
-	_drawDebug = true;	
+	_drawDebug = false;	
     _sideMenu->setFocus();
     
 	_running = 0;
@@ -239,8 +242,9 @@ void T4TApp::resizeEvent(unsigned int width, unsigned int height) {
 }
 
 void T4TApp::free() {
-	while(!_constraints.empty()) _constraints.erase(_constraints.begin());
-	((Rocket*)getProject("rocket"))->_straw->_constraint.reset();
+	//while(!_constraints.empty()) _constraints.erase(_constraints.begin());
+	//Rocket *rocket = (Rocket*) getProject("rocket");
+	//if(rocket && rocket->_straw) rocket->_straw->_constraint.reset();
 	SAFE_RELEASE(_scene);
 	SAFE_RELEASE(_mainMenu);
 }
@@ -576,6 +580,10 @@ void T4TApp::controlEvent(Control* control, Control::Listener::EventType evt)
 	else if(control == _redo) {
 		redoLastAction();
 	}
+	
+	else if(control == _exit) {
+		exit();
+	}
 
 	//close a submenu when one of its items is clicked
 	Container *next = parent;
@@ -737,7 +745,7 @@ void T4TApp::filterItemMenu(const char *tag) {
 
 void T4TApp::promptItem(const char *tag, const char *title) {
 	filterItemMenu(tag);
-	_componentTitle->setText(title);
+	_componentTitle->setText(title ? title : "");
 	if(!title) _componentHeader->setVisible(false);
 	_componentMenu->setVisible(true);
 }

@@ -328,6 +328,30 @@ material foam_roof : colored {
 	}
 }
 
+material legoman : colored {
+	technique {
+		pass {
+			u_ambientColor = 0.9, 0.9, 0.2
+		}
+	}
+}
+
+material lego : colored {
+	technique {
+		pass {
+			u_ambientColor = 0.9, 0.9, 0.2
+		}
+	}
+}
+
+material astronaut : colored {
+	technique {
+		pass {
+			u_ambientColor = 0.9, 0.9, 0.2
+		}
+	}
+}
+
 material EnginePropellerThing : colored {
 	technique {
 		pass {

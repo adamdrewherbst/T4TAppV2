@@ -111,7 +111,7 @@ public:
 	void translateToOrigin();
 	void scaleModel(float scale);
 	void attachTo(MyNode *parent, const Vector3 &point, const Vector3 &normal);
-	void updateMaterial();
+	void updateMaterial(bool recur = false);
 	void setBase();
 	void baseTranslate(const Vector3& delta);
 	void baseRotate(const Quaternion& delta, Vector3 *center = NULL);

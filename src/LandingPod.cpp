@@ -143,6 +143,7 @@ bool LandingPod::positionPayload() {
 	cout << "rotating z-axis to " << app->pv(-normal) << " => " << app->pq(rot) << endl;
 	_payload->setMyRotation(rot);
 	_scene->addNode(_payload);
+	_payload->updateMaterial();
 	return true;
 }
 

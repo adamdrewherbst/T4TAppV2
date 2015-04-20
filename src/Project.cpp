@@ -281,6 +281,7 @@ void Project::setActive(bool active) {
 		//determine the count of this component type based on the highest index for this element in the scene or in saved files
 		_typeCount = 0;
 		_scene->addNode(_rootNode);
+		_rootNode->updateMaterial(true);
 		app->_ground->setVisible(false);
 		app->_componentMenu->setFocus();
 		app->filterItemMenu();
@@ -430,6 +431,7 @@ void Project::sync() {
 		std::string dir = "http://www.t4t.org/nasa-app/upload/" + app->_userEmail + "/";
 		if(!_rootNode->loadData(dir.c_str(), false)) return;
 		_rootNode->setRest();
+		_rootNode->updateMaterial(true);
 		short n = _elements.size(), i;
 		for(i = 0; i < n; i++) {
 			Element *el = _elements[i].get();
@@ -467,6 +469,7 @@ bool Project::removePayload() {
 	_payload->placeRest();
 	_payload->updateTransform();
 	root->addChild(_payload);
+	_payload->updateMaterial();
 	_payload = NULL;
 	return true;
 }

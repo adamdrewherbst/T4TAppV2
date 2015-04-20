@@ -12,21 +12,6 @@ void T4TApp::generateModels() {
 #ifdef USE_ONLINE_MODELS
 
 	//test for Android
-	Stream *stream = FileSystem::open("res/tmp/tmpfile", FileSystem::WRITE);
-	size_t writeable = stream->canWrite() ? 1 : 0;
-	size_t length1 = stream->length();
-	size_t written = stream->write("hello there", sizeof(char), 11);
-	size_t length2 = stream->length();
-	stream->close();
-	
-	stream = FileSystem::open("res/tmp/tmpfile", FileSystem::READ, true);
-	size_t length3 = stream->length();
-	stream->close();
-
-	char *test = FileSystem::readAll("res/tmp/tmpfile", NULL, true);
-	GP_WARN("Test file: %s - wrote %d, writeable = %d, length1 = %d, length2 = %d, length3 = %d",
-		test, written, writeable, length1, length2, length3);
-
 	std::string modelDir = "http://www.t4t.org/nasa-app/models/", url = modelDir + "models.list", file;
 	char *text = curlFile(url.c_str());
 	if(!text) return;
@@ -151,6 +136,8 @@ void T4TApp::loadModels(const char *filename) {
 			std::string nodeFile = modelFile;
 			short len = strlen(modelFile);
 			nodeFile.replace(len-3, 3, "node");
+			size_t dir = nodeFile.find("models_src");
+			if(dir != std::string::npos) nodeFile.replace(dir, 10, "models");
 			if(!FileSystem::fileExists(nodeFile.c_str())) {
 				cout << "loading DAE: " << modelFile << endl;
 				loadDAE(modelFile);
@@ -593,6 +580,7 @@ void T4TApp::loadDAE(const char *filename) {
 	Matrix world;
 	loadXMLNode(doc, root, world, node, meshes);
 	node->mergeVertices(1e-5);
+	node->triangulateAll();
 	node->translateToOrigin();
 	if(scale != 1) node->scaleModel(scale);
 

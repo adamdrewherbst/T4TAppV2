@@ -1,8 +1,10 @@
 #ifndef TEMPLATEGAME_H_
 #define TEMPLATEGAME_H_
 
-//#define USE_GLU_TESS
-//#define USE_COLLADA
+#ifdef __linux__
+	#define USE_GLU_TESS
+	#define USE_COLLADA
+#endif
 
 #include <cmath>
 #include <cstring>
@@ -164,7 +166,7 @@ public:
     MenuFilter *_itemFilter;
     Label *_componentTitle, *_message, *_textPrompt, *_confirmMessage;
     TextBox *_textName;
-    Button *_login, *_register, *_textSubmit, *_textCancel, *_confirmYes, *_confirmNo, *_undo, *_redo;
+    Button *_login, *_register, *_textSubmit, *_textCancel, *_confirmYes, *_confirmNo, *_undo, *_redo, *_exit;
     std::vector<Container*> _submenus; //submenus
     CheckBox *_drawDebugCheckbox;
     std::vector<std::string> _modeNames, _machineNames;

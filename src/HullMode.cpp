@@ -69,6 +69,10 @@ void HullMode::controlEvent(Control *control, EventType evt) {
 		_region->_faces.resize(nf);
 		for(i = 0; i < nf; i++) _region->_faces[i] = i;
 		_region->update();
+	} else if(strcmp(id, "oneHull") == 0) {
+		_hullNode->removePhysics();
+		_hullNode->setOneHull();
+		_hullNode->addPhysics();
 	} else if(strcmp(id, "reverseFace") == 0) {
 		if(_currentSelection) _currentSelection->reverseFaces();
 	} else if(control == _scaleSlider) {

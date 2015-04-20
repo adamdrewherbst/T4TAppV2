@@ -98,6 +98,7 @@ public:
 	void addFace(std::vector<unsigned short> &face, bool reverse = false);
 	void addFace(short n, ...);
 	void addFace(std::vector<unsigned short> &face, std::vector<std::vector<unsigned short> > &triangles);
+	void triangulateAll();
 	void printFace(std::vector<unsigned short> &face, bool shortFormat = false);
 	void printFace(unsigned short n, bool shortFormat = false);
 	void printFaces();

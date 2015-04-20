@@ -1,6 +1,8 @@
 #include "T4TApp.h"
 #include "MyNode.h"
 
+#define READ_BUF_SIZE 32768
+
 namespace T4T {
 
 //triangulation of faces with holes
@@ -347,6 +349,13 @@ void Meshy::addFace(std::vector<unsigned short> &face, std::vector<std::vector<u
 	f._border = face;
 	f._triangles = triangles;
 	addFace(f);
+}
+
+void Meshy::triangulateAll() {
+	short n = nf(), i;
+	for(i = 0; i < n; i++) {
+		if(_faces[i]._triangles.empty()) _faces[i].triangulate();
+	}
 }
 
 void Meshy::printFace(std::vector<unsigned short> &face, bool shortFormat) {
@@ -968,9 +977,9 @@ void MyNode::addHullFace(MyNode::ConvexHull *hull, short f) {
 void MyNode::setOneHull() {
 	_hulls.clear();
 	ConvexHull *hull = new ConvexHull(this);
-	short i;
-	for(i = 0; i < nv(); i++) hull->addVertex(_vertices[i]);
-	for(i = 0; i < nf(); i++) addHullFace(hull, i);
+	short i, n = nv();
+	for(i = 0; i < n; i++) hull->addVertex(_vertices[i]);
+	//for(i = 0; i < nf(); i++) addHullFace(hull, i);
 	_hulls.push_back(std::unique_ptr<ConvexHull>(hull));
 }
 
@@ -987,7 +996,7 @@ std::string MyNode::resolveFilename(const char *filename) {
 		//check that the file exists and has content
 		if(!FileSystem::fileExists(path.c_str())) path = "";
 		else {
-			std::unique_ptr<Stream> stream(FileSystem::open(path.c_str()));
+			std::unique_ptr<Stream> stream(FileSystem::open(path.c_str(), FileSystem::READ, true));
 			if(stream.get() == nullptr || stream->length() < 1) path = "";
 		}
 	} else if(filename[n-1] == '/') {
@@ -1013,15 +1022,15 @@ void MyNode::clearNode() {
 std::vector<std::string> MyNode::getVersions(const char *filename) {
 	std::vector<std::string> versions;
 
-	std::unique_ptr<Stream> stream(FileSystem::open(filename));
+	std::unique_ptr<Stream> stream(FileSystem::open(filename, FileSystem::READ, true));
 	if (stream.get() == nullptr) return versions;
 	stream->rewind();
 	
 	std::string str, token;
-	char line[2048];
+	char line[READ_BUF_SIZE];
 	std::istringstream in;
 	
-	str = stream->readLine(line, 2048);
+	str = stream->readLine(line, READ_BUF_SIZE);
 	in.clear();
 	in.str(str);
 	in >> token;
@@ -1032,7 +1041,7 @@ std::vector<std::string> MyNode::getVersions(const char *filename) {
 	in >> token;
 	versions.push_back(token);
 	
-	str = stream->readLine(line, 2048);
+	str = stream->readLine(line, READ_BUF_SIZE);
 	in.clear();
 	in.str(str);
 	in >> token;
@@ -1066,14 +1075,14 @@ bool MyNode::loadData(const char *file, bool doPhysics)
 	//then read the new data from the file
 	_typeCount = 0;
 
-	char line[2048];
+	char line[READ_BUF_SIZE];
 	std::string str, token;
 	short i, j, k, m, n;
     float x, y, z, w;
 	std::istringstream in;
 	
 	//check the file version is the latest
-	str = stream->readLine(line, 2048);
+	str = stream->readLine(line, READ_BUF_SIZE);
 	in.clear();
 	in.str(str);
 	in >> token;
@@ -1089,13 +1098,13 @@ bool MyNode::loadData(const char *file, bool doPhysics)
 	}
 	
 	//get the version # of this particular model
-	str = stream->readLine(line, 2048);
+	str = stream->readLine(line, READ_BUF_SIZE);
 	in.clear();
 	in.str(str);
 	in >> token;
 	if(token.compare("model_version") == 0) {
 		in >> _version;
-		str = stream->readLine(line, 2048);
+		str = stream->readLine(line, READ_BUF_SIZE);
 		in.clear();
 		in.str(str);
 		in >> token;
@@ -1104,37 +1113,37 @@ bool MyNode::loadData(const char *file, bool doPhysics)
 	
 	//read the node data
 	if(_type.compare("root") != 0) { //this is a physical node, not just a root node
-		str = stream->readLine(line, 2048);
+		str = stream->readLine(line, READ_BUF_SIZE);
 		in.clear();
 		in.str(str);
 		in >> x >> y >> z;
 		_color.set(x, y, z);
-		str = stream->readLine(line, 2048);
+		str = stream->readLine(line, READ_BUF_SIZE);
 		in.clear();
 		in.str(str);
 		in >> x >> y >> z >> w;
 		setRotation(Vector3(x, y, z), (float)(w*M_PI/180.0));
-		str = stream->readLine(line, 2048);
+		str = stream->readLine(line, READ_BUF_SIZE);
 		in.clear();
 		in.str(str);
 		in >> x >> y >> z;
 		setTranslation(x, y, z);
-		str = stream->readLine(line, 2048);
+		str = stream->readLine(line, READ_BUF_SIZE);
 		in.clear();
 		in.str(str);
 		in >> x >> y >> z;
 		setScale(x, y, z);
-		str = stream->readLine(line, 2048);
+		str = stream->readLine(line, READ_BUF_SIZE);
 		short nv = atoi(str.c_str());
 		for(i = 0; i < nv; i++) {
-			str = stream->readLine(line, 2048);
+			str = stream->readLine(line, READ_BUF_SIZE);
 			in.clear();
 			in.str(str);
 			in >> x >> y >> z;
 			_vertices.push_back(Vector3(x, y, z));
 		}
 		//faces, along with their constituent triangles
-		str = stream->readLine(line, 2048);
+		str = stream->readLine(line, READ_BUF_SIZE);
 		short nf = atoi(str.c_str()), faceSize, numHoles, holeSize, numTriangles;
 		std::vector<unsigned short> hole;
 		Vector3 faceNormal, holeNormal;
@@ -1143,7 +1152,7 @@ bool MyNode::loadData(const char *file, bool doPhysics)
 			Face &face = _faces[i];
 			face._mesh = this;
 			face._index = i;
-			str = stream->readLine(line, 2048);
+			str = stream->readLine(line, READ_BUF_SIZE);
 			in.clear();
 			in.str(str);
 			in >> faceSize;
@@ -1152,7 +1161,7 @@ bool MyNode::loadData(const char *file, bool doPhysics)
 			face._holes.resize(numHoles);
 			in >> numTriangles;
 			face._triangles.resize(numTriangles);
-			str = stream->readLine(line, 2048);
+			str = stream->readLine(line, READ_BUF_SIZE);
 			in.clear();
 			in.str(str);
 			for(j = 0; j < faceSize; j++) {
@@ -1161,10 +1170,10 @@ bool MyNode::loadData(const char *file, bool doPhysics)
 			}
 			faceNormal = getNormal(face._border, true);
 			for(j = 0; j < numHoles; j++) {
-				str = stream->readLine(line, 2048);
+				str = stream->readLine(line, READ_BUF_SIZE);
 				holeSize = atoi(str.c_str());
 				hole.resize(holeSize);
-				str = stream->readLine(line, 2048);
+				str = stream->readLine(line, READ_BUF_SIZE);
 				in.clear();
 				in.str(str);
 				for(k = 0; k < holeSize; k++) {
@@ -1176,7 +1185,7 @@ bool MyNode::loadData(const char *file, bool doPhysics)
 				face._holes[j] = hole;
 			}
 			for(j = 0; j < numTriangles; j++) {
-				str = stream->readLine(line, 2048);
+				str = stream->readLine(line, READ_BUF_SIZE);
 				in.clear();
 				in.str(str);
 				face._triangles[j].resize(3);
@@ -1188,18 +1197,18 @@ bool MyNode::loadData(const char *file, bool doPhysics)
 		}
 		//COLLADA components
 		_componentInd.resize(nv);
-		str = stream->readLine(line, 2048);
+		str = stream->readLine(line, READ_BUF_SIZE);
 		short nc = atoi(str.c_str()), size;
 		std::string id;
 		for(i = 0; i < nc; i++) {
-			str = stream->readLine(line, 2048);
+			str = stream->readLine(line, READ_BUF_SIZE);
 			in.clear();
 			in.str(str);
 			in >> id >> size >> n;
 			_components[id].resize(n);
 			for(j = 0; j < n; j++) {
 				_components[id][j].resize(size);
-				str = stream->readLine(line, 2048);
+				str = stream->readLine(line, READ_BUF_SIZE);
 				in.clear();
 				in.str(str);
 				for(k = 0; k < size; k++) {
@@ -1210,35 +1219,35 @@ bool MyNode::loadData(const char *file, bool doPhysics)
 			}
 		}
 		//physics
-		str = stream->readLine(line, 2048);
+		str = stream->readLine(line, READ_BUF_SIZE);
 		in.clear();
 		in.str(str);
 		in >> _objType;
-		str = stream->readLine(line, 2048);
+		str = stream->readLine(line, READ_BUF_SIZE);
 		short nh = atoi(str.c_str());
 		_hulls.resize(nh);
 		for(i = 0; i < nh; i++) {
-			str = stream->readLine(line, 2048);
+			str = stream->readLine(line, READ_BUF_SIZE);
 			nv = atoi(str.c_str());
 			ConvexHull *hull = new ConvexHull(this);
 			hull->_vertices.resize(nv);
 			for(j = 0; j < nv; j++) {
-				str = stream->readLine(line, 2048);
+				str = stream->readLine(line, READ_BUF_SIZE);
 				in.clear();
 				in.str(str);
 				in >> x >> y >> z;
 				hull->_vertices[j].set(x, y, z);
 			}
-			str = stream->readLine(line, 2048);
+			str = stream->readLine(line, READ_BUF_SIZE);
 			nf = atoi(str.c_str());
 			hull->_faces.resize(nf);
 			for(j = 0; j < nf; j++) {
 				Face &face = hull->_faces[j];
 				face._mesh = hull;
 				face._index = j;
-				str = stream->readLine(line, 2048);
+				str = stream->readLine(line, READ_BUF_SIZE);
 				faceSize = atoi(str.c_str());
-				str = stream->readLine(line, 2048);
+				str = stream->readLine(line, READ_BUF_SIZE);
 				in.clear();
 				in.str(str);
 				face.resize(faceSize);
@@ -1248,14 +1257,14 @@ bool MyNode::loadData(const char *file, bool doPhysics)
 			}
 			_hulls[i] = std::unique_ptr<ConvexHull>(hull);
 		}
-		str = stream->readLine(line, 2048);
+		str = stream->readLine(line, READ_BUF_SIZE);
 		nc = atoi(str.c_str());
 		_constraints.resize(nc);
 		std::string word;
 		short boolVal;
 		for(i = 0; i < nc; i++) {
 			_constraints[i] = std::unique_ptr<nodeConstraint>(new nodeConstraint());
-			str = stream->readLine(line, 2048);
+			str = stream->readLine(line, READ_BUF_SIZE);
 			in.clear();
 			in.str(str);
 			in >> word;
@@ -1272,13 +1281,13 @@ bool MyNode::loadData(const char *file, bool doPhysics)
 			_constraints[i]->noCollide = boolVal > 0;
 			_constraints[i]->id = -1;
 		}
-		str = stream->readLine(line, 2048);
+		str = stream->readLine(line, READ_BUF_SIZE);
 		_mass = atof(str.c_str());
-		str = stream->readLine(line, 2048);
+		str = stream->readLine(line, READ_BUF_SIZE);
 		_staticObj = atoi(str.c_str()) > 0;
-		str = stream->readLine(line, 2048);
+		str = stream->readLine(line, READ_BUF_SIZE);
 		_radius = atof(str.c_str());
-		str = stream->readLine(line, 2048);
+		str = stream->readLine(line, READ_BUF_SIZE);
 		if(_project != NULL && str.size() > 0) {
 			str.erase(str.find_last_not_of(" \n\r\t")+1);
 			_element = _project->getElement(str.c_str());
@@ -1286,7 +1295,7 @@ bool MyNode::loadData(const char *file, bool doPhysics)
 				_element->_nodes.push_back(std::shared_ptr<MyNode>(this));
 				_element->setComplete(true);
 				for(i = 0; i < 3; i++) {
-					str = stream->readLine(line, 2048);
+					str = stream->readLine(line, READ_BUF_SIZE);
 					in.clear();
 					in.str(str);
 					in >> x >> y >> z;
@@ -1297,10 +1306,10 @@ bool MyNode::loadData(const char *file, bool doPhysics)
 		}
 	}
 	//see if this node has any children
-	str = stream->readLine(line, 2048);
+	str = stream->readLine(line, READ_BUF_SIZE);
 	int numChildren = atoi(str.c_str());
 	for(i = 0; i < numChildren; i++) {
-		str = stream->readLine(line, 2048);
+		str = stream->readLine(line, READ_BUF_SIZE);
 		in.clear();
 		in.str(str);
 		std::string childId;
@@ -2192,14 +2201,20 @@ void MyNode::attachTo(MyNode *parent, const Vector3 &point, const Vector3 &norm)
 }
 
 //set lighting parameters according to which scene we are currently part of
-void MyNode::updateMaterial() {
+void MyNode::updateMaterial(bool recur) {
+	if(recur) for(Node *node = getFirstChild(); node; node = node->getNextSibling()) {
+		MyNode *child = dynamic_cast<MyNode*>(node);
+		if(child) child->updateMaterial(recur);
+	}
 	Scene *scene = getScene();
 	if(scene == NULL) return;
 	Node *lightNode = scene->findNode("lightNode");
 	if(lightNode == NULL) return;
 	Light *light = lightNode->getLight();
 	if(light == NULL) return;
-	Technique *technique = getModel()->getMaterial()->getTechnique();
+	Model *model = getModel();
+	if(model == NULL) return;
+	Technique *technique = model->getMaterial()->getTechnique();
 	if(technique == NULL) return;
 	technique->getParameter("u_directionalLightColor[0]")->setValue(light->getColor());
 	technique->getParameter("u_directionalLightDirection[0]")->bindValue(lightNode, &Node::getForwardVectorView);
