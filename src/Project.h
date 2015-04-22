@@ -60,12 +60,12 @@ public:
 	std::vector<std::string> _moveModes;
 	Container *_moveContainer;
 
-	short _numElements, _numActions, _currentElement, _typeCount, _moveMode, _moveAxis;
+	short _numElements, _numActions, _currentElement, _typeCount, _moveMode, _moveAxis, _instructionsPage;
 	Quaternion _baseRotation;
 	Vector3 _baseTranslation;
 
 	//blank scene onto which to build the component
-	std::string _sceneFile, _nodeId;
+	std::string _sceneFile, _nodeId, _description, _constraints;
 	MyNode *_rootNode; //parent node for this component
 
 	//eg. the satellite is the payload for the balloon rocket
@@ -78,7 +78,8 @@ public:
 
 	ConstraintPtr _buildAnchor; //keep the model from moving while we are building it
 
-	bool _inSequence, //true during the first run-through to add all the elements
+	bool _started, //true after user has opened the screen for this project
+	     _inSequence, //true during the first run-through to add all the elements
 	     _launching, //after user clicks the Launch button in test mode
 	     _launchComplete, _broken;
 	     
@@ -94,7 +95,6 @@ public:
 	virtual void setupMenu();
 	void setActive(bool active);
 	bool setSubMode(short mode);
-	void promptItem();
 	bool selectItem(const char *id);
 	bool setSelectedNode(MyNode *node, Vector3 point = Vector3::zero());
 	virtual void update();
@@ -106,6 +106,9 @@ public:
 	bool touchEvent(Touch::TouchEvent evt, int x, int y, unsigned int contactIndex);
 	void setCurrentElement(short n);
 	void promptNextElement();
+	void promptItem();
+	void showInstructions();
+	void navigateInstructions(bool forward = true);
 	void saveProject();
 	void saveHelper(const char *email);
 	virtual void addNode();

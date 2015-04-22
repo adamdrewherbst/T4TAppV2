@@ -183,6 +183,6 @@ set_target_properties(${GAME_NAME} PROPERTIES
 #TODO: Copy res files to the bin dir, it is done that way so we can make post
 #processing to the the res files in the future like zipping or preparation to
 #per platfom format.
-#copy_files(CopyRes * "${CMAKE_SOURCE_DIR}/res" "$<TARGET_FILE_DIR:${GAME_NAME}>/res" 1)
+copy_files(CopyRes * "${CMAKE_SOURCE_DIR}/res" "$<TARGET_FILE_DIR:${GAME_NAME}>/res" 1)
 copy_files(CopyShaders * "${GAMEPLAY_SRC_PATH}/gameplay/res/shaders" "$<TARGET_FILE_DIR:${GAME_NAME}>/res/shaders" 1)
 copy_files(CopyConfig *.config "${CMAKE_SOURCE_DIR}" "$<TARGET_FILE_DIR:${GAME_NAME}>" 0)

@@ -30,12 +30,41 @@ Project::Project(const char* id, const char *name) : Mode::Mode(id, name) {
 	_other = (Other*) addElement(new Other(this));	
 
 	_currentElement = 0;
+	_instructionsPage = 0;
 	_moveMode = 0;
 	_launching = false;
 	_saveFlag = false;
+	_started = false;
 
 	_subModes.push_back("build");
 	_subModes.push_back("test");
+
+	//load the project instructions
+	std::string str = "projects/descriptions/" + _id + ".desc";
+	char *text = app->curlFile(str.c_str(), NULL, app->_versions["project_info"].c_str());
+	if(text) {
+		_description = text;
+		size_t pos = _description.find("\n");
+		if(pos > 0) _description.replace(0, pos+1, "");
+	}
+	std::replace(_description.begin(), _description.end(), '\n', ' ');
+	str = "projects/constraints/" + _id + ".con";
+	text = app->curlFile(str.c_str(), NULL, app->_versions["project_info"].c_str());
+	if(text) {
+		_constraints = text;
+		size_t pos = _constraints.find("\n");
+		if(pos > 0) _constraints.replace(0, pos+1, "");
+		//replace all newlines by spaces except for double newlines
+		pos = 0;
+		while((pos = _constraints.find("\n", pos)) != std::string::npos) {
+			if(_constraints[pos+1] == '\n') {
+				pos += 2;
+				continue;
+			}
+			_constraints.replace(pos, 1, " ");
+			pos++;
+		}
+	}
 }
 
 void Project::setupMenu() {
@@ -291,10 +320,15 @@ void Project::setActive(bool active) {
 		app->getPhysicsController()->addStatusListener(this);
 		_inSequence = true;
 		//determine the next element needing to be added
-		short e;
-		for(e = 1; e < _numElements && _elements[e]->getNode(); e++);
-		_currentElement = e-1;
-		if(e < _numElements) promptNextElement();
+		if(!_started) {
+			showInstructions();
+			_started = true;
+		} else {
+			short e;
+			for(e = 1; e < _numElements && _elements[e]->getNode(); e++);
+			_currentElement = e-1;
+			if(e < _numElements) promptNextElement();
+		}
 	}else {
 		removePayload();
 		if(_buildAnchor.get() != nullptr) _buildAnchor->setEnabled(false);
@@ -353,6 +387,24 @@ void Project::setCurrentElement(short n) {
 			_actionFilter->filter(actions[i].c_str(), false);
 		}
 	}
+}
+
+void Project::showInstructions() {
+	app->_componentContainer->setVisible(false);
+	std::string title = _name + " - Instructions";
+	app->_componentTitle->setText(title.c_str());
+	app->_componentInstructions->setVisible(true);
+	app->_componentDescription->setText(_description.c_str());
+	app->_componentBack->setVisible(false);
+	_instructionsPage = 0;
+	app->_componentMenu->setVisible(true);
+}
+
+void Project::navigateInstructions(bool forward) {
+	if((_instructionsPage == 0 && !forward) || (_instructionsPage == 2 && forward)) return;
+	_instructionsPage += forward ? 1 : -1;
+	if(_instructionsPage == 2) promptNextElement();
+	else app->_componentDescription->setText(_instructionsPage == 0 ? _description.c_str() : _constraints.c_str());
 }
 
 void Project::promptNextElement() {

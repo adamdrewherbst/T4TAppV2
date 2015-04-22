@@ -41,9 +41,26 @@ T4TApp* T4TApp::getInstance() {
 
 void T4TApp::initialize()
 {
+
+	displayScreen(this, &T4TApp::drawSplash, NULL, 1000L);
+
 #ifdef USE_GLU_TESS
 	Face::initTess();
 #endif
+
+	//get the versions for the various types of content so we know what needs to be reloaded from the server
+	char *text = curlFile("versions.txt");
+	if(text) {
+		std::istringstream in(text);
+		std::string type, version;
+		while(in) {
+			in >> type >> version;
+			if(!type.empty()) {
+				_versions[type] = version;
+				GP_WARN("%s version is %s", type.c_str(), version.c_str());
+			}
+		}
+	}
 	
 	generateModels();
 	
@@ -91,6 +108,11 @@ void T4TApp::initialize()
 	_componentContainer = (Container*) _componentMenu->getControl("components");
 	_componentHeader = (Container*) _componentMenu->getControl("header");
 	_componentTitle = (Label*) _componentHeader->getControl("title");
+	_componentBack = (Button*) _componentHeader->getControl("back");
+	_componentInstructions = (Container*) _componentMenu->getControl("instructions");
+	_componentDescription = (Label*) _componentInstructions->getControl("description");
+	_componentPrev = (Button*) _componentInstructions->getControl("prev");
+	_componentNext = (Button*) _componentInstructions->getControl("next");
 
 	//dialogs
 	_login = (Button*)_sideMenu->getControl("login");
@@ -229,6 +251,16 @@ void T4TApp::initialize()
 	resizeEvent(getWidth(), getHeight());
 }
 
+void T4TApp::drawSplash(void* param)
+{
+	clear(CLEAR_COLOR_DEPTH, Vector4(0, 0, 0, 1), 1.0f, 0);
+	SpriteBatch* batch = SpriteBatch::create("res/logo_powered_white.png");
+	batch->start();
+	batch->draw(getWidth() * 0.5f, getHeight() * 0.5f, 0.0f, 512.0f, 512.0f, 0.0f, 1.0f, 1.0f, 0.0f, Vector4::one(), true);
+	batch->finish();
+	SAFE_DELETE(batch);
+}
+
 void T4TApp::resizeEvent(unsigned int width, unsigned int height) {
 
 	_stage->setWidth(width - _sideMenu->getWidth());
@@ -255,10 +287,6 @@ T4TApp::~T4TApp() {
 
 void T4TApp::finalize()
 {
-	free();
-}
-
-void T4TApp::exit() {
 	free();
 }
 
@@ -402,11 +430,49 @@ size_t curl_write(void *ptr, size_t size, size_t count, void *data) {
 	return stream->write(ptr, size, count);
 }
 
-char* T4TApp::curlFile(const char *url, const char *filename) {
+char* T4TApp::curlFile(const char *url, const char *filename, const char *localVersion) {
+
 	bool returnText = filename == NULL;
 	if(returnText) filename = "res/tmp/tmpfile";
+
+	bool useLocal = false;
+	std::string file;
+	if(localVersion) {
+		file = "res/";
+		file += url;
+		filename = file.c_str();
+		Stream *stream = FileSystem::open(filename);
+		if(stream) {
+			char buf[READ_BUF_SIZE], *arr;
+			arr = stream->readLine(buf, READ_BUF_SIZE);
+			if(arr) {
+				std::istringstream in(arr);
+				std::string token;
+				in >> token;
+				if(token.compare("version") == 0) {
+					in >> token;
+					if(token.compare(localVersion) == 0) {
+						useLocal = true;
+						GP_WARN("Using local version of %s", url);
+					}
+				}
+			}
+			stream->close();
+		}
+	}
+	if(useLocal) {
+		return FileSystem::readAll(filename, NULL, true);
+	}
+	
+	std::string urlStr = url;
+	if(strncmp(url, "http://", 7) != 0) {
+		urlStr = "http://www.t4t.org/nasa-app/" + urlStr;
+	}
+	url = urlStr.c_str();
+	
 	Stream *stream = FileSystem::open(filename, FileSystem::WRITE);
 	GP_WARN("curling %s to %s with stream %d", url, filename, stream);
+	
 	CURL *curl = curl_easy_init();
 	CURLcode res;
 	curl_easy_setopt(curl, CURLOPT_URL, url);
@@ -414,6 +480,7 @@ char* T4TApp::curlFile(const char *url, const char *filename) {
 	curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, curl_write);
 	curl_easy_setopt(curl, CURLOPT_FAILONERROR, 1L);
 	res = curl_easy_perform(curl);
+	
 	stream->close();
 	curl_easy_cleanup(curl);
 	
@@ -421,7 +488,8 @@ char* T4TApp::curlFile(const char *url, const char *filename) {
 		GP_WARN("Couldn't load file %s: %s", url, curl_easy_strerror(res));
 		return NULL;
 	}
-	if(returnText) return FileSystem::readAll(filename, NULL, FileSystem::WRITE);
+	
+	if(returnText) return FileSystem::readAll(filename, NULL, true);
 	else return const_cast<char*>("");
 }
 
@@ -561,10 +629,24 @@ void T4TApp::controlEvent(Control* control, Control::Listener::EventType evt)
 			commitAction();
 		}
 	}
+	else if(control == _componentBack) {
+		Project *project = getProject();
+		if(project) {
+			project->showInstructions();
+			if(project->_currentElement > 0) project->_currentElement--;
+		}
+	}
+	else if(control == _componentNext || control == _componentPrev) {
+		Project *project = getProject();
+		if(project) project->navigateInstructions(control == _componentNext);
+	}
 	else if(strcmp(id, "componentCancel") == 0) {
 		_componentMenu->setVisible(false);
 		Project *project = getProject();
-		if(project) project->_inSequence = false;
+		if(project) {
+			project->_inSequence = false;
+			if(project->_currentElement > 0) project->_currentElement--;
+		}
 	}
 	else if(strcmp(id, "debugButton") == 0) {
 		debugTrigger();
@@ -747,6 +829,9 @@ void T4TApp::promptItem(const char *tag, const char *title) {
 	filterItemMenu(tag);
 	_componentTitle->setText(title ? title : "");
 	if(!title) _componentHeader->setVisible(false);
+	_componentInstructions->setVisible(false);
+	_componentBack->setVisible(true);
+	_componentContainer->setVisible(true);
 	_componentMenu->setVisible(true);
 }
 

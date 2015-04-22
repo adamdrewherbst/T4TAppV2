@@ -43,6 +43,7 @@ void Robot::setActive(bool active) {
 			PhysicsCollisionShape::capsule(1.7f, 6.0f, Vector3(0, 3.0f, 0), true), &params);
 		_character = static_cast<PhysicsCharacter*>(_robot->getCollisionObject());
 		_scene->addNode(_robot);
+		_robot->updateMaterial(true);
 		app->_ground->setVisible(true);
 	} else {
 		_robot->setCollisionObject(PhysicsCollisionObject::NONE);

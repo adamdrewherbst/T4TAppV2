@@ -1,8 +1,6 @@
 #include "T4TApp.h"
 #include "MyNode.h"
 
-#define READ_BUF_SIZE 32768
-
 namespace T4T {
 
 //triangulation of faces with holes

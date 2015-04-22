@@ -38,12 +38,6 @@ form mainMenu {
 			height = 50
 			text = Scene >>
 		}
-		button parent_componentMenu {
-			style = buttonStyle
-			autoWidth = true
-			height = 50
-			text = Add Object >>
-		}
 		button parent_machineMenu {
 			style = buttonStyle
 			autoWidth = true
@@ -812,10 +806,17 @@ form componentMenu {
 
 	container header {
 		style = hiddenContainer
-		layout = LAYOUT_FLOW
+		layout = LAYOUT_ABSOLUTE
 		width = 100%
 		autoSize = AUTO_SIZE_HEIGHT
 		
+		button back {
+			style = buttonStyle
+			autoSize = AUTO_SIZE_WIDTH
+			height = 50
+			alignment = ALIGN_LEFT
+			text = Back to Instructions
+		}
 		label title {
 			style = noBorder
 			autoSize = AUTO_SIZE_WIDTH
@@ -823,13 +824,58 @@ form componentMenu {
 			fontSize = 20
 			alignment = ALIGN_HCENTER
 		}
-	}	
-	container components {
+	}
+	container wrapper {
 		style = basicContainer
-		layout = LAYOUT_FLOW
+		layout = LAYOUT_ABSOLUTE
 		scroll = SCROLL_VERTICAL
-		width = 100%
-		height = 80%
+		size = 100%, 80%
+		
+		container instructions {
+			style = basicContainer
+			layout = LAYOUT_ABSOLUTE
+			size = 100%, 100%
+			
+			container navigation {
+				style = hiddenContainer
+				size = 100%, 15%
+				layout = LAYOUT_ABSOLUTE
+				alignment = ALIGN_TOP
+				
+				button prev {
+					style = buttonStyle
+					autoSize = AUTO_SIZE_WIDTH
+					height = 50
+					text = Previous
+					alignment = ALIGN_LEFT
+				}
+				button next {
+					style = buttonStyle
+					autoSize = AUTO_SIZE_WIDTH
+					height = 50
+					text = Next
+					alignment = ALIGN_RIGHT
+				}
+			}
+			container descriptionWrapper {
+				style = hiddenContainer
+				size = 80%, 80%
+				alignment = ALIGN_BOTTOM_HCENTER
+				layout = LAYOUT_VERTICAL
+
+				label description {
+					style = noBorder
+					width = 100%
+					height = 100%
+					fontSize = 20
+				}
+			}
+		}
+		container components {
+			style = hiddenContainer
+			layout = LAYOUT_FLOW
+			size = 100%, 100%
+		}
 	}
 	container controls {
 		style = hiddenContainer
@@ -1017,3 +1063,4 @@ form registerDialog {
 		}
 	}
 }
+

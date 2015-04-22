@@ -76,16 +76,17 @@ bool CEV::setSubMode(short mode) {
 				}
 			}
 			if(maxRadius > _maxRadius || (maxZ - minZ) > _maxLength) {
-				app->message("Vehicle does not fit in tube");
+				app->message("Your vehicle does not fit in the tube. Click 'Build' to fix it.");
 				_launchButton->setEnabled(false);
 				break;
 			}
 			//check that the mass is within the limit
 			if(_rootNode->getMass() > _maxMass) {
-				app->message("Your vehicle is more than 100g");
+				app->message("Your vehicle is more than 100g. Click 'Build' to fix it.");
 				_launchButton->setEnabled(false);
 				break;
 			}
+			app->message("Your vehicle is small enough. Now build the Launcher to test it out!");
 			break;
 		}
 	}

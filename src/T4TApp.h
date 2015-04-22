@@ -1,10 +1,12 @@
 #ifndef TEMPLATEGAME_H_
 #define TEMPLATEGAME_H_
 
-#ifdef __linux__
+#if defined __linux__ && !defined __ANDROID__
 	#define USE_GLU_TESS
 	#define USE_COLLADA
 #endif
+
+#define READ_BUF_SIZE 8192
 
 #include <cmath>
 #include <cstring>
@@ -111,6 +113,9 @@ public:
 
 	//user info
 	std::string _userEmail, _userPass;
+	
+	//the version of each content type, for syncing with the content server
+	std::map<std::string, std::string> _versions;
 
 	//scene setup
     Scene* _scene;
@@ -162,11 +167,13 @@ public:
     //user interface
     Form *_mainMenu, *_componentMenu;
     Container *_sideMenu, *_stage, *_sceneMenu, *_machineMenu, *_modePanel,
-      *_textDialog, *_confirmDialog, *_overlay, *_cameraMenu, *_componentContainer, *_componentHeader;
+      *_textDialog, *_confirmDialog, *_overlay, *_cameraMenu, *_componentContainer, *_componentHeader,
+      *_componentInstructions;
     MenuFilter *_itemFilter;
-    Label *_componentTitle, *_message, *_textPrompt, *_confirmMessage;
+    Label *_componentTitle, *_componentDescription, *_message, *_textPrompt, *_confirmMessage;
     TextBox *_textName;
-    Button *_login, *_register, *_textSubmit, *_textCancel, *_confirmYes, *_confirmNo, *_undo, *_redo, *_exit;
+    Button *_login, *_register, *_textSubmit, *_textCancel, *_confirmYes, *_confirmNo, *_undo, *_redo, *_exit,
+    	*_componentPrev, *_componentNext, *_componentBack;
     std::vector<Container*> _submenus; //submenus
     CheckBox *_drawDebugCheckbox;
     std::vector<std::string> _modeNames, _machineNames;
@@ -188,13 +195,12 @@ public:
     T4TApp();
     ~T4TApp();
     void free();
-    void exit();
     T4TApp* getInstance();
     bool login();
     void processLogin(AppForm *form);
     void processRegistration(AppForm *form);
     void loadProjects(bool saveOnly = false);
-    char* curlFile(const char *url, const char *filename = NULL);
+    char* curlFile(const char *url, const char *filename = NULL, const char *localVersion = NULL);
 	void generateModels();
 	MyNode* generateModel(const char *id, const char *type, ...);
 	void loadModels(const char *filename);
@@ -292,6 +298,7 @@ public:
     void enableListener(bool enable, Control *control, Control::Listener *listener, int evtFlags = Control::Listener::CLICK);
 
     void initialize();
+    void drawSplash(void *param);
     void finalize();
     void update(float elapsedTime);
     void render(float elapsedTime);

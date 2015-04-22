@@ -12,33 +12,21 @@ void T4TApp::generateModels() {
 #ifdef USE_ONLINE_MODELS
 
 	//test for Android
-	std::string modelDir = "http://www.t4t.org/nasa-app/models/", url = modelDir + "models.list", file;
-	char *text = curlFile(url.c_str());
+	char *text = curlFile("models/models.list");
 	if(!text) return;
 	GP_WARN("Model list: %s", text);
-	std::string modelList = text, modelStr, token, version;
+	std::string modelList = text, modelStr, token, version, url, file;
 	std::istringstream in(modelList);
-	in >> token;
-	GP_WARN("Model token: %s", token.c_str());
-	bool sameVersion = false;
-	if(token.compare("file_version") == 0) {
-		in >> version;
-		if(version.compare(NODE_FILE_VERSION) == 0) sameVersion = true;
-	}
-	if(!sameVersion) {
-		GP_ERROR("Online model list is not version %s", NODE_FILE_VERSION);
-		return;
-	}
 	while(in) {
 		in >> modelStr;
 		if(in.good() && !modelStr.empty()) {
-			cout << "loading model " << modelStr << " [version " << version << "]" << endl;
-			url = modelDir + modelStr + ".node";
-			file = "res/models/" + modelStr + ".node";
+			url = "models/" + modelStr + ".node";
+			file = "res/" + url;
 			in >> version;
+			cout << "loading model " << modelStr << " [version " << version << "]" << endl;
 			std::vector<std::string> versions = MyNode::getVersions(file.c_str());
 			if(versions.size() == 2
-			  && versions[0].compare(NODE_FILE_VERSION) == 0 && versions[1].compare(version) == 0) {
+			  && versions[0].compare(_versions["model"]) == 0 && versions[1].compare(version) == 0) {
 				cout << "  already loaded and latest version" << endl;
 				continue;
 			}

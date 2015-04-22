@@ -1,12 +1,2 @@
-#res/models_src/pitri_wheel.dae
-#res/models_src/jar_with_cone.dae
-#res/models_src/disk_with_holes.dae
-#res/models_src/threaded_post.dae
-#res/models_src/nose_cone.dae
-#res/models_src/peepee_cap.dae
-#res/models_src/plastic_cone.dae
-#res/models_src/EnginePropellerThing.dae
-#res/models_src/foam_roof.dae
-#res/models_src/legoman.dae
-#res/models_src/lego.dae
-res/models_src/astronaut.dae
+#res/common/pitri_wheel.dae
+#res/common/jar_with_cone.dae
