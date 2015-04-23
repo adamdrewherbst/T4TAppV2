@@ -121,6 +121,7 @@ public:
     Scene* _scene;
     Node* _lightNode;
     Light* _light;
+    std::unique_ptr<Animation> _cameraShift;
     
 	//the functionality of the various interactive modes    
 	std::vector<Mode*> _modes;
@@ -260,11 +261,13 @@ public:
 
     Camera* getCamera();
     Node* getCameraNode();
+    Matrix getCameraMatrix(cameraState *state);
     void placeCamera();
     void setCameraEye(float radius, float theta, float phi);
     void setCameraZoom(float radius);
     void setCameraTarget(Vector3 target);
     void setCameraNode(MyNode *node);
+    void shiftCamera(cameraState *state, unsigned int millis = 1000);
     void resetCamera();
     void cameraPush();
     void cameraPop();

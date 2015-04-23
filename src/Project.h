@@ -24,6 +24,7 @@ public:
 		TouchPoint _parentTouch, _planeTouch;
 		std::vector<std::string> _actions;
 		std::vector<Element*> _children;
+		std::unique_ptr<cameraState> _attachZoom;
 		
 		Element(Project *project, Element *parent, const char *id, const char *name = NULL, bool multiple = false);
 		void setMovable(bool x, bool y, bool z, short ref = -1);
@@ -45,6 +46,7 @@ public:
 		virtual void setComplete(bool complete);
 		virtual void addPhysics(short n = 0);
 		virtual void deleteNode(short n = 0);
+		virtual cameraState* getAttachZoom();
 	};
 	
 	//represents all items that are not specifically part of this project

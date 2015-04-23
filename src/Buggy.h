@@ -10,6 +10,7 @@ public:
 	class Body : public Project::Element {
 		public:
 		Body(Project *project);
+		cameraState* getAttachZoom();
 	};
 
 	class Axle : public Project::Element {
@@ -17,6 +18,7 @@ public:
 		Axle(Project *project, Element *parent, const char *id, const char *name);
 		void placeNode(short n);
 		void addPhysics(short n);
+		cameraState* getAttachZoom();
 	};
 
 	class Wheels : public Project::Element {

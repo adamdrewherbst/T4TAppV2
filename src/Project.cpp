@@ -540,6 +540,9 @@ Project::Element::Element(Project *project, Element *parent, const char *id, con
 		addAction("add");
 		addAction("delete");
 	}
+	_attachZoom = new cameraState();
+	_attachZoom->node = NULL;
+	_attachZoom->target.set(0, 0, 0);
 }
 
 void Project::Element::setParent(Element *parent) {
@@ -614,8 +617,13 @@ void Project::Element::doAction(const char *action) {
 
 void Project::Element::setNode(const char *id) {
 	_currentNodeId = id;
-	if(_parent == NULL && !_isOther) { //auto-place this node
+	if(_parent == NULL && !_isOther) {
+		//auto-place this node
 		addNode();
+	} else if(!_isOther) {
+		//zoom in to the region where the user should tap to add this element
+		app->cameraPush();
+		app->shiftCamera(_parent->getAttachZoom(), 1000.0f);
 	}
 }
 
@@ -669,7 +677,10 @@ void Project::Element::setComplete(bool complete) {
 		cout << "\tenabling " << _children[i]->_id << endl;
 		Control *button = _project->_elementContainer->getControl(_children[i]->_id.c_str());
 		if(button) button->setEnabled(complete);
-	}	
+	}
+	if(_parent != NULL && !_isOther) {
+		app->cameraPop();
+	}
 }
 
 void Project::Element::addPhysics(short n) {
@@ -847,6 +858,11 @@ bool Project::Element::touchEvent(Touch::TouchEvent evt, int x, int y, unsigned 
 		_touchInd = -1;
 	}
 }
+
+Project::Element::getAttachZoom() {
+	return NULL;
+}
+
 
 Project::Other::Other(Project *project) : Project::Element::Element(project, NULL, "other", "Other", true) {
 	_isOther = true;

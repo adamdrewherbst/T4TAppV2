@@ -1347,18 +1347,23 @@ Node* T4TApp::getCameraNode() {
 	return getCamera()->getNode();
 }
 
-void T4TApp::placeCamera() {
-	float radius = _cameraState->radius, theta = _cameraState->theta, phi = _cameraState->phi;
+Matrix T4TApp::getCameraMatrix(cameraState *state) {
+	float radius = state->radius, theta = state->theta, phi = state->phi;
 	Vector3 eye(radius * cos(theta) * cos(phi), radius * sin(phi), radius * sin(theta) * cos(phi));
-	eye += _cameraState->target;
+	eye += state->target;
 	Vector3 up(-cos(theta) * sin(phi), cos(phi), -sin(theta) * sin(phi));
 	Matrix cam;
-	Matrix::createLookAt(eye, _cameraState->target, up, &cam);
+	Matrix::createLookAt(eye, state->target, up, &cam);
 	cam.invert();
-	if(_cameraState->node != NULL) {
-		Matrix node = _cameraState->node->getRotTrans(), camCopy = cam;
+	if(state->node != NULL) {
+		Matrix node = state->node->getRotTrans(), camCopy = cam;
 		Matrix::multiply(node, camCopy, &cam);
 	}
+	return cam;
+}
+
+void T4TApp::placeCamera() {
+	Matrix cam = getCameraMatrix(_cameraState);
 	Vector3 scale, translation; Quaternion rotation;
 	cam.decompose(&scale, &rotation, &translation);
 	getCameraNode()->set(scale, rotation, translation);
@@ -1391,6 +1396,37 @@ void T4TApp::setCameraNode(MyNode *node) {
 		cameraPop();
 	}
 	_cameraMenu->getControl("translate")->setEnabled(node == NULL);
+}
+
+void T4TApp::shiftCamera(cameraState *state, unsigned int millis) {
+	if(state == NULL) return;
+	if(_cameraShift) _cameraShift->stop();
+	unsigned int keyTimes[2] = {0, millis};
+	float keyValues[14];
+	Node *node = getCameraNode();
+	Quaternion rotation1 = node->getRotation(), rotation2;
+	Vector3 translation1 = node->getTranslationWorld(), translation2, scale;
+	keyValues[0] = rotation1.x;
+	keyValues[1] = rotation1.y;
+	keyValues[2] = rotation1.z;
+	keyValues[3] = rotation1.w;
+	keyValues[4] = translation1.x;
+	keyValues[5] = translation1.y;
+	keyValues[6] = translation1.z;
+	Matrix cam = getCameraMatrix(state);
+	cam.decompose(&scale, &rotation2, &translation2);
+	keyValues[7] = rotation2.x;
+	keyValues[8] = rotation2.y;
+	keyValues[9] = rotation2.z;
+	keyValues[10] = rotation2.w;
+	keyValues[11] = translation2.x;
+	keyValues[12] = translation2.y;
+	keyValues[13] = translation2.z;
+	_cameraShift = std::unique_ptr<Animation>(node->createAnimation(
+		"cameraShift", Transform::ANIMATE_ROTATE_TRANSLATE, 2, keyTimes, keyValues, Curve::LINEAR
+	));
+	_cameraShift->play();
+	copyCameraState(state, _cameraState);
 }
 
 void T4TApp::resetCamera() {

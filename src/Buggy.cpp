@@ -114,6 +114,14 @@ Buggy::Body::Body(Project *project) : Project::Element(project, NULL, "body", "B
 	_filter = "body";
 }
 
+cameraState* Buggy::Body::getAttachZoom() {
+	_attachZoom->node = getNode();
+	_attachZoom->radius = 10;
+	_attachZoom->theta = 0;
+	_attachZoom->phi = 0;
+	return _attachZoom;
+}
+
 Buggy::Axle::Axle(Project *project, Element *parent, const char *id, const char *name)
   : Project::Element(project, parent, id, name) {
 	_filter = "axle";
@@ -133,6 +141,17 @@ void Buggy::Axle::addPhysics(short n) {
 	MyNode *node = getNode(), *parent = _parent->getNode();
 	app->addConstraint(parent, node, node->_constraintId, "fixed", node->getTranslationWorld(), Vector3::unitX(), true, true);
 	node->_parentNormal = Vector3::unitX();
+}
+
+cameraState* Buggy::Axle::getAttachZoom() {
+	Node *node = getNode();
+	//bird's eye view of the exposed part of the axle on one side of the body
+	_attachZoom->target = node->getTranslationWorld();
+	_attachZoom->radius = 10;
+	_attachZoom->theta = 0;
+	_attachZoom->phi = M_PI / 2;
+	_attachZoom->node = NULL;
+	return _attachZoom;
 }
 
 Buggy::Wheels::Wheels(Project *project, Element *parent, const char *id, const char *name)
