@@ -114,12 +114,13 @@ Buggy::Body::Body(Project *project) : Project::Element(project, NULL, "body", "B
 	_filter = "body";
 }
 
-cameraState* Buggy::Body::getAttachZoom() {
-	_attachZoom->node = getNode();
-	_attachZoom->radius = 10;
-	_attachZoom->theta = 0;
-	_attachZoom->phi = 0;
-	return _attachZoom;
+cameraState* Buggy::Body::getAttachState() {
+	//side view of the body
+	_attachState->node = getNode();
+	_attachState->radius = 20;
+	_attachState->theta = 0;
+	_attachState->phi = 0;
+	return _attachState;
 }
 
 Buggy::Axle::Axle(Project *project, Element *parent, const char *id, const char *name)
@@ -143,15 +144,19 @@ void Buggy::Axle::addPhysics(short n) {
 	node->_parentNormal = Vector3::unitX();
 }
 
-cameraState* Buggy::Axle::getAttachZoom() {
-	Node *node = getNode();
+cameraState* Buggy::Axle::getAttachState() {
+	MyNode *node = getNode(), *parent = _parent->getNode();
+	parent->updateTransform();
+	BoundingBox parentBox = parent->getBoundingBox(false, false), box = node->getBoundingBox(false, false);
 	//bird's eye view of the exposed part of the axle on one side of the body
-	_attachZoom->target = node->getTranslationWorld();
-	_attachZoom->radius = 10;
-	_attachZoom->theta = 0;
-	_attachZoom->phi = M_PI / 2;
-	_attachZoom->node = NULL;
-	return _attachZoom;
+	_attachState->target = node->getTranslationWorld();
+	_attachState->target.x = parentBox.max.x + (box.max.x - parentBox.max.x) / 2;
+	_attachState->theta = M_PI / 2;
+	_attachState->phi = M_PI / 2;
+	_attachState->node = NULL;
+	_attachBox.set(parentBox.max.x, box.min.y, box.min.z, box.max.x, box.max.y, box.max.z);
+	_attachState->radius = getAttachZoom();
+	return _attachState;
 }
 
 Buggy::Wheels::Wheels(Project *project, Element *parent, const char *id, const char *name)

@@ -10,6 +10,7 @@ Project::Project(const char* id, const char *name) : Mode::Mode(id, name) {
 	_scene = Scene::load("res/common/game.scene");
 	_camera = _scene->getActiveCamera();
 	_camera->setAspectRatio(app->getAspectRatio());
+	_camera->setNearPlane(1.0f);
 	Node *lightNode = _scene->findNode("lightNode");
 	Light *light = lightNode->getLight();
 	Quaternion lightRot;
@@ -540,9 +541,9 @@ Project::Element::Element(Project *project, Element *parent, const char *id, con
 		addAction("add");
 		addAction("delete");
 	}
-	_attachZoom = new cameraState();
-	_attachZoom->node = NULL;
-	_attachZoom->target.set(0, 0, 0);
+	_attachState = new cameraState();
+	_attachState->node = NULL;
+	_attachState->target.set(0, 0, 0);
 }
 
 void Project::Element::setParent(Element *parent) {
@@ -623,7 +624,7 @@ void Project::Element::setNode(const char *id) {
 	} else if(!_isOther) {
 		//zoom in to the region where the user should tap to add this element
 		app->cameraPush();
-		app->shiftCamera(_parent->getAttachZoom(), 1000.0f);
+		app->shiftCamera(_parent->getAttachState(), 1000.0f);
 	}
 }
 
@@ -859,8 +860,38 @@ bool Project::Element::touchEvent(Touch::TouchEvent evt, int x, int y, unsigned 
 	}
 }
 
-Project::Element::getAttachZoom() {
+cameraState* Project::Element::getAttachState() {
 	return NULL;
+}
+
+float Project::Element::getAttachZoom(float fillFraction) {
+	//find the direction of a ray that passes through the corner of the desired fill region
+	Camera *camera = app->getCamera();
+	Ray ray;
+	Rectangle viewport = app->getViewport();
+	camera->pickRay(viewport, viewport.x + ((1 + fillFraction) / 2) * viewport.width,
+		viewport.y + ((1 - fillFraction) / 2) * viewport.height, &ray);
+	const Vector3 &dir = ray.getDirection();
+	//get the new camera orientation after we complete the pan
+	Node *cameraNode = camera->getNode();
+	_attachState->radius = 1;
+	Matrix cam = app->getCameraMatrix(_attachState);
+	Vector3 up = cam.getUpVector(), right = cam.getRightVector(), forward = cam.getForwardVector(), origin;
+	cam.getTranslation(&origin);
+	float upSlope = dir.dot(up) / dir.dot(forward), rightSlope = dir.dot(right) / dir.dot(forward), maxZoom = 0, zoom;
+	//loop through the corners of the target box and determine the one where the required zoom is maximum
+	short i, p, q, r;
+	Vector3 point;
+	for(i = 0; i < 8; i++) {
+		p = i % 2;
+		q = (i % 4) / 2;
+		r = i / 4;
+		point.x = p == 0 ? _attachBox.min.x : _attachBox.max.x;
+		point.y = q == 0 ? _attachBox.min.y : _attachBox.max.y;
+		point.z = r == 0 ? _attachBox.min.z : _attachBox.max.z;
+		point -= origin;
+		point.dot(up);
+	}
 }
 
 

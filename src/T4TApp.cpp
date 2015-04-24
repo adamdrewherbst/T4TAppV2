@@ -241,6 +241,8 @@ void T4TApp::initialize()
 
 	_activeMode = -1;
 	setMode(0);
+	
+	_cameraShift = NULL;
 
 	_drawDebug = false;	
     _sideMenu->setFocus();
@@ -1400,7 +1402,6 @@ void T4TApp::setCameraNode(MyNode *node) {
 
 void T4TApp::shiftCamera(cameraState *state, unsigned int millis) {
 	if(state == NULL) return;
-	if(_cameraShift) _cameraShift->stop();
 	unsigned int keyTimes[2] = {0, millis};
 	float keyValues[14];
 	Node *node = getCameraNode();
@@ -1422,9 +1423,13 @@ void T4TApp::shiftCamera(cameraState *state, unsigned int millis) {
 	keyValues[11] = translation2.x;
 	keyValues[12] = translation2.y;
 	keyValues[13] = translation2.z;
-	_cameraShift = std::unique_ptr<Animation>(node->createAnimation(
+	if(_cameraShift) {
+		_cameraShift->stop();
+		node->destroyAnimation("cameraShift");
+	}
+	_cameraShift = node->createAnimation(
 		"cameraShift", Transform::ANIMATE_ROTATE_TRANSLATE, 2, keyTimes, keyValues, Curve::LINEAR
-	));
+	);
 	_cameraShift->play();
 	copyCameraState(state, _cameraState);
 }

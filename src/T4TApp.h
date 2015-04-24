@@ -121,7 +121,7 @@ public:
     Scene* _scene;
     Node* _lightNode;
     Light* _light;
-    std::unique_ptr<Animation> _cameraShift;
+    Animation* _cameraShift;
     
 	//the functionality of the various interactive modes    
 	std::vector<Mode*> _modes;
