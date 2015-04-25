@@ -155,7 +155,7 @@ cameraState* Buggy::Axle::getAttachState() {
 	_attachState->phi = M_PI / 2;
 	_attachState->node = NULL;
 	_attachBox.set(parentBox.max.x, box.min.y, box.min.z, box.max.x, box.max.y, box.max.z);
-	_attachState->radius = getAttachZoom();
+	_attachState->radius = getAttachZoom(0.4f);
 	return _attachState;
 }
 

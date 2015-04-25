@@ -865,20 +865,20 @@ cameraState* Project::Element::getAttachState() {
 }
 
 float Project::Element::getAttachZoom(float fillFraction) {
-	//find the direction of a ray that passes through the corner of the desired fill region
+	//find the slope of a line that passes through the corner of the desired fill region
 	Camera *camera = app->getCamera();
-	Ray ray;
-	Rectangle viewport = app->getViewport();
-	camera->pickRay(viewport, viewport.x + ((1 + fillFraction) / 2) * viewport.width,
-		viewport.y + ((1 - fillFraction) / 2) * viewport.height, &ray);
-	const Vector3 &dir = ray.getDirection();
-	//get the new camera orientation after we complete the pan
-	Node *cameraNode = camera->getNode();
+	float angle = camera->getFieldOfView() * M_PI/180,
+		upSlope = tan(angle * fillFraction), rightSlope = tan(angle * fillFraction);
 	_attachState->radius = 1;
 	Matrix cam = app->getCameraMatrix(_attachState);
-	Vector3 up = cam.getUpVector(), right = cam.getRightVector(), forward = cam.getForwardVector(), origin;
-	cam.getTranslation(&origin);
-	float upSlope = dir.dot(up) / dir.dot(forward), rightSlope = dir.dot(right) / dir.dot(forward), maxZoom = 0, zoom;
+	Vector3 up, right, forward;
+	cam.getUpVector(&up);
+	cam.getRightVector(&right);
+	cam.getForwardVector(&forward);
+	//get the new camera orientation after we complete the pan
+	float maxZoom = 0, zoom;
+	Vector3 target = _attachState->target;
+	if(_attachState->node) target += _attachState->node->getTranslationWorld();
 	//loop through the corners of the target box and determine the one where the required zoom is maximum
 	short i, p, q, r;
 	Vector3 point;
@@ -889,9 +889,15 @@ float Project::Element::getAttachZoom(float fillFraction) {
 		point.x = p == 0 ? _attachBox.min.x : _attachBox.max.x;
 		point.y = q == 0 ? _attachBox.min.y : _attachBox.max.y;
 		point.z = r == 0 ? _attachBox.min.z : _attachBox.max.z;
-		point -= origin;
-		point.dot(up);
+		point -= target;
+		//zoom to put top of point at top of fill region
+		zoom = fabs(point.dot(up) / upSlope) - point.dot(forward);
+		if(zoom > maxZoom) maxZoom = zoom;
+		//zoom to put side of point at side of fill region
+		zoom = fabs(point.dot(right) / rightSlope) - point.dot(forward);
+		if(zoom > maxZoom) maxZoom = zoom;
 	}
+	return maxZoom;
 }
 
 
