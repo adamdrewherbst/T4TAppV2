@@ -343,6 +343,12 @@ theme mainMenu
         }
     }
 
+    style buttonActive {
+    	stateNormal {
+    		skin = ButtonSkinActive
+    	}
+    }
+
     style CheckBox : Label
     {
         stateNormal

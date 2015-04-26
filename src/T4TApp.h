@@ -96,6 +96,23 @@ struct nodeConstraint {
 	bool noCollide; //ignore collisions between the two constrained nodes
 };
 
+class ButtonGroup {
+public:
+	T4TApp *app;
+	std::string _id;
+	std::vector<Control*> _buttons;
+	Control *_activeButton;
+	Theme::Style *_activeStyle;
+	static std::vector<ButtonGroup*> _groups;
+	static std::map<Control*, ButtonGroup*> _index;
+	
+	ButtonGroup(const char *id = NULL);
+	void addButton(Control *button);
+	void setActive(Control *active);
+	static ButtonGroup* create(const char *id = NULL);
+	static ButtonGroup* getGroup(Control *button);
+};
+
 class MenuFilter {
 public:
 	T4TApp *app;
@@ -199,7 +216,7 @@ public:
     CheckBox *_drawDebugCheckbox;
     std::vector<std::string> _modeNames, _machineNames;
     Theme *_theme;
-    Theme::Style *_formStyle, *_buttonStyle, *_titleStyle, *_hiddenStyle;
+    Theme::Style *_formStyle, *_buttonStyle, *_buttonActive, *_titleStyle, *_hiddenStyle;
     Font *_font;
     std::vector<AppForm*> _forms;
     AppForm *_loginForm, *_registerForm;

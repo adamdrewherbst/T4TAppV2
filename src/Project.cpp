@@ -121,11 +121,13 @@ void Project::setupMenu() {
 	_moveModes.push_back("rotateFree");
 	_moveModes.push_back("groundFace");
 	n = _moveModes.size();
+	ButtonGroup *group = ButtonGroup::create("projectControls");
 	for(i = 0; i < n; i++) {
 		ImageControl *button = app->addControl <ImageControl> (_moveContainer, _moveModes[i].c_str(),
 			"imageSquare", 50.0f, 50.0f);
 		button->setImage(MyNode::concat(3, "res/png/", _moveModes[i].c_str(), ".png"));
 		button->setZIndex(zIndex);
+		group->addButton(button);
 	}
 
 	//add a button for each action that any element has - we will enable them on the fly for the selected element
@@ -149,7 +151,7 @@ void Project::setupMenu() {
 	button->setText("Save");
 	button->setZIndex(zIndex);
 	
-	app->addListener(_controls, this);
+	//app->addListener(_controls, this);
 	_container->setVisible(false);
 }
 

@@ -85,6 +85,7 @@ void T4TApp::initialize()
     _formStyle = _theme->getStyle("basicContainer");
     _hiddenStyle = _theme->getStyle("hiddenContainer");
     _buttonStyle = _theme->getStyle("buttonStyle");
+    _buttonActive = _theme->getStyle("buttonActive");
     _titleStyle = _theme->getStyle("title");
 
 	/*********************** GUI SETUP ***********************/
@@ -166,9 +167,6 @@ void T4TApp::initialize()
 		_forms[i]->_container->setVisible(false);
 		addListener(_forms[i]->_container, this);
 	}
-	
-    addListener(_mainMenu, this);
-    addListener(_componentMenu, this);
 
 	// populate catalog of items
 	_models = Scene::create("models");
@@ -238,6 +236,9 @@ void T4TApp::initialize()
 	_vertex = duplicateModelNode("sphere");
 	_vertex->setScale(0.15f);
 	_vertex->getModel()->setMaterial("res/common/models.material#red");
+
+    addListener(_mainMenu, this);
+    addListener(_componentMenu, this);
 
 	_activeMode = -1;
 	setMode(0);
@@ -329,27 +330,6 @@ void T4TApp::render(float elapsedTime)
     	if(_drawDebug) getPhysicsController()->drawDebug(_activeScene->getActiveCamera()->getViewProjectionMatrix());
     }
 
-    // Draw text
-    Vector4 fontColor(1.0f, 1.0f, 1.0f, 1.0f);
-    unsigned int width, height;
-    char buffer[50];
-
-/*    _font->start();
-
-    // Mouse
-    sprintf(buffer, "M(%d,%d)", (int)_mousePoint.x, (int)_mousePoint.y);
-    _font->measureText(buffer, _font->getSize(), &width, &height);
-    int x = _mousePoint.x - (int)(width>>1);
-    int y = _mousePoint.y - (int)(height>>1);
-    //cout << "drawing " << buffer << " at " << x << ", " << y << endl;
-    _font->drawText(buffer, x, y, fontColor, _font->getSize());
-    if (_mouseString.length() > 0)
-    {
-        int y = getHeight() - _font->getSize();
-        _font->drawText(_mouseString.c_str(), 0, y, fontColor, _font->getSize());
-    }
-    _font->finish();
-//*/
 	_mainMenu->draw();
 	_componentMenu->draw();
 	short n = _forms.size(), i;
@@ -535,6 +515,12 @@ void T4TApp::controlEvent(Control *control, Control::Listener::EventType evt)
 	const char *id = control->getId();
 	Container *parent = (Container*) control->getParent();
 	cout << "CLICKED " << id << endl;
+	
+	//if this button is part of a group, make it the active one
+	ButtonGroup *group = ButtonGroup::getGroup(control);
+	if(group) {
+		group->setActive(control);
+	}
 
 	Mode *mode = getActiveMode();
 	if(mode && mode->_container->getControl(id) == control) {
@@ -842,7 +828,7 @@ void T4TApp::addItem(const char *type, short numTags, ...) {
 	itemImage->setText(type);
 	itemImage->setZIndex(_componentMenu->getZIndex());
 	//itemImage->setImage("res/png/cowboys-helmet-nobkg.png");
-	addListener(itemImage, this, Control::Listener::CLICK);
+	//addListener(itemImage, this, Control::Listener::CLICK);
 }
 
 void T4TApp::filterItemMenu(const char *tag) {
@@ -1476,7 +1462,7 @@ void T4TApp::animationEvent(AnimationClip *clip, AnimationClip::Listener::EventT
 					float keyValues[8];
 					keyTimes[0] = 0;
 					keyTimes[1] = 500;
-					short n;
+					short n = 0;
 					keyValues[n++] = start.x;
 					keyValues[n++] = start.y;
 					keyValues[n++] = start.z;
@@ -1792,6 +1778,7 @@ void T4TApp::reloadConstraint(MyNode *node, nodeConstraint *constraint) {
 }
 
 
+//FILTERS
 T4TApp::HitFilter::HitFilter(T4TApp *app_) : app(app_) {}
 
 bool T4TApp::HitFilter::filter(PhysicsCollisionObject *object) {
@@ -1809,6 +1796,45 @@ void T4TApp::NodeFilter::setNode(MyNode *node) {
 
 bool T4TApp::NodeFilter::filter(PhysicsCollisionObject *object) {
 	return object->getNode() != _node;
+}
+
+
+//BUTTON GROUPS
+std::vector<ButtonGroup*> ButtonGroup::_groups;
+std::map<Control*, ButtonGroup*> ButtonGroup::_index;
+
+ButtonGroup::ButtonGroup(const char *id) : _activeButton(NULL), _activeStyle(NULL) {
+	app = (T4TApp*) Game::getInstance();
+	_id = id;
+}
+
+ButtonGroup* ButtonGroup::create(const char *id) {
+	ButtonGroup *group = new ButtonGroup(id);
+	_groups.push_back(group);
+	return group;
+}
+
+void ButtonGroup::addButton(Control *button) {
+	_buttons.push_back(button);
+	_index[button] = this;
+}
+
+void ButtonGroup::setActive(Control *active) {
+	if(_activeButton) {
+		_activeButton->setStyle(_activeStyle);
+		_activeButton->setEnabled(false);
+		_activeButton->setEnabled(true);
+	}
+	_activeButton = active;
+	if(_activeButton) {
+		_activeStyle = _activeButton->getStyle();
+		_activeButton->setStyle(app->_buttonActive);
+	}
+}
+
+ButtonGroup* ButtonGroup::getGroup(Control *button) {
+	if(_index.find(button) == _index.end()) return NULL;
+	return _index[button];
 }
 
 
