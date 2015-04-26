@@ -160,7 +160,7 @@ public:
      *
      * @script{ignore}
      */
-    static Stream* open(const char* path, size_t streamMode = READ);
+    static Stream* open(const char* path, size_t streamMode = READ, bool external = false);
 
     /**
      * Opens the specified file.
@@ -190,7 +190,7 @@ public:
      * @return A newly allocated (NULL-terminated) character array containing the
      *      contents of the file, or NULL if the file could not be read.
      */
-    static char* readAll(const char* filePath, int* fileSize = NULL);
+    static char* readAll(const char* filePath, int* fileSize = NULL, bool external = false);
 
     /**
      * Determines if the file path is an absolute path for the current platform.

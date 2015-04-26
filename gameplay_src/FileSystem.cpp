@@ -76,7 +76,7 @@ static bool androidFileExists(const char* filePath)
     AAsset* asset = AAssetManager_open(__assetManager, filePath, AASSET_MODE_RANDOM);
     if (asset)
     {
-        int lenght = AAsset_getLength(asset);
+        int length = AAsset_getLength(asset);
         AAsset_close(asset);
         return length > 0;
     }
@@ -344,8 +344,7 @@ bool FileSystem::fileExists(const char* filePath)
     GP_ASSERT(filePath);
 
 #ifdef __ANDROID__
-    if (androidFileExists(resolvePath(filePath)))
-    {
+    if (androidFileExists(resolvePath(filePath))) {
         return true;
     }
 #endif
@@ -358,13 +357,13 @@ bool FileSystem::fileExists(const char* filePath)
 
 }
 
-Stream* FileSystem::open(const char* path, size_t streamMode)
+Stream* FileSystem::open(const char* path, size_t streamMode, bool external)
 {
     char modeStr[] = "rb";
     if ((streamMode & WRITE) != 0)
         modeStr[0] = 'w';
 #ifdef __ANDROID__
-    if ((streamMode & WRITE) != 0)
+    if ((streamMode & WRITE) != 0 || external)
     {
         // Open a file on the SD card
         std::string fullPath(__resourcePath);
@@ -407,18 +406,19 @@ FILE* FileSystem::openFile(const char* filePath, const char* mode)
     return fp;
 }
 
-char* FileSystem::readAll(const char* filePath, int* fileSize)
+char* FileSystem::readAll(const char* filePath, int* fileSize, bool external)
 {
     GP_ASSERT(filePath);
 
     // Open file for reading.
-    std::auto_ptr<Stream> stream(open(filePath));
+    std::auto_ptr<Stream> stream(open(filePath, READ, external));
     if (stream.get() == NULL)
     {
         GP_ERROR("Failed to load file: %s", filePath);
         return NULL;
     }
     size_t size = stream->length();
+    GP_WARN("Reading all %d bytes of %s", size, filePath);
 
     // Read entire file contents.
     char* buffer = new char[size + 1];
