@@ -41,10 +41,26 @@ class T4TApp;
 
 typedef std::unique_ptr<PhysicsConstraint, PhysicsConstraint::Deleter> ConstraintPtr;
 
-struct cameraState {
+class CameraState {
+public:
+	T4TApp *app;
 	MyNode *node;
 	float radius, theta, phi;
 	Vector3 target;
+	Matrix matrix;
+	
+	CameraState();
+	CameraState(float radius, float theta, float phi, Vector3 target = Vector3::zero(), MyNode *node = NULL);
+	CameraState* copy(CameraState *dst = NULL);
+	Matrix getMatrix();
+	void set(float radius, float theta, float phi, Vector3 target = Vector3::zero(), MyNode *node = NULL);
+	void setEye(float radius, float theta, float phi);
+	Vector3 getEye();
+	void setTarget(Vector3 target);
+	Vector3 getTarget();
+	void setNode(MyNode *node);
+	void setLookAt(const Vector3& eye, const Vector3& target);
+	const std::string print();
 };
 
 class TouchPoint {
@@ -107,7 +123,7 @@ public:
 	void submit();
 };
 
-class T4TApp: public Game, public Control::Listener, public PhysicsCollisionObject::CollisionListener
+class T4TApp: public Game, public Control::Listener, public PhysicsCollisionObject::CollisionListener, public AnimationClip::Listener
 {
 public:
 
@@ -121,7 +137,6 @@ public:
     Scene* _scene;
     Node* _lightNode;
     Light* _light;
-    Animation* _cameraShift;
     
 	//the functionality of the various interactive modes    
 	std::vector<Mode*> _modes;
@@ -151,9 +166,14 @@ public:
     Scene *_activeScene;
     Vector3 _gravity;
 
-    //history
-    cameraState *_cameraState;
-    std::vector<cameraState*> _cameraHistory;
+    //camera
+    CameraState *_cameraState;
+    std::vector<CameraState*> _cameraHistory;
+    //for animating camera transitions
+    bool _cameraShifting;
+    CameraState *_cameraStart, *_cameraEnd;
+    Animation *_cameraShift, *_cameraAdjust;
+    
     //undo/redo
     struct Action {
     	std::string type;
@@ -236,7 +256,6 @@ public:
     const std::string pv(const Vector3& v);
     const std::string pv2(const Vector2& v);
     const std::string pq(const Quaternion& q);
-    const std::string pcam(cameraState *state);
 
     void initScene();
     void setSceneName(const char *name);
@@ -261,17 +280,18 @@ public:
 
     Camera* getCamera();
     Node* getCameraNode();
-    Matrix getCameraMatrix(cameraState *state);
     void placeCamera();
+    void setCamera(CameraState *state);
     void setCameraEye(float radius, float theta, float phi);
     void setCameraZoom(float radius);
     void setCameraTarget(Vector3 target);
     void setCameraNode(MyNode *node);
-    void shiftCamera(cameraState *state, unsigned int millis = 1000);
+    void shiftCamera(CameraState *state, unsigned int millis = 1000);
     void resetCamera();
     void cameraPush();
     void cameraPop();
-    cameraState* copyCameraState(cameraState *state, cameraState *dst = NULL);
+    
+    void animationEvent(AnimationClip *clip, AnimationClip::Listener::EventType type);
     
     void setAction(const char *type, ...); //set the current action parameters but don't commit
     void commitAction();

@@ -28,6 +28,9 @@ Project::Project(const char* id, const char *name) : Mode::Mode(id, name) {
 	_payloadId = NULL;
 	_payload = NULL;
 
+	_buildState = new CameraState(30, -M_PI/3, M_PI/12);
+	_testState = new CameraState(40, 0, M_PI/12);	
+
 	_other = (Other*) addElement(new Other(this));	
 
 	_currentElement = 0;
@@ -159,7 +162,7 @@ void Project::controlEvent(Control *control, Control::Listener::EventType evt) {
 	if(_numElements > 0 && _elementContainer->getControl(id) == control) {
 		for(short i = 0; i < _elements.size(); i++) if(_elements[i]->_id.compare(id) == 0) {
 			setCurrentElement(i);
-			_inSequence = false;
+			setInSequence(false);
 			if(!getEl()->_complete) {
 				promptItem();
 				cout << "prompting for " << getEl()->_filter << endl;
@@ -319,7 +322,7 @@ void Project::setActive(bool active) {
 		if(finish) finish->setEnabled(true);
 		app->getPhysicsController()->setGravity(Vector3::zero());
 		app->getPhysicsController()->addStatusListener(this);
-		_inSequence = true;
+		setInSequence(true);
 		//determine the next element needing to be added
 		if(!_started) {
 			showInstructions();
@@ -361,12 +364,12 @@ bool Project::setSubMode(short mode) {
 	if(_buildAnchor.get() != nullptr) _buildAnchor->setEnabled(_subMode == 0);
 	switch(_subMode) {
 		case 0: { //build
-			app->setCameraEye(30, -M_PI/3, M_PI/12);
+			app->setCamera(_buildState);
 			removePayload();
 			_rootNode->enablePhysics(true);
 			break;
 		} case 1: { //place in test position
-			app->setCameraEye(40, 0, M_PI/12);
+			app->setCamera(_testState);
 			break;
 		}
 	}
@@ -413,9 +416,16 @@ void Project::promptNextElement() {
 		setCurrentElement(_currentElement+1);
 		_moveMode = -1;
 	}
-	else _inSequence = false;
+	else setInSequence(false);
 	if(!_inSequence) return;
 	promptItem();
+}
+
+void Project::setInSequence(bool seq) {
+	if(_inSequence && !seq) {
+		app->setCamera(_buildState);
+	}
+	_inSequence = seq;
 }
 
 void Project::promptItem() {
@@ -541,9 +551,7 @@ Project::Element::Element(Project *project, Element *parent, const char *id, con
 		addAction("add");
 		addAction("delete");
 	}
-	_attachState = new cameraState();
-	_attachState->node = NULL;
-	_attachState->target.set(0, 0, 0);
+	_attachState = new CameraState();
 }
 
 void Project::Element::setParent(Element *parent) {
@@ -678,9 +686,6 @@ void Project::Element::setComplete(bool complete) {
 		cout << "\tenabling " << _children[i]->_id << endl;
 		Control *button = _project->_elementContainer->getControl(_children[i]->_id.c_str());
 		if(button) button->setEnabled(complete);
-	}
-	if(_parent != NULL && !_isOther) {
-		app->cameraPop();
 	}
 }
 
@@ -860,7 +865,7 @@ bool Project::Element::touchEvent(Touch::TouchEvent evt, int x, int y, unsigned 
 	}
 }
 
-cameraState* Project::Element::getAttachState() {
+CameraState* Project::Element::getAttachState() {
 	return NULL;
 }
 
@@ -870,15 +875,14 @@ float Project::Element::getAttachZoom(float fillFraction) {
 	float angle = camera->getFieldOfView() * M_PI/180,
 		upSlope = tan(angle * fillFraction), rightSlope = tan(angle * fillFraction);
 	_attachState->radius = 1;
-	Matrix cam = app->getCameraMatrix(_attachState);
+	Matrix cam = _attachState->getMatrix();
 	Vector3 up, right, forward;
 	cam.getUpVector(&up);
 	cam.getRightVector(&right);
 	cam.getForwardVector(&forward);
 	//get the new camera orientation after we complete the pan
 	float maxZoom = 0, zoom;
-	Vector3 target = _attachState->target;
-	if(_attachState->node) target += _attachState->node->getTranslationWorld();
+	Vector3 target = _attachState->getTarget();
 	//loop through the corners of the target box and determine the one where the required zoom is maximum
 	short i, p, q, r;
 	Vector3 point;

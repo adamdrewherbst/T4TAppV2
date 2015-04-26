@@ -30,7 +30,7 @@ public:
 	Ray _ray;
 	//Base members remember the value from the time of the last TOUCH_PRESS event
 	Camera *_cameraBase;
-	cameraState *_cameraStateBase;
+	CameraState *_cameraStateBase;
 	Rectangle _viewportBase;
 	Vector3 _jointBase; //when free rotating a node, this is the vector from its joint to the touch point
 	

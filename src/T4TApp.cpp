@@ -72,7 +72,7 @@ void T4TApp::initialize()
     
     initScene();
 
-    cout << "cam at: " << pcam(_cameraState) << endl;
+    cout << "cam at: " << _cameraState->print() << endl;
     
 	getPhysicsController()->setGravity(Vector3(0.0f, -10.0f, 0.0f));
 
@@ -304,6 +304,24 @@ void T4TApp::render(float elapsedTime)
 {
     // Clear the color and depth buffers
     clear(CLEAR_COLOR_DEPTH, Vector4::zero(), 1.0f, 0);
+    
+    //during camera shifts, keep it targeted along the line between the start and end targets
+    if(_cameraShifting) {
+    	Node *cameraNode = getCameraNode();
+    	Vector3 startEye = _cameraStart->getEye(), totalEye = _cameraEnd->getEye() - startEye,
+    		eye = cameraNode->getTranslationWorld();
+    	float delta = 0;
+    	if(totalEye.length() > 1e-4) {
+			Vector3 deltaEye = eye - startEye;
+	    	delta = deltaEye.length() / totalEye.length();
+	    }
+    	Vector3 start = _cameraStart->getTarget(), end = _cameraEnd->getTarget(),
+    		target = start + delta * (end - start);
+    	float curTheta = _cameraState->theta;
+    	_cameraState->setLookAt(eye, target);
+    	if(fabs(_cameraState->phi) >= 0.999f * M_PI/2) _cameraState->theta = curTheta;
+    	placeCamera();
+    }
 
     // Visit all the nodes in the scene for drawing
     if(_activeScene != NULL) {
@@ -512,11 +530,17 @@ void T4TApp::setNavMode(short mode) {
 	_navMode = mode;
 }
 
-void T4TApp::controlEvent(Control* control, Control::Listener::EventType evt)
+void T4TApp::controlEvent(Control *control, Control::Listener::EventType evt)
 {
 	const char *id = control->getId();
 	Container *parent = (Container*) control->getParent();
 	cout << "CLICKED " << id << endl;
+
+	Mode *mode = getActiveMode();
+	if(mode && mode->_container->getControl(id) == control) {
+		mode->controlEvent(control, evt);
+		return;
+	}
 
 	//login/register
 	if(control == _login) {
@@ -738,7 +762,10 @@ void T4TApp::initScene()
 
     // Set the aspect ratio for the scene's camera to match the current resolution
     _scene->getActiveCamera()->setAspectRatio(getAspectRatio());
-    _cameraState = new cameraState();
+
+    _cameraState = new CameraState();
+    _cameraStart = new CameraState();
+    _cameraEnd = new CameraState();
 
     // Get light node
     _lightNode = _scene->findNode("lightNode");
@@ -1349,32 +1376,20 @@ Node* T4TApp::getCameraNode() {
 	return getCamera()->getNode();
 }
 
-Matrix T4TApp::getCameraMatrix(cameraState *state) {
-	float radius = state->radius, theta = state->theta, phi = state->phi;
-	Vector3 eye(radius * cos(theta) * cos(phi), radius * sin(phi), radius * sin(theta) * cos(phi));
-	eye += state->target;
-	Vector3 up(-cos(theta) * sin(phi), cos(phi), -sin(theta) * sin(phi));
-	Matrix cam;
-	Matrix::createLookAt(eye, state->target, up, &cam);
-	cam.invert();
-	if(state->node != NULL) {
-		Matrix node = state->node->getRotTrans(), camCopy = cam;
-		Matrix::multiply(node, camCopy, &cam);
-	}
-	return cam;
-}
-
 void T4TApp::placeCamera() {
-	Matrix cam = getCameraMatrix(_cameraState);
+	Matrix cam = _cameraState->getMatrix();
 	Vector3 scale, translation; Quaternion rotation;
 	cam.decompose(&scale, &rotation, &translation);
 	getCameraNode()->set(scale, rotation, translation);
 }
 
+void T4TApp::setCamera(CameraState *state) {
+	state->copy(_cameraState);
+	placeCamera();
+}
+
 void T4TApp::setCameraEye(float radius, float theta, float phi) {
-	_cameraState->radius = radius;
-	_cameraState->theta = theta;
-	_cameraState->phi = phi;
+	_cameraState->setEye(radius, theta, phi);
 	placeCamera();
 }
 
@@ -1384,14 +1399,14 @@ void T4TApp::setCameraZoom(float radius) {
 }
 
 void T4TApp::setCameraTarget(Vector3 target) {
-	_cameraState->target = target;
+	_cameraState->setTarget(target);
 	placeCamera();
 }
 
 void T4TApp::setCameraNode(MyNode *node) {
 	if(node != NULL) {
 		cameraPush();
-		_cameraState->node = node;
+		_cameraState->setNode(node);
 		resetCamera();
 		if(_navMode == 1) setNavMode(0);
 	} else {
@@ -1400,72 +1415,112 @@ void T4TApp::setCameraNode(MyNode *node) {
 	_cameraMenu->getControl("translate")->setEnabled(node == NULL);
 }
 
-void T4TApp::shiftCamera(cameraState *state, unsigned int millis) {
+void T4TApp::shiftCamera(CameraState *state, unsigned int millis) {
 	if(state == NULL) return;
 	unsigned int keyTimes[2] = {0, millis};
-	float keyValues[14];
+	float keyValues[6];
 	Node *node = getCameraNode();
 	Quaternion rotation1 = node->getRotation(), rotation2;
 	Vector3 translation1 = node->getTranslationWorld(), translation2, scale;
-	keyValues[0] = rotation1.x;
-	keyValues[1] = rotation1.y;
-	keyValues[2] = rotation1.z;
-	keyValues[3] = rotation1.w;
-	keyValues[4] = translation1.x;
-	keyValues[5] = translation1.y;
-	keyValues[6] = translation1.z;
-	Matrix cam = getCameraMatrix(state);
+	short n = 0;
+	//keyValues[n++] = rotation1.x;
+	//keyValues[n++] = rotation1.y;
+	//keyValues[n++] = rotation1.z;
+	//keyValues[n++] = rotation1.w;
+	keyValues[n++] = translation1.x;
+	keyValues[n++] = translation1.y;
+	keyValues[n++] = translation1.z;
+	Matrix cam = state->getMatrix();
 	cam.decompose(&scale, &rotation2, &translation2);
-	keyValues[7] = rotation2.x;
-	keyValues[8] = rotation2.y;
-	keyValues[9] = rotation2.z;
-	keyValues[10] = rotation2.w;
-	keyValues[11] = translation2.x;
-	keyValues[12] = translation2.y;
-	keyValues[13] = translation2.z;
+	//keyValues[n++] = rotation2.x;
+	//keyValues[n++] = rotation2.y;
+	//keyValues[n++] = rotation2.z;
+	//keyValues[n++] = rotation2.w;
+	keyValues[n++] = translation2.x;
+	keyValues[n++] = translation2.y;
+	keyValues[n++] = translation2.z;
 	if(_cameraShift) {
 		_cameraShift->stop();
 		node->destroyAnimation("cameraShift");
 	}
 	_cameraShift = node->createAnimation(
-		"cameraShift", Transform::ANIMATE_ROTATE_TRANSLATE, 2, keyTimes, keyValues, Curve::LINEAR
+		"cameraShift", Transform::ANIMATE_TRANSLATE /*ANIMATE_ROTATE_TRANSLATE*/, 2, keyTimes, keyValues, Curve::LINEAR
 	);
+	_cameraShift->getClip()->addBeginListener(this);
+	_cameraShift->getClip()->addEndListener(this);
 	_cameraShift->play();
-	copyCameraState(state, _cameraState);
+	_cameraState->copy(_cameraStart);
+	state->copy(_cameraEnd);
+}
+
+void T4TApp::animationEvent(AnimationClip *clip, AnimationClip::Listener::EventType type) {
+	if(strcmp(clip->getAnimation()->getId(), "cameraShift") == 0) {
+		switch(type) {
+			case AnimationClip::Listener::BEGIN:
+				_cameraShifting = true;
+				break;
+			case AnimationClip::Listener::END: {
+				_cameraShifting = false;
+				//see if we need to do any additional rotation to orient the camera
+				Matrix m1 = _cameraState->getMatrix(), m2 = _cameraEnd->getMatrix();
+				Quaternion start, end, startInv, delta;
+				m1.getRotation(&start);
+				m2.getRotation(&end);
+				start.inverse(&startInv);
+				delta = end * startInv;
+				Vector3 axis;
+				if(fabs(delta.toAxisAngle(&axis)) > 0.1f) {
+					//if so, do so in a post-animation
+					Node *cameraNode = getCameraNode();
+					unsigned int keyTimes[2];
+					float keyValues[8];
+					keyTimes[0] = 0;
+					keyTimes[1] = 500;
+					short n;
+					keyValues[n++] = start.x;
+					keyValues[n++] = start.y;
+					keyValues[n++] = start.z;
+					keyValues[n++] = start.w;
+					keyValues[n++] = end.x;
+					keyValues[n++] = end.y;
+					keyValues[n++] = end.z;
+					keyValues[n++] = end.w;
+					if(_cameraAdjust) {
+						_cameraAdjust->stop();
+						cameraNode->destroyAnimation("cameraAdjust");
+					}
+					_cameraAdjust = cameraNode->createAnimation("cameraAdjust", Transform::ANIMATE_ROTATE, 2,
+						keyTimes, keyValues, Curve::LINEAR);
+					_cameraAdjust->play();
+					_cameraEnd->copy(_cameraState);
+				} else {
+					_cameraEnd->copy(_cameraState);
+					placeCamera();
+				}
+				break;
+			}
+		}
+	}
 }
 
 void T4TApp::resetCamera() {
-	_cameraState->target.set(0, 0, 0);
+	_cameraState->setTarget(Vector3::zero());
 	if(_cameraState->node == NULL) {
-		_cameraState->radius = 30;
-		_cameraState->theta = M_PI / 2;
-		_cameraState->phi = M_PI / 12;
+		_cameraState->setEye(30, M_PI/2, M_PI/12);
 	} else {
-		_cameraState->radius = 20;
-		_cameraState->theta = -M_PI/2;
-		_cameraState->phi = 0;
+		_cameraState->setEye(20, -M_PI/2, 0);
 	}
 	placeCamera();
 }
 
-cameraState* T4TApp::copyCameraState(cameraState *state, cameraState *dst) {
-	if(dst == NULL) dst = new cameraState();
-	dst->node = state->node;
-	dst->radius = state->radius;
-	dst->theta = state->theta;
-	dst->phi = state->phi;
-	dst->target = state->target;
-	return dst;
-}
-
 void T4TApp::cameraPush() {
-	cameraState *state = copyCameraState(_cameraState);
+	CameraState *state = _cameraState->copy();
 	_cameraHistory.push_back(state);
 }
 
 void T4TApp::cameraPop() {
-	cameraState *state = _cameraHistory.back();
-	copyCameraState(state, _cameraState);
+	CameraState *state = _cameraHistory.back();
+	state->copy(_cameraState);
 	_cameraHistory.pop_back();
 	placeCamera();
 }
@@ -1490,10 +1545,87 @@ const std::string T4TApp::pq(const Quaternion& q) {
 	return os.str();
 }
 
-const std::string T4TApp::pcam(cameraState *state) {
+CameraState::CameraState() {
+	app = (T4TApp*) Game::getInstance();
+	set(0, 0, 0);
+}
+
+CameraState::CameraState(float radius, float theta, float phi, Vector3 target, MyNode *node) {
+	app = (T4TApp*) Game::getInstance();
+	set(radius, theta, phi, target, node);
+}
+
+void CameraState::set(float radius, float theta, float phi, Vector3 target, MyNode *node) {
+	this->radius = radius;
+	this->theta = theta;
+	this->phi = phi;
+	this->target = target;
+	this->node = node;
+}
+
+void CameraState::setEye(float radius, float theta, float phi) {
+	this->radius = radius;
+	this->theta = theta;
+	this->phi = phi;
+}
+
+void CameraState::setTarget(Vector3 target) {
+	this->target = target;
+}
+
+void CameraState::setNode(MyNode *node) {
+	this->node = node;
+}
+
+void CameraState::setLookAt(const Vector3& eye, const Vector3& target) {
+	this->target = target;
+	Vector3 delta = eye - target;
+	radius = delta.length();
+	theta = atan2(delta.z, delta.x);
+	float Rxz = sqrt(delta.x * delta.x + delta.z * delta.z);
+	phi = atan2(delta.y, Rxz);
+}
+
+CameraState* CameraState::copy(CameraState *dst) {
+	if(!dst) dst = new CameraState();
+	dst->set(radius, theta, phi, target, node);
+	return dst;
+}
+
+Matrix CameraState::getMatrix() {
+	Vector3 eye(radius * cos(theta) * cos(phi), radius * sin(phi), radius * sin(theta) * cos(phi));
+	eye += target;
+	Vector3 up(-cos(theta) * sin(phi), cos(phi), -sin(theta) * sin(phi));
+	Matrix cam;
+	Matrix::createLookAt(eye, target, up, &cam);
+	cam.invert();
+	if(node != NULL) {
+		Matrix node = this->node->getRotTrans(), camCopy = cam;
+		Matrix::multiply(node, camCopy, &cam);
+	}
+	return cam;
+}
+
+Vector3 CameraState::getEye() {
+	Vector3 eye(radius * cos(theta) * cos(phi), radius * sin(phi), radius * sin(theta) * cos(phi));
+	eye += target;
+	if(node) {
+		Matrix node = this->node->getRotTrans();
+		node.transformPoint(&eye);
+	}
+	return eye;
+}
+
+Vector3 CameraState::getTarget() {
+	Vector3 target = this->target;
+	if(node) target += node->getTranslationWorld();
+	return target;
+}
+
+const std::string CameraState::print() {
 	std::ostringstream os;
-	os << state->radius << "," << state->theta << "," << state->phi << " => " << pv(state->target);
-	if(state->node != NULL) os << " [node " << state->node->getId() << "]";
+	os << radius << "," << theta << "," << phi << " => " << app->pv(target);
+	if(node != NULL) os << " [node " << node->getId() << "]";
 	return os.str();
 }
 

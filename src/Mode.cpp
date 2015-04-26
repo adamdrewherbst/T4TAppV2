@@ -20,7 +20,7 @@ Mode::Mode(const char* id, const char *name) : _selectedNode(NULL), _doSelect(tr
 	_container = (Container*)app->_stage->getControl(("mode_" + _id).c_str());
 	if(_container) {
 		_container->setVisible(false);
-	
+
 		//load any custom controls this mode includes
 		_controls = (Container*)_container->getControl("controls");
 		_subModePanel = NULL;
@@ -28,8 +28,8 @@ Mode::Mode(const char* id, const char *name) : _selectedNode(NULL), _doSelect(tr
 			_subModePanel = (Container*)_controls->getControl("subMode");
 		}
 
-		app->removeListener(_container, app);
-		app->addListener(_container, this);
+		//app->removeListener(_container, app);
+		//app->addListener(_container, this);
 	}
 
 	_plane = app->_groundPlane;
@@ -37,8 +37,8 @@ Mode::Mode(const char* id, const char *name) : _selectedNode(NULL), _doSelect(tr
 	  _camera->getNearPlane(), _camera->getFarPlane());
 	Node *cameraNode = Node::create((_id + "_camera").c_str());
 	cameraNode->setCamera(_cameraBase);
-	_cameraStateBase = new cameraState();
-	app->copyCameraState(app->_cameraState, _cameraStateBase);
+	_cameraStateBase = new CameraState();
+	app->_cameraState->copy(_cameraStateBase);
 	//setActive(false);
 	_active = false;
 	_selectedNode = NULL;
@@ -146,8 +146,8 @@ bool Mode::touchEvent(Touch::TouchEvent evt, int x, int y, unsigned int contactI
 			} else {
 				_cameraBase->getNode()->set(*_camera->getNode());
 				_viewportBase = app->getViewport();
-				app->copyCameraState(app->_cameraState, _cameraStateBase);
-				cout << "touched: camera at " << app->pcam(_cameraStateBase) << endl;
+				app->_cameraState->copy(_cameraStateBase);
+				cout << "touched: camera at " << _cameraStateBase->print() << endl;
 			}
 			break;
 		} case Touch::TOUCH_MOVE: {

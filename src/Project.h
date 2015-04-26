@@ -25,7 +25,7 @@ public:
 		std::vector<std::string> _actions;
 		std::vector<Element*> _children;
 		//where the camera should pan to when the user is attaching something to this element...
-		cameraState *_attachState;
+		CameraState *_attachState;
 		//...and what region it is zooming in on
 		BoundingBox _attachBox;
 		
@@ -49,7 +49,7 @@ public:
 		virtual void setComplete(bool complete);
 		virtual void addPhysics(short n = 0);
 		virtual void deleteNode(short n = 0);
-		virtual cameraState* getAttachState();
+		virtual CameraState* getAttachState();
 		virtual float getAttachZoom(float fillFraction = 0.8f);
 	};
 	
@@ -83,6 +83,8 @@ public:
 	Button *_launchButton, *_activateButton;
 
 	ConstraintPtr _buildAnchor; //keep the model from moving while we are building it
+	
+	CameraState *_buildState, *_testState;
 
 	bool _started, //true after user has opened the screen for this project
 	     _inSequence, //true during the first run-through to add all the elements
@@ -112,6 +114,7 @@ public:
 	bool touchEvent(Touch::TouchEvent evt, int x, int y, unsigned int contactIndex);
 	void setCurrentElement(short n);
 	void promptNextElement();
+	void setInSequence(bool seq);
 	void promptItem();
 	void showInstructions();
 	void navigateInstructions(bool forward = true);

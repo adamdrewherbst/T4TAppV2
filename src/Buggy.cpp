@@ -114,12 +114,9 @@ Buggy::Body::Body(Project *project) : Project::Element(project, NULL, "body", "B
 	_filter = "body";
 }
 
-cameraState* Buggy::Body::getAttachState() {
+CameraState* Buggy::Body::getAttachState() {
 	//side view of the body
-	_attachState->node = getNode();
-	_attachState->radius = 20;
-	_attachState->theta = 0;
-	_attachState->phi = 0;
+	_attachState->set(20, 0, 0, Vector3::zero(), getNode());
 	return _attachState;
 }
 
@@ -144,7 +141,7 @@ void Buggy::Axle::addPhysics(short n) {
 	node->_parentNormal = Vector3::unitX();
 }
 
-cameraState* Buggy::Axle::getAttachState() {
+CameraState* Buggy::Axle::getAttachState() {
 	MyNode *node = getNode(), *parent = _parent->getNode();
 	parent->updateTransform();
 	BoundingBox parentBox = parent->getBoundingBox(false, false), box = node->getBoundingBox(false, false);
@@ -155,7 +152,7 @@ cameraState* Buggy::Axle::getAttachState() {
 	_attachState->phi = M_PI / 2;
 	_attachState->node = NULL;
 	_attachBox.set(parentBox.max.x, box.min.y, box.min.z, box.max.x, box.max.y, box.max.z);
-	_attachState->radius = getAttachZoom(0.4f);
+	_attachState->radius = getAttachZoom(0.2f);
 	return _attachState;
 }
 
@@ -179,7 +176,8 @@ void Buggy::Wheels::placeNode(short n) {
 void Buggy::Wheels::addPhysics(short n) {
 	Element::addPhysics(n);
 	MyNode *node = getNode(n);
-	app->addConstraint(_parent->getNode(), node, node->_constraintId, "hinge", node->getTranslationWorld(), Vector3::unitX(), true, true);
+	app->addConstraint(_parent->getNode(), node, node->_constraintId, "hinge",
+		node->getTranslationWorld(), Vector3::unitX(), true, true);
 	node->_parentNormal = Vector3::unitX();
 }
 
