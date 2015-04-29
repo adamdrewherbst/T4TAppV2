@@ -41,8 +41,11 @@ T4TApp* T4TApp::getInstance() {
 
 void T4TApp::initialize()
 {
+    // Load font
+    _font = Font::create("res/common/arial.gpb");
+    assert(_font);
 
-	displayScreen(this, &T4TApp::drawSplash, NULL, 1000L);
+	splash("Initializing...");
 
 #ifdef USE_GLU_TESS
 	Face::initTess();
@@ -62,14 +65,12 @@ void T4TApp::initialize()
 		}
 	}
 	
+	splash("Loading models...");
 	generateModels();
 	
-    // Load font
-    _font = Font::create("res/common/arial18.gpb");
-    assert(_font);
-    
     _userEmail = "";
     
+    splash("Loading scene...");
     initScene();
 
     cout << "cam at: " << _cameraState->print() << endl;
@@ -77,6 +78,8 @@ void T4TApp::initialize()
 	getPhysicsController()->setGravity(Vector3(0.0f, -10.0f, 0.0f));
 
 	_steering = _braking = _driving = 0.0f;
+	
+	splash("Loading user interface...");
     
     //create the form for selecting catalog items
     cout << "creating theme" << endl;
@@ -99,6 +102,25 @@ void T4TApp::initialize()
 	_modePanel = (Container*)_sideMenu->getControl("modePanel");
 	_cameraMenu = (Container*)_stage->getControl("camera");
 	
+	//make a button group for the navigation modes
+	ButtonGroup *eyeGroup = ButtonGroup::create("eye"), *navGroup = ButtonGroup::create("navModes");
+	Control *eye = _cameraMenu->getControl("eye");
+	eyeGroup->addButton(eye);
+	Container *navContainer = (Container*)_cameraMenu->getControl("subMode");
+	std::vector<Control*> navButtons = navContainer->getControls();
+	short n = navButtons.size(), i;
+	for(i = 0; i < n; i++) {
+		navGroup->addButton(navButtons[i]);
+	}
+	
+	//and the projects
+	ButtonGroup *modeGroup = ButtonGroup::create("modes");
+	std::vector<Control*> modeButtons = _modePanel->getControls();
+	n = modeButtons.size();
+	for(i = 0; i < n; i++) {
+		modeGroup->addButton(modeButtons[i]);
+	}
+	
 	_exit = (Button*) ((Container*)_mainMenu->getControl("exitMenu"))->getControl("exit");
 	
 	ImageControl* itemImage = addControl <ImageControl> (_sideMenu, "dummyImage");
@@ -118,8 +140,12 @@ void T4TApp::initialize()
 	//dialogs
 	_login = (Button*)_sideMenu->getControl("login");
 	_register = (Button*)_sideMenu->getControl("register");
-	_message = (Label*)_stage->getControl("message");
-	_message->setVisible(false);
+	_messages[MESSAGE_BOTTOM] = (Label*)_stage->getControl("messageBottom");
+	_messages[MESSAGE_TOP] = (Label*)_stage->getControl("messageTop");
+	_messages[MESSAGE_CENTER] = (Label*)_stage->getControl("messageCenter");
+	for(std::map<MessageLocation, Label*>::iterator it = _messages.begin(); it != _messages.end(); it++) {
+		it->second->setVisible(false);
+	}
 	_textDialog = (Container*)_mainMenu->getControl("textDialog");
 	_textPrompt = (Label*)_textDialog->getControl("textPrompt");
 	_textName = (TextBox*)_textDialog->getControl("textName");
@@ -162,11 +188,13 @@ void T4TApp::initialize()
 	_registerForm->_callback = &T4TApp::processRegistration;
 	_forms.push_back(_registerForm);
 	
-	short n = _forms.size(), i;
+	n = _forms.size();
 	for(i = 0; i < n; i++) {
 		_forms[i]->_container->setVisible(false);
 		addListener(_forms[i]->_container, this);
 	}
+	
+	splash("Building model catalog...");
 
 	// populate catalog of items
 	_models = Scene::create("models");
@@ -193,6 +221,8 @@ void T4TApp::initialize()
 	//Button *debugButton = addControl <Button> (_sideMenu, "debugButton");
 	
     //addListener(_textName, this, Control::Listener::TEXT_CHANGED);
+    
+    splash("Adding modes...");
 	
 	//interactive modes
 	_modes.push_back(new NavigateMode());
@@ -214,6 +244,8 @@ void T4TApp::initialize()
 	//simple machines
     //_modes.push_back(new Lever());
     //_modes.push_back(new Pulley());
+    
+    splash("Finalizing...");
     
     _itemFilter = new MenuFilter(_componentContainer);
     
@@ -256,12 +288,24 @@ void T4TApp::initialize()
 
 void T4TApp::drawSplash(void* param)
 {
+	const char *msg = NULL;
+	if(param) msg = (const char*)param;
 	clear(CLEAR_COLOR_DEPTH, Vector4(0, 0, 0, 1), 1.0f, 0);
-	SpriteBatch* batch = SpriteBatch::create("res/logo_powered_white.png");
+	SpriteBatch* batch = SpriteBatch::create("res/png/T4T_logo.png");
 	batch->start();
-	batch->draw(getWidth() * 0.5f, getHeight() * 0.5f, 0.0f, 512.0f, 512.0f, 0.0f, 1.0f, 1.0f, 0.0f, Vector4::one(), true);
+	float logoX = getWidth() * 0.5f, logoY = getHeight() * 0.5f, logoWidth = 256.0f, logoHeight = 256.0f;
+	batch->draw(logoX, logoY, 0.0f, logoWidth, logoHeight, 0.0f, 1.0f, 1.0f, 0.0f, Vector4::one(), true);
 	batch->finish();
+	_font->start();
+	unsigned int size = 24, width, height;
+	_font->measureText(msg, size, &width, &height);
+	_font->drawText(msg, (int)(logoX - width/2), (int)(logoY + logoHeight/2 + 10), Vector4::one(), size);
+	_font->finish();
 	SAFE_DELETE(batch);
+}
+
+void T4TApp::splash(const char *msg) {
+	displayScreen(this, &T4TApp::drawSplash, (void*)msg, 10L);
 }
 
 void T4TApp::resizeEvent(unsigned int width, unsigned int height) {
@@ -272,8 +316,6 @@ void T4TApp::resizeEvent(unsigned int width, unsigned int height) {
 	_componentMenu->setPosition(_sideMenu->getX() + _sideMenu->getWidth() + 25.0f, 25.0f);
 	_componentMenu->setWidth(width - 2 * _componentMenu->getX());
 	_componentMenu->setHeight(height - 2 * _componentMenu->getY());
-
-	_message->setPosition(0.0f, height - _message->getHeight());
 }
 
 void T4TApp::free() {
@@ -508,6 +550,13 @@ void T4TApp::setMode(short mode) {
 
 void T4TApp::setNavMode(short mode) {
 	_navMode = mode;
+	ButtonGroup *eye = ButtonGroup::getGroup("eye"), *modes = ButtonGroup::getGroup("navModes");
+	if(eye) eye->toggleButton("eye", _navMode >= 0);
+	if(modes) switch(_navMode) {
+		case 0: modes->setActive("rotate"); break;
+		case 1: modes->setActive("translate"); break;
+		case 2: modes->setActive("zoom"); break;
+	}
 }
 
 void T4TApp::controlEvent(Control *control, Control::Listener::EventType evt)
@@ -811,6 +860,9 @@ void T4TApp::initScene()
 
 void T4TApp::addItem(const char *type, short numTags, ...) {
 	if(_models->findNode(type) != NULL) return;
+	std::ostringstream os;
+	os << "Building model catalog... " << type;
+	splash(os.str().c_str());
 	va_list args;
 	va_start(args, numTags);
 	MyNode *node = MyNode::create(type);
@@ -1102,17 +1154,28 @@ void T4TApp::confirmDelete(bool yes) {
 	}
 }
 
-void T4TApp::message(const char *text) {
-	if(text == NULL) {
-		_message->setVisible(false);
-	} else {
-		_message->setText(text);
-		_message->setVisible(true);
+void T4TApp::message(const char *text, int locations) {
+	std::vector<Label*> messages;
+	if(locations & MESSAGE_BOTTOM) messages.push_back(_messages[MESSAGE_BOTTOM]);
+	if(locations & MESSAGE_TOP) messages.push_back(_messages[MESSAGE_TOP]);
+	if(locations & MESSAGE_CENTER) messages.push_back(_messages[MESSAGE_CENTER]);
+	short n = messages.size(), i;
+	for(i = 0; i < n; i++) {
+		Label *message = messages[i];
+		if(text == NULL) {
+			message->setVisible(false);
+		} else {
+			message->setText(text);
+			message->setVisible(true);
+		}
 	}
 }
 
-bool T4TApp::hasMessage() {
-	return _message->isVisible();
+bool T4TApp::hasMessage(int locations) {
+	if(locations & MESSAGE_BOTTOM && _messages[MESSAGE_BOTTOM]->isVisible()) return true;
+	if(locations & MESSAGE_TOP && _messages[MESSAGE_TOP]->isVisible()) return true;
+	if(locations & MESSAGE_CENTER && _messages[MESSAGE_CENTER]->isVisible()) return true;
+	return false;
 }
 
 bool T4TApp::prepareNode(MyNode* node)
@@ -1821,20 +1884,77 @@ void ButtonGroup::addButton(Control *button) {
 
 void ButtonGroup::setActive(Control *active) {
 	if(_activeButton) {
-		_activeButton->setStyle(_activeStyle);
-		_activeButton->setEnabled(false);
-		_activeButton->setEnabled(true);
+		setStyle(_activeButton, false);
+		//for a one-button group, we are just toggling it
+		if(_buttons.size() == 1) {
+			_activeButton = NULL;
+			return;
+		}
 	}
 	_activeButton = active;
 	if(_activeButton) {
-		_activeStyle = _activeButton->getStyle();
-		_activeButton->setStyle(app->_buttonActive);
+		if(_activeButton->getStyle() != app->_buttonActive)
+			_activeStyle = _activeButton->getStyle();
+		setStyle(_activeButton, true);
+	}
+}
+
+void ButtonGroup::setActive(const char *id) {
+	short n = _buttons.size(), i;
+	for(i = 0; i < n; i++) {
+		if(strcmp(_buttons[i]->getId(), id) == 0) {
+			setActive(_buttons[i]);
+			break;
+		}
+	}
+}
+
+void ButtonGroup::setStyle(Control *button, bool active) {
+	if(!active && !_activeStyle) return;
+	button->setStyle(active ? app->_buttonActive : _activeStyle);
+	//force a render update
+	button->setEnabled(false);
+	button->setEnabled(true);
+}
+
+void ButtonGroup::toggleButton(Control *button, bool active) {
+	if(active) {
+		_activeButton = button;
+		if(button->getStyle() != app->_buttonActive)
+			_activeStyle = button->getStyle();
+		setStyle(button, true);
+	} else {
+		setStyle(button, false);
+		_activeButton = NULL;
+	}
+}
+
+void ButtonGroup::toggleButton(const char *id, bool active) {
+	short n = _buttons.size(), i;
+	for(i = 0; i < n; i++) {
+		if(strcmp(_buttons[i]->getId(), id) == 0) {
+			toggleButton(_buttons[i], active);
+			break;
+		}
+	}
+}
+
+void ButtonGroup::setEnabled(bool enabled) {
+	short n = _buttons.size(), i;
+	for(i = 0; i < n; i++) {
+		_buttons[i]->setEnabled(enabled);
 	}
 }
 
 ButtonGroup* ButtonGroup::getGroup(Control *button) {
 	if(_index.find(button) == _index.end()) return NULL;
 	return _index[button];
+}
+
+ButtonGroup* ButtonGroup::getGroup(const char *id) {
+	short n = _groups.size(), i;
+	for(i = 0; i < n; i++) if(_groups[i]->_id.compare(id) == 0) return _groups[i];
+	return NULL;
 }
 
 

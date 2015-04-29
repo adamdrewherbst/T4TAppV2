@@ -19,6 +19,9 @@ void T4TApp::generateModels() {
 	std::istringstream in(modelList);
 	while(in) {
 		in >> modelStr;
+		std::ostringstream os;
+		os << "Loading models... " << modelStr;
+		splash(os.str().c_str());
 		if(in.good() && !modelStr.empty()) {
 			url = "models/" + modelStr + ".node";
 			file = "res/" + url;

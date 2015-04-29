@@ -346,6 +346,10 @@ theme mainMenu
     style buttonActive {
     	stateNormal {
     		skin = ButtonSkinActive
+            font = ${font}
+            textColor = ${textColor}
+            fontSize = ${fontSize}
+            textAlignment = ALIGN_VCENTER_HCENTER
     	}
     }
 

@@ -105,12 +105,18 @@ public:
 	Theme::Style *_activeStyle;
 	static std::vector<ButtonGroup*> _groups;
 	static std::map<Control*, ButtonGroup*> _index;
-	
+
 	ButtonGroup(const char *id = NULL);
 	void addButton(Control *button);
 	void setActive(Control *active);
+	void setActive(const char *id);
+	void toggleButton(Control *button, bool active);
+	void toggleButton(const char *id, bool active);
+	void setStyle(Control *button, bool active);
+	void setEnabled(bool enabled);
 	static ButtonGroup* create(const char *id = NULL);
 	static ButtonGroup* getGroup(Control *button);
+	static ButtonGroup* getGroup(const char *id);
 };
 
 class MenuFilter {
@@ -208,7 +214,16 @@ public:
       *_textDialog, *_confirmDialog, *_overlay, *_cameraMenu, *_componentContainer, *_componentHeader,
       *_componentInstructions;
     MenuFilter *_itemFilter;
-    Label *_componentTitle, *_componentDescription, *_message, *_textPrompt, *_confirmMessage;
+	
+	enum MessageLocation {
+		MESSAGE_BOTTOM = 0x01,
+		MESSAGE_TOP = 0x02,
+		MESSAGE_CENTER = 0x04,
+		MESSAGE_ALL = MESSAGE_BOTTOM | MESSAGE_TOP | MESSAGE_CENTER
+	};
+    std::map<MessageLocation, Label*> _messages;
+    
+    Label *_componentTitle, *_componentDescription, *_textPrompt, *_confirmMessage;
     TextBox *_textName;
     Button *_login, *_register, *_textSubmit, *_textCancel, *_confirmYes, *_confirmNo, *_undo, *_redo, *_exit,
     	*_componentPrev, *_componentNext, *_componentBack;
@@ -339,6 +354,7 @@ public:
 
     void initialize();
     void drawSplash(void *param);
+    void splash(const char *msg);
     void finalize();
     void update(float elapsedTime);
     void render(float elapsedTime);
@@ -376,8 +392,8 @@ public:
     void doConfirm(const char *message, void (T4TApp::*callback)(bool));
     void showDialog(Container *dialog, bool show = true);
     void confirmDelete(bool yes);
-    void message(const char *text);
-    bool hasMessage();
+    void message(const char *text, int locations = MESSAGE_BOTTOM);
+    bool hasMessage(int locations = MESSAGE_BOTTOM);
     
     //miscellaneous
     template <class T> T* popBack(std::vector<T*> &vec);

@@ -16,6 +16,8 @@ Buggy::Buggy() : Project::Project("buggy", "Lunar Buggy") {
 	_frontWheels = addElement(new Wheels(this, _frontAxle, "frontWheels", "Front Wheels"));
 	_rearWheels = addElement(new Wheels(this, _rearAxle, "rearWheels", "Rear Wheels"));
 	setupMenu();
+	
+	_testState->set(60, 0, M_PI/8);
 
 	_ramp = MyNode::create("buggyRamp");
 	_ramp->loadData("res/models/", false);
@@ -47,7 +49,6 @@ bool Buggy::setSubMode(short mode) {
 			//_rootNode->setMyTranslation(trans);
 			setRampHeight(1);
 			app->getPhysicsController()->setGravity(app->_gravity);
-			app->setCameraEye(30, 0, M_PI/12);
 			app->_ground->setVisible(true);
 			_ramp->setVisible(true);
 			break;

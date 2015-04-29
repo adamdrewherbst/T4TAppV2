@@ -204,12 +204,20 @@ form mainMenu {
 		layout = LAYOUT_ABSOLUTE
 		consumeInputEvents = false
 		
-		label message {
+		label messageBottom {
 			style = buttonStyle
-			position = 0, 700
-			width = 90%
-			height = 50
-			alignment = ALIGN_BOTTOM
+			size = 90%, 8%
+			alignment = ALIGN_BOTTOM_LEFT
+		}
+		label messageTop {
+			style = buttonStyle
+			size = 60%, 8%
+			alignment = ALIGN_TOP_HCENTER
+		}
+		label messageCenter {
+			style = buttonStyle
+			size = 60%, 8%
+			alignment = ALIGN_VCENTER_HCENTER
 		}
 		
 		container camera {

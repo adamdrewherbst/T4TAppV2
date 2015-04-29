@@ -7,6 +7,10 @@ namespace T4T {
 Mode::Mode(const char* id, const char *name) : _selectedNode(NULL), _doSelect(true) {
 
 	app = dynamic_cast<T4TApp*>(Game::getInstance());
+	std::ostringstream os;
+	os << "Loading modes... " << name;
+	app->splash(os.str().c_str());
+
 	_scene = app->_scene;
 	_camera = app->getCamera();
 	

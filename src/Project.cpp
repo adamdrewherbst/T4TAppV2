@@ -105,12 +105,14 @@ void Project::setupMenu() {
 	short i, j, n;
 	_elementContainer = app->addControl <Container> (_controls, "elements", "hiddenContainer");
 	_elementContainer->setLayout(Layout::LAYOUT_VERTICAL);
+	ButtonGroup *elementGroup = ButtonGroup::create("projectElement");
 	for(i = 0; i < _numElements; i++) {
 		j = (i+1) % _numElements;
 		button = app->addControl <Button> (_elementContainer, _elements[j]->_id.c_str(), NULL, -1, 40);
 		button->setText(_elements[j]->_name.c_str());
 		button->setZIndex(zIndex);
 		if(_elements[j]->_parent) button->setEnabled(false);
+		elementGroup->addButton(button);
 	}
 
 	_moveContainer = app->addControl <Container> (_controls, "moveMode", "hiddenContainer");
@@ -121,13 +123,13 @@ void Project::setupMenu() {
 	_moveModes.push_back("rotateFree");
 	_moveModes.push_back("groundFace");
 	n = _moveModes.size();
-	ButtonGroup *group = ButtonGroup::create("projectControls");
+	ButtonGroup *moveGroup = ButtonGroup::create("moveMode");
 	for(i = 0; i < n; i++) {
 		ImageControl *button = app->addControl <ImageControl> (_moveContainer, _moveModes[i].c_str(),
 			"imageSquare", 50.0f, 50.0f);
 		button->setImage(MyNode::concat(3, "res/png/", _moveModes[i].c_str(), ".png"));
 		button->setZIndex(zIndex);
-		group->addButton(button);
+		moveGroup->addButton(button);
 	}
 
 	//add a button for each action that any element has - we will enable them on the fly for the selected element
@@ -277,6 +279,7 @@ void Project::addNode() {
 	node->addPhysics();
 	app->addConstraint(parent, node, -1, "fixed", point, normal, true);
 	node->updateMaterial();
+	
 	_currentNodeId = NULL;
 }
 
@@ -633,12 +636,16 @@ void Project::Element::setNode(const char *id) {
 		addNode();
 	} else if(!_isOther) {
 		//zoom in to the region where the user should tap to add this element
+		std::ostringstream os;
+		os << "Tap on the " << _parent->_name << " to place the " << _name;
+		app->message(os.str().c_str()); 
 		app->cameraPush();
 		app->shiftCamera(_parent->getAttachState(), 1000.0f);
 	}
 }
 
 void Project::Element::addNode() {
+	if(_currentNodeId == NULL) return;
 	bool append = _multiple || _nodes.empty();
 	short offset = _multiple ? _nodes.size() / _numNodes : 0;
 	for(short i = 0; i < _numNodes; i++) {
