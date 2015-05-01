@@ -10,6 +10,8 @@ Rocket::Rocket() : Project::Project("rocket", "Balloon Rocket") {
 	app->addItem("balloon_sphere", 2, "general", "balloon");
 	app->addItem("balloon_long", 2, "general", "balloon");
 	
+	_testState->set(45, 0, M_PI/12);
+	
 	_payloadId = "satellite";
 
 	_pathLength = 10;
@@ -35,7 +37,6 @@ bool Rocket::setSubMode(short mode) {
 		} case 1: { //test
 			//move the straw back to the starting point
 			Vector3 start(0, 0, -_pathLength/2);
-			app->setCameraEye(30, 0, M_PI/12);
 			app->getPhysicsController()->setGravity(app->_gravity);
 			_straw->_constraint->setEnabled(false);
 			_rootNode->enablePhysics(false);
@@ -116,7 +117,7 @@ void Rocket::update() {
 			trans = trans.normalize() * (scale * _balloons->_balloonRadius[i] - _balloons->_anchorRadius[i]);
 			balloon->setTranslation(trans);	
 			//apply the air pressure force
-			anchor->getCollisionObject()->asRigidBody()->applyForce(Vector3(0, 0, 40) * scale);
+			anchor->getCollisionObject()->asRigidBody()->applyForce(Vector3(0, 0, 200) * scale);
 		}
 	}
 }

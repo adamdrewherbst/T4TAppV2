@@ -11,6 +11,8 @@ Launcher::Launcher() : Project::Project("launcher", "CEV Launcher") {
 
 	_rubberBand = (RubberBand*) addElement(new RubberBand(this));
 	setupMenu();
+	
+	_testState->set(80, 0, M_PI/3);
 
 	_table = MyNode::create("table1");
 	_table->loadData("res/models/", false);
@@ -79,7 +81,6 @@ bool Launcher::setSubMode(short n) {
 			break;
 		} case 1: {
 			//show the table with the clamps
-			app->setCameraEye(55, 0, M_PI/3);
 			_scene->addNode(_table);
 			_table->enablePhysics(true);
 			app->_ground->setVisible(true);

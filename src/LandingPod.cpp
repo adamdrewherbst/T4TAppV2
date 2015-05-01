@@ -13,6 +13,8 @@ LandingPod::LandingPod() : Project::Project("landingPod", "Landing Pod") {
 	_body = (Body*) addElement(new Body(this));
 	_hatch = (Hatch*) addElement(new Hatch(this, _body));
 	
+	_testState->set(50, 0, M_PI/3);
+	
 	_payloadId = "buggy";
 	
 	_ramp = MyNode::create("podRamp");

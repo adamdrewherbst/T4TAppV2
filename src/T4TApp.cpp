@@ -269,8 +269,8 @@ void T4TApp::initialize()
 	_vertex->setScale(0.15f);
 	_vertex->getModel()->setMaterial("res/common/models.material#red");
 
-    addListener(_mainMenu, this);
-    addListener(_componentMenu, this);
+    addListener(_mainMenu, this, Control::Listener::CLICK | Control::Listener::PRESS | Control::Listener::RELEASE);
+    addListener(_componentMenu, this, Control::Listener::CLICK | Control::Listener::PRESS | Control::Listener::RELEASE);
 
 	_activeMode = -1;
 	setMode(0);
@@ -282,8 +282,13 @@ void T4TApp::initialize()
     
 	_running = 0;
 	_constraintCount = 0;
+	_tooltipControl = NULL;
 	
 	resizeEvent(getWidth(), getHeight());
+	
+	if(isGestureSupported(Gesture::GESTURE_LONG_TAP)) message("Long tap supported");
+	else message("Long tap not supported");
+	registerGesture(Gesture::GESTURE_LONG_TAP);
 }
 
 void T4TApp::drawSplash(void* param)
@@ -298,8 +303,24 @@ void T4TApp::drawSplash(void* param)
 	batch->finish();
 	_font->start();
 	unsigned int size = 24, width, height;
-	_font->measureText(msg, size, &width, &height);
-	_font->drawText(msg, (int)(logoX - width/2), (int)(logoY + logoHeight/2 + 10), Vector4::one(), size);
+	int x, y = (logoY + logoHeight/2 + 10);
+	bool setPos = strcmp(&msg[strlen(msg)-3], "...") == 0;
+	if(!setPos) {
+		const char *ellipsis = strstr(msg, "...");
+		if(ellipsis) {
+			std::string str = msg;
+			str.resize(ellipsis - msg + 3);
+			if(_splashPos.find(str) != _splashPos.end())
+				x = _splashPos[str];
+			else setPos = true;
+		} else setPos = true;
+	}
+	if(setPos) {
+		_font->measureText(msg, size, &width, &height);
+		x = (int)(logoX - width/2);
+		_splashPos[msg] = x;
+	}
+	_font->drawText(msg, x, y, Vector4::one(), size);
 	_font->finish();
 	SAFE_DELETE(batch);
 }
@@ -347,6 +368,14 @@ void T4TApp::render(float elapsedTime)
 {
     // Clear the color and depth buffers
     clear(CLEAR_COLOR_DEPTH, Vector4::zero(), 1.0f, 0);
+    
+    if(_tooltipControl) {
+    	_tooltipTime += elapsedTime;
+    	if(_tooltipTime > 1000) {
+    		const char *tooltip = _tooltipControl->getTooltip();
+    		if(tooltip) message(tooltip);
+    	}
+    }
     
     //during camera shifts, keep it targeted along the line between the start and end targets
     if(_cameraShifting) {
@@ -559,12 +588,26 @@ void T4TApp::setNavMode(short mode) {
 	}
 }
 
+void T4TApp::gestureLongTapEvent(int x, int y, float duration) {
+	Logger::log(Logger::LEVEL_INFO, "long tap at %d, %d - %f", x, y, duration);
+	message("LONG TAP BRO!");
+}
+
 void T4TApp::controlEvent(Control *control, Control::Listener::EventType evt)
 {
 	const char *id = control->getId();
 	Container *parent = (Container*) control->getParent();
-	cout << "CLICKED " << id << endl;
 	
+	if(evt == Control::Listener::PRESS) {
+		_tooltipControl = control;
+		_tooltipTime = 0;
+	} else if(evt == Control::Listener::RELEASE) {
+		_tooltipControl = NULL;
+	}
+
+	if(evt == Control::Listener::PRESS || evt == Control::Listener::RELEASE) return;
+	cout << "CLICKED " << id << endl;
+
 	//if this button is part of a group, make it the active one
 	ButtonGroup *group = ButtonGroup::getGroup(control);
 	if(group) {
@@ -768,10 +811,12 @@ AppForm* T4TApp::getForm(Control *control) {
 void T4TApp::keyEvent(Keyboard::KeyEvent evt, int key) {
 	if(_activeMode >= 0 && _modes.size() > _activeMode) _modes[_activeMode]->keyEvent(evt, key);
 }
+
 void T4TApp::touchEvent(Touch::TouchEvent evt, int x, int y, unsigned int contactIndex) {
-	//cout << "Touched! " << x << "," << y << endl;
+	_touchPoint.set(evt, x, y);
 	if(_activeMode >= 0 && _modes.size() > _activeMode) _modes[_activeMode]->touchEvent(evt, x, y, contactIndex);
 }
+
 bool T4TApp::mouseEvent(Mouse::MouseEvent evt, int x, int y, int wheelDelta) {
 	//cout << "Moused! " << x << "," << y << endl;
 	return false;

@@ -668,6 +668,7 @@ void Project::Element::addNode() {
 	}
 	_currentNodeId = NULL;
 	setComplete(true);
+	app->message(NULL);
 	_project->promptNextElement();
 }
 

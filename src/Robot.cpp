@@ -15,6 +15,9 @@ Robot::Robot() : Project::Project("robot", "Robot") {
 		_robot->loadAnimation("res/common/robot.animation", _animations[i].c_str());
 	}
 	setupMenu();
+	
+	_buildState->set(30, 0, M_PI/2);
+	_testState->set(25, 0, M_PI/4);
 
 	_pathNode = MyNode::create("robotPath");
 	_pathNode->_type = "grid";
@@ -55,12 +58,10 @@ bool Robot::setSubMode(short mode) {
 	bool changed = Project::setSubMode(mode);
 	switch(_subMode) {
 		case 0: { //build
-			app->setCameraEye(30, 0, M_PI/2);
 			_path.clear();
 			_path.push_back(Vector2(0, 0));
 			break;
 		} case 1: { //test
-			app->setCameraEye(30, 0, M_PI/2);
 			break;
 		}
 	}
@@ -83,7 +84,6 @@ void Robot::launch() {
 	_pathInd = 0;
 	_pathDistance = 0;
 	_robot->playAnimation("walk", true);
-	app->setCameraEye(30, 0, M_PI/3);
 }
 
 void Robot::update() {

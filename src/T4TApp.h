@@ -237,6 +237,10 @@ public:
     AppForm *_loginForm, *_registerForm;
     //callbacks
     void (T4TApp::*_textCallback)(const char*), (T4TApp::*_confirmCallback)(bool);
+    std::map<std::string, int> _splashPos;
+    TouchPoint _touchPoint;
+    Control *_tooltipControl;
+    float _tooltipTime;
     
     //debugging
     Meshy *_debugMesh;
@@ -342,6 +346,7 @@ public:
 	void keyEvent(Keyboard::KeyEvent evt, int key);
     void touchEvent(Touch::TouchEvent evt, int x, int y, unsigned int contactIndex);
     void controlEvent(Control* control, Control::Listener::EventType evt);
+	void gestureLongTapEvent(int x, int y, float duration);
     void inactivateControls(Container *container = NULL);
     void collisionEvent(PhysicsCollisionObject::CollisionListener::EventType type,
     	const PhysicsCollisionObject::CollisionPair& pair, const Vector3& pointA, const Vector3& pointB);

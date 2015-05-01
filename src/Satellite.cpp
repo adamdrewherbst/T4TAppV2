@@ -14,6 +14,8 @@ Satellite::Satellite() : Project::Project("satellite", "Satellite") {
 	_body = (Body*) addElement(new Body(this));
 	_instruments = (Instrument*) addElement(new Instrument(this, _body));
 	setupMenu();
+	
+	_testState->set(40, M_PI/4, M_PI/3);
 
 	_maxRadius = 10.0f;
 	_maxLength = 10.0f;

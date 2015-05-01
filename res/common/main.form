@@ -233,6 +233,7 @@ form mainMenu {
 				autoWidth = true
 				height = 90
 				path = res/png/eye.png
+				tooltip = Toggle between navigation and building modes
 			}			
 			container subMode {
 				style = hiddenContainer
@@ -244,16 +245,19 @@ form mainMenu {
 					style = imageSquare
 					size = 75, 75
 					path = res/png/rotate.png
+					tooltip = Rotate the camera by dragging
 				}
 				image translate {
 					style = imageSquare
 					size = 75, 75
 					path = res/png/translate.png
+					tooltip = Translate the camera by dragging
 				}
 				image zoom {
 					style = imageSquare
 					size = 75, 75
 					path = res/png/zoom.png
+					tooltip = Zoom in and out by dragging up and down
 				}
 			}
 			button axis {
@@ -267,6 +271,7 @@ form mainMenu {
 				autoWidth = true
 				height = 40
 				text = Reset
+				tooltip = Move the camera back to its starting position
 			}
 		}
 		
@@ -734,6 +739,18 @@ form mainMenu {
 			autoWidth = true
 			height = 50
 			text = Pulley
+		}
+	}
+	
+	container tooltipWrapper {
+		style = hiddenContainer
+		autoSize = AUTO_SIZE_BOTH
+		layout = LAYOUT_FLOW
+		
+		label tooltip {
+			style = buttonStyle
+			autoSize = AUTO_SIZE_WIDTH
+			height = 50
 		}
 	}
 	
