@@ -77,6 +77,7 @@ public:
 	//eg. the satellite is the payload for the balloon rocket
 	const char *_payloadId;
 	MyNode *_payload;
+	Vector3 _payloadPosition;
 
 	Container *_elementContainer, *_actionContainer;
 	MenuFilter *_actionFilter;
@@ -87,6 +88,7 @@ public:
 	CameraState *_buildState, *_testState;
 
 	bool _started, //true after user has opened the screen for this project
+		 _complete, //true once all required elements have been added
 	     _inSequence, //true during the first run-through to add all the elements
 	     _launching, //after user clicks the Launch button in test mode
 	     _launchComplete, _broken;
@@ -105,6 +107,7 @@ public:
 	bool setSubMode(short mode);
 	bool selectItem(const char *id);
 	bool setSelectedNode(MyNode *node, Vector3 point = Vector3::zero());
+	void highlightNode(MyNode *node, bool select = true);
 	virtual void update();
 	Element* addElement(Element *element);
 	Element* getEl(short n = -1);

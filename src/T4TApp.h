@@ -239,8 +239,12 @@ public:
     void (T4TApp::*_textCallback)(const char*), (T4TApp::*_confirmCallback)(bool);
     std::map<std::string, int> _splashPos;
     TouchPoint _touchPoint;
-    Control *_tooltipControl;
-    float _tooltipTime;
+    
+    //tooltips for buttons
+    Control *_touchControl, *_tooltipControl;
+    float _touchTime;
+    Form *_tooltipWrapper;
+    Label *_tooltip;
     
     //debugging
     Meshy *_debugMesh;
@@ -368,6 +372,7 @@ public:
     void placeNode(MyNode *node, float x, float y);
     void setMode(short mode);
     void setNavMode(short mode);
+    void setTooltip();
 
     //see if the current touch coordinates intersect a given model in the scene
     bool checkTouchModel(Node* node);

@@ -742,18 +742,6 @@ form mainMenu {
 		}
 	}
 	
-	container tooltipWrapper {
-		style = hiddenContainer
-		autoSize = AUTO_SIZE_BOTH
-		layout = LAYOUT_FLOW
-		
-		label tooltip {
-			style = buttonStyle
-			autoSize = AUTO_SIZE_WIDTH
-			height = 50
-		}
-	}
-	
 	//MODAL DIALOGS - use hidden overlay with intermediate z-index to block other controls
 	container overlay {
 		style = hiddenContainer
@@ -1086,6 +1074,19 @@ form registerDialog {
 				text = Submit
 			}
 		}
+	}
+}
+
+form tooltipWrapper {
+	theme = res/common/default.theme
+	style = hiddenContainer
+	autoSize = AUTO_SIZE_BOTH
+	layout = LAYOUT_FLOW
+	
+	label tooltip {
+		style = Tooltip
+		autoSize = AUTO_SIZE_WIDTH
+		height = 35
 	}
 }
 

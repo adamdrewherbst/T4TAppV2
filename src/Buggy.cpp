@@ -39,6 +39,7 @@ void Buggy::setActive(bool active) {
 
 bool Buggy::setSubMode(short mode) {
 	bool changed = Project::setSubMode(mode);
+	if(mode == 1 && !_complete) return false;
 	switch(_subMode) {
 		case 0: { //build
 			_ramp->setVisible(false);

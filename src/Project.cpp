@@ -39,6 +39,7 @@ Project::Project(const char* id, const char *name) : Mode::Mode(id, name) {
 	_launching = false;
 	_saveFlag = false;
 	_started = false;
+	_complete = false;
 
 	_subModes.push_back("build");
 	_subModes.push_back("test");
@@ -117,11 +118,17 @@ void Project::setupMenu() {
 
 	_moveContainer = app->addControl <Container> (_controls, "moveMode", "hiddenContainer");
 	_moveContainer->setLayout(Layout::LAYOUT_FLOW);
+	std::vector<std::string> tooltips;
 	_moveModes.push_back("translate");
+	tooltips.push_back("Translate the object in the tangent plane to the surface");
 	_moveModes.push_back("translateFree");
+	tooltips.push_back("Translate the object over the surface it is attached to");
 	_moveModes.push_back("rotate");
+	tooltips.push_back("Rotate the object in the tangent plane to the surface");
 	_moveModes.push_back("rotateFree");
+	tooltips.push_back("Rotate the object in any direction");
 	_moveModes.push_back("groundFace");
+	tooltips.push_back("Choose a new point on the object to attach to the surface");
 	n = _moveModes.size();
 	ButtonGroup *moveGroup = ButtonGroup::create("moveMode");
 	for(i = 0; i < n; i++) {
@@ -129,6 +136,7 @@ void Project::setupMenu() {
 			"imageSquare", 50.0f, 50.0f);
 		button->setImage(MyNode::concat(3, "res/png/", _moveModes[i].c_str(), ".png"));
 		button->setZIndex(zIndex);
+		button->setTooltip(tooltips[i].c_str());
 		moveGroup->addButton(button);
 	}
 
@@ -152,6 +160,7 @@ void Project::setupMenu() {
 	button = app->addControl <Button> (_controls, "save", NULL, -1, 40);
 	button->setText("Save");
 	button->setZIndex(zIndex);
+	button->setTooltip("Save your project to your account so you can open it on other devices");
 	
 	//app->addListener(_controls, this);
 	_container->setVisible(false);
@@ -204,14 +213,44 @@ bool Project::selectItem(const char *id) {
 	return true;
 }
 
-bool Project::setSelectedNode(MyNode *node, Vector3 point) {
-	bool changed = Mode::setSelectedNode(node, point);
-	//enable all the appropriate buttons for the selected element
-	/*if(node == NULL) return changed;
+void Project::highlightNode(MyNode *node, bool select) {
+	if(!node) return;
+	//find all nodes in the same element group as this one (eg. left & right wheel)
 	Element *element = node->_element;
-	if(!element) return changed;
-	short n = _elements.size(), i;
-	for(i = 0; i < n; i++) if(_elements[i].get() == element) setCurrentElement(i);*/
+	std::vector<MyNode*> nodes;
+	if(element && element->_numNodes > 1) {
+		short ind = -1, i, n = element->_nodes.size();
+		for(i = 0; i < n; i++) {
+			if(element->_nodes[i].get() == node) {
+				ind = i;
+				break;
+			}
+		}
+		if(ind >= 0) {
+			ind -= ind % element->_numNodes;
+			for(i = ind; i < n && i < ind + element->_numNodes; i++) {
+				nodes.push_back(element->_nodes[i].get());
+			}
+		} else nodes.push_back(node);
+	} else nodes.push_back(node);
+	//highlight or de-highlight them all
+	short n = nodes.size(), i;
+	for(i = 0; i < n; i++) {
+		MyNode *curNode = nodes[i];
+		if(select) {
+			curNode->setColor(0.6f, 1.0f, 0.6f, false, true);
+		} else {
+			Vector3 prev = curNode->_color;
+			curNode->setColor(prev.x, prev.y, prev.z, true, true);
+		}
+	}
+}
+
+bool Project::setSelectedNode(MyNode *node, Vector3 point) {
+	if(_selectedNode) highlightNode(_selectedNode, false);
+	bool changed = Mode::setSelectedNode(node, point);
+	if(_selectedNode) highlightNode(_selectedNode, true);
+	return changed;
 }
 
 bool Project::touchEvent(Touch::TouchEvent evt, int x, int y, unsigned int contactIndex) {
@@ -243,12 +282,12 @@ void Project::deleteSelected() {
 	Element *el = _selectedNode->_element;
 	if(el == NULL) return;
 	short n = el->_nodes.size(), i;
-	for(i = 0; i < n; i++) {
-		if(el->_nodes[i].get() == _selectedNode) {
-			el->deleteNode(i);
-			setSelectedNode(NULL);
-			break;
-		}
+	for(i = 0; i < n && el->_nodes[i].get() != _selectedNode; i++);
+	if(i >= n) return;
+	setSelectedNode(NULL);
+	short start = i - i % el->_numNodes, end = start + el->_numNodes;
+	for(i = start; i < end; i++) {
+		el->deleteNode(start);
 	}
 }
 
@@ -357,10 +396,12 @@ bool Project::setSubMode(short mode) {
 				std::ostringstream os;
 				os << "You must add a " << _elements[i]->_name << " first";
 				app->message(os.str().c_str());
+				_complete = false;
 				return false;
 			}
 		}
 	}
+	_complete = true;
 	bool building = _subMode == 0, changed = Mode::setSubMode(mode);
 	if(_subMode == 0) app->_ground->setVisible(false);
 	if(building) {
@@ -374,6 +415,7 @@ bool Project::setSubMode(short mode) {
 			_rootNode->enablePhysics(true);
 			break;
 		} case 1: { //place in test position
+			setSelectedNode(NULL);
 			app->setCamera(_testState);
 			break;
 		}
@@ -392,8 +434,23 @@ void Project::setCurrentElement(short n) {
 		Element *element = getEl();
 		std::vector<std::string> &actions = element->_actions;
 		_actionFilter->filterAll(true);
-		for(short i = 0; i < actions.size(); i++) {
+		short n = actions.size(), i;
+		for(i = 0; i < n; i++) {
 			_actionFilter->filter(actions[i].c_str(), false);
+		}
+		//update button tooltips to use the name of this element
+		std::vector<Control*> controls = _actionContainer->getControls();
+		n = controls.size();
+		for(i = 0; i < n; i++) {
+			const char *id = controls[i]->getId();
+			std::ostringstream os;
+			if(strcmp(id, "add") == 0) {
+				os << "Add another " << element->_name;
+				controls[i]->setTooltip(os.str().c_str());
+			} else if(strcmp(id, "delete") == 0) {
+				os << "Delete the " << element->_name;
+				controls[i]->setTooltip(os.str().c_str());
+			}
 		}
 	}
 }
@@ -554,8 +611,8 @@ Project::Element::Element(Project *project, Element *parent, const char *id, con
 	for(short i = 0; i < 3; i++) setLimits(i, -MyNode::inf(), MyNode::inf());
 	if(_multiple) {
 		addAction("add");
-		addAction("delete");
 	}
+	addAction("delete");
 	_attachState = new CameraState();
 }
 
@@ -692,7 +749,7 @@ void Project::Element::setComplete(bool complete) {
 	_complete = complete;
 	cout << _id << " complete" << endl;
 	for(short i = 0; i < _children.size(); i++) {
-		if(!complete) _children[i]->setComplete(false);
+		//if(!complete) _children[i]->setComplete(false);
 		cout << "\tenabling " << _children[i]->_id << endl;
 		Control *button = _project->_elementContainer->getControl(_children[i]->_id.c_str());
 		if(button) button->setEnabled(complete);
@@ -710,10 +767,7 @@ void Project::Element::addPhysics(short n) {
 }
 
 void Project::Element::deleteNode(short n) {
-	MyNode *node = _nodes[n].get();
-	node->removeMe();
-	_nodes.erase(_nodes.begin() + n);
-	if(_nodes.empty()) setComplete(false);
+	_nodes[n]->removeMe();
 }
 
 short Project::Element::getNodeCount() {
@@ -739,6 +793,7 @@ bool Project::Element::touchEvent(Touch::TouchEvent evt, int x, int y, unsigned 
 	if(node) parent = dynamic_cast<MyNode*>(node->getParent());
 	//move the node as needed
 	if(node && parent && parent != _project->_rootNode && _project->_moveMode >= 0) {
+		short start = _touchInd - _touchInd % _numNodes, end = start + _numNodes, i;
 		switch(_project->_moveMode) {
 			case 0: { //translate in plane
 				switch(evt) {
@@ -746,17 +801,23 @@ bool Project::Element::touchEvent(Touch::TouchEvent evt, int x, int y, unsigned 
 						Vector3 point = _project->getTouchPoint(evt), normal = node->getJointNormal();
 						_plane.set(normal, -normal.dot(point));
 						cout << "set plane to " << app->pv(_plane.getNormal()) << " at " << _plane.getDistance() << endl;
-						node->enablePhysics(false);
+						for(i = start; i < end; i++) {
+							_nodes[i]->enablePhysics(false);
+						}
 						break;
 					} case Touch::TOUCH_MOVE: {
 						Vector3 delta = _planeTouch.getPoint(evt) - _project->getTouchPoint(Touch::TOUCH_PRESS);
 						cout << "plane now " << app->pv(_plane.getNormal()) << " at " << _plane.getDistance() << endl;
 						cout << "translating by " << app->pv(delta) << endl;
-						node->baseTranslate(delta);
+						for(i = start; i < end; i++) {
+							_nodes[i]->baseTranslate(delta);
+						}
 						break;
 					} case Touch::TOUCH_RELEASE: {
 						addPhysics(_touchInd);
-						node->enablePhysics(true);
+						for(i = start; i < end; i++) {
+							_nodes[i]->enablePhysics(true);
+						}
 						break;
 					}
 				}
@@ -770,16 +831,22 @@ bool Project::Element::touchEvent(Touch::TouchEvent evt, int x, int y, unsigned 
 						Vector3 point = node->getAnchorPoint();
 						_project->_touchPt.set(evt, x, y, point);
 						cout << "touched " << node->getId() << ", currently at " << app->pv(point) << endl;
-						node->enablePhysics(false);
+						for(i = start; i < end; i++) {
+							_nodes[i]->enablePhysics(false);
+						}
 						break;
 					} case Touch::TOUCH_MOVE: {
 						_project->_touchPt.set(evt, x, y, parent);
 						cout << "moving to " << app->pv(_project->_touchPt.getPoint(evt)) << endl;
-						placeNode(_touchInd);
+						for(i = start; i < end; i++) {
+							placeNode(i);
+						}
 						break;
 					} case Touch::TOUCH_RELEASE: {
-						addPhysics(_touchInd);
-						node->enablePhysics(true);
+						for(i = start; i < end; i++) {
+							addPhysics(i);
+							_nodes[i]->enablePhysics(true);
+						}
 						break;
 					}
 				}
@@ -787,19 +854,27 @@ bool Project::Element::touchEvent(Touch::TouchEvent evt, int x, int y, unsigned 
 			} case 2: { //rotate in plane
 				switch(evt) {
 					case Touch::TOUCH_PRESS: {
-						node->enablePhysics(false);
+						for(i = start; i < end; i++) {
+							_nodes[i]->enablePhysics(false);
+						}
 						break;
 					} case Touch::TOUCH_MOVE: {
 						float deltaAngle = _project->_touchPt.deltaPix().x * 2 * M_PI / 400.0f;
-						Quaternion rot(node->getJointNormal(), deltaAngle);
-						node->baseRotate(rot);
-						cout << "base rotating " << node->getId() << " from "
-							<< app->pq(node->_baseRotation) << " by " << app->pq(rot) << endl;
-						cout << "  now at " << app->pq(node->getRotation()) << endl;
+						for(i = start; i < end; i++) {
+							Quaternion rot(_nodes[i]->getJointNormal(), deltaAngle);
+							_nodes[i]->baseRotate(rot);
+							if(_nodes[i].get() == node) {
+								cout << "base rotating " << node->getId() << " from "
+									<< app->pq(node->_baseRotation) << " by " << app->pq(rot) << endl;
+								cout << "  now at " << app->pq(node->getRotation()) << endl;
+							}
+						}
 						break;
 					} case Touch::TOUCH_RELEASE: {
-						addPhysics(_touchInd);
-						node->enablePhysics(true);
+						for(i = start; i < end; i++) {
+							addPhysics(i);
+							_nodes[i]->enablePhysics(true);
+						}
 						break;
 					}
 				}

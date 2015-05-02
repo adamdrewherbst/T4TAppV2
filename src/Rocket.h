@@ -24,6 +24,7 @@ public:
 		Balloon(Project *project, Element *parent);
 		void placeNode(short n);
 		void addPhysics(short n);
+		void deleteNode(short n);
 	};
 
 	Straw *_straw;

@@ -99,6 +99,7 @@ void LandingPod::setActive(bool active) {
 
 bool LandingPod::setSubMode(short mode) {
 	bool changed = Project::setSubMode(mode);
+	if(mode == 1 && !_complete) return false;
 	if(_body->_groundAnchor.get()) _body->_groundAnchor.reset();
 	switch(_subMode) {
 		case 0: { //build

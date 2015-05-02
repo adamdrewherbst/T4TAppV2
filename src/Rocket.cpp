@@ -30,6 +30,7 @@ void Rocket::setActive(bool active) {
 
 bool Rocket::setSubMode(short mode) {
 	bool changed = Project::setSubMode(mode);
+	if(mode == 1 && !_complete) return false;
 	_launching = false;
 	switch(mode) {
 		case 0: { //build
@@ -41,16 +42,20 @@ bool Rocket::setSubMode(short mode) {
 			_straw->_constraint->setEnabled(false);
 			_rootNode->enablePhysics(false);
 			_rootNode->setMyTranslation(start);
+			positionPayload();
 			_rootNode->enablePhysics(true);
 			_straw->_constraint->setEnabled(true);
-			//dangle the lunar buggy from the center of the straw with a socket constraint
-			positionPayload();
-			/*for(short i = 0; i < 2; i++) {
-				Vector3 springJoint(joint.x, joint.y, joint.z + (2*i-1) * _strawLength/3);
-				PhysicsSpringConstraint *constraint = 
-					(PhysicsSpringConstraint*) app->addConstraint(straw, body, -1, "spring", springJoint, dir, true);
-				constraint->setLinearStrengthZ(0.1f);
-			}*/
+
+			_payload->enablePhysics(true);
+			Vector3 trans = _payload->getTranslationWorld();
+			BoundingBox satelliteBox = _payload->getBoundingBox(true);
+			if(_payload->getScene() != _scene) {
+				Vector3 joint = trans, dir = Vector3::unitY();
+				joint.y += satelliteBox.max.y;
+				app->addConstraint(_straw->getNode(), _payload, -1, "fixed", joint, dir, true);
+				_payload->updateMaterial();
+				_payloadPosition = trans;
+			}
 			break;
 		}
 	}
@@ -59,6 +64,10 @@ bool Rocket::setSubMode(short mode) {
 
 bool Rocket::positionPayload() {
 	if(!Project::positionPayload()) return false;
+	if(_payload->getScene() == _scene) {
+		_payload->setMyTranslation(_payloadPosition);
+		return true;
+	}
 	MyNode *straw = _straw->getNode();
 	straw->updateTransform();
 	BoundingBox strawBox = straw->getBoundingBox(true);
@@ -66,13 +75,6 @@ bool Rocket::positionPayload() {
 	Vector3 trans = straw->getTranslationWorld();
 	trans.y += strawBox.min.y - satelliteBox.max.y - 1.5f;
 	_payload->setMyTranslation(trans);
-	_payload->enablePhysics(true);
-	if(_payload->getScene() != _scene) {
-		Vector3 joint = trans, dir = Vector3::unitY();
-		joint.y += satelliteBox.max.y;
-		app->addConstraint(straw, _payload, -1, "fixed", joint, dir, true);
-		_payload->updateMaterial();
-	}
 	return true;
 }
 
@@ -223,7 +225,7 @@ void Rocket::Balloon::placeNode(short n) {
 	anchor->_objType = "sphere";
 	anchor->_radius = anchorRadius;
 	anchor->_mass = 0.5f;
-	balloon->_objType = "none";
+	balloon->_objType = "ghost";
 	anchor->addChild(balloon);
 	_project->_scene->addNode(anchor);
 	balloon->setTranslation(trans * (balloonRadius - anchorRadius));
@@ -250,7 +252,13 @@ void Rocket::Balloon::addPhysics(short n) {
 	anchor->_radius = anchorRadius;
 
 	anchor->addPhysics(false);
+	balloon->addPhysics(false);
 	app->addConstraint(straw, anchor, -1, "fixed", Vector3::zero(), Vector3::zero(), true);
+}
+
+void Rocket::Balloon::deleteNode(short n) {
+	MyNode *anchor = dynamic_cast<MyNode*>(_nodes[n]->getParent());
+	anchor->removeMe();
 }
 
 }

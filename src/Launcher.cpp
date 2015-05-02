@@ -67,8 +67,9 @@ bool Launcher::touchEvent(Touch::TouchEvent evt, int x, int y, unsigned int cont
 	return true;
 }
 
-bool Launcher::setSubMode(short n) {
-	bool changed = Project::setSubMode(n);
+bool Launcher::setSubMode(short mode) {
+	bool changed = Project::setSubMode(mode);
+	if(mode == 1 && !_complete) return false;
 	MyNode *ends[2] = {NULL, NULL};
 	if(_rubberBand->getNode() != NULL) for(short i = 0; i < 2; i++) {
 		os.str("");

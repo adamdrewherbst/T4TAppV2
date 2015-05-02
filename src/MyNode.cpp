@@ -2088,12 +2088,18 @@ void MyNode::set(Node *other) {
 	set(other->getWorldMatrix());
 }
 
+bool MyNode::inheritsTransform() {
+	return getCollisionObject() == NULL || isStatic()
+	  || getCollisionObject()->getType() == PhysicsCollisionObject::GHOST_OBJECT;
+}
+
 void MyNode::myTranslate(const Vector3& delta) {
 	for(MyNode *child = dynamic_cast<MyNode*>(getFirstChild()); child; child = dynamic_cast<MyNode*>(child->getNextSibling())) {
 		child->myTranslate(delta);
 	}
 	//cout << "moving " << getId() << " by " << app->pv(delta) << endl;
-	if(getParent() == NULL || (getCollisionObject() && !isStatic())) translate(delta);
+	if(getParent() == NULL || !inheritsTransform())
+		translate(delta);
 }
 
 void MyNode::setMyTranslation(const Vector3& translation) {
@@ -2291,6 +2297,8 @@ void MyNode::addCollisionObject() {
 		  _radius > 0 ? PhysicsCollisionShape::sphere(_radius) : PhysicsCollisionShape::sphere(), &params);
 	} else if(_objType.compare("capsule") == 0) {
 		setCollisionObject(PhysicsCollisionObject::RIGID_BODY, PhysicsCollisionShape::capsule(), &params);
+	} else if(_objType.compare("ghost") == 0) {
+		setCollisionObject(PhysicsCollisionObject::GHOST_OBJECT, PhysicsCollisionShape::sphere(), &params);
 	}
 }
 
@@ -2403,9 +2411,23 @@ int MyNode::getActivation() {
 }
 
 void MyNode::removeMe() {
+	for(Node *node = getFirstChild(); node; node = node->getNextSibling()) {
+		MyNode *child = dynamic_cast<MyNode*>(node);
+		if(child) child->removeMe();
+	}
 	removePhysics();
 	if(_parent) _parent->removeChild(this);
 	else if(_scene) _scene->removeNode(this);
+	if(_element) {
+		short n = _element->_nodes.size(), i;
+		for(i = 0; i < n; i++) {
+			if(_element->_nodes[i].get() == this) {
+				_element->_nodes.erase(_element->_nodes.begin() + i);
+				break;
+			}
+		}
+		if(_element->_nodes.empty()) _element->setComplete(false);
+	}
 }
 
 PhysicsConstraint* MyNode::getConstraint(MyNode *other) {

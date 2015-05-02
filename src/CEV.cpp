@@ -50,6 +50,7 @@ void CEV::setActive(bool active) {
 
 bool CEV::setSubMode(short mode) {
 	bool changed = Project::setSubMode(mode);
+	if(mode == 1 && !_complete) return false;
 	switch(_subMode) {
 		case 0: { //build
 			break;

@@ -23,6 +23,7 @@ Satellite::Satellite() : Project::Project("satellite", "Satellite") {
 
 bool Satellite::setSubMode(short mode) {
 	bool changed = Project::setSubMode(mode);
+	if(mode == 1 && !_complete) return false;
 	switch(_subMode) {
 		case 0: { //build
 			break;

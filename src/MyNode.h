@@ -101,6 +101,7 @@ public:
 	Vector3 getCentroid();
 	void set(const Matrix& trans);
 	void set(Node *other);
+	bool inheritsTransform();
 	void myTranslate(const Vector3& delta);
 	void setMyTranslation(const Vector3& translation);
 	void myRotate(const Quaternion &delta, Vector3 *center = NULL);

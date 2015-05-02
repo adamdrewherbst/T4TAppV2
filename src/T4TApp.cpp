@@ -101,7 +101,11 @@ void T4TApp::initialize()
 	_machineMenu = (Container*)_mainMenu->getControl("submenu_machineMenu");
 	_modePanel = (Container*)_sideMenu->getControl("modePanel");
 	_cameraMenu = (Container*)_stage->getControl("camera");
-	
+
+	_tooltipWrapper = Form::create("res/common/main.form#tooltipWrapper");
+	_tooltip = (Label*)_tooltipWrapper->getControl("tooltip");
+	_tooltipWrapper->setVisible(false);
+
 	//make a button group for the navigation modes
 	ButtonGroup *eyeGroup = ButtonGroup::create("eye"), *navGroup = ButtonGroup::create("navModes");
 	Control *eye = _cameraMenu->getControl("eye");
@@ -282,6 +286,7 @@ void T4TApp::initialize()
     
 	_running = 0;
 	_constraintCount = 0;
+	_touchControl = NULL;
 	_tooltipControl = NULL;
 	
 	resizeEvent(getWidth(), getHeight());
@@ -361,7 +366,37 @@ void T4TApp::update(float elapsedTime)
 {
 	if(_activeMode >= 0) _modes[_activeMode]->update();
     _mainMenu->update(elapsedTime);
+    _componentMenu->update(elapsedTime);
+    _tooltipWrapper->update(elapsedTime);
+	short n = _forms.size(), i;
+	for(i = 0; i < n; i++) _forms[i]->_container->update(elapsedTime);
 	if(_carVehicle) _carVehicle->update(elapsedTime, _steering, _braking, _driving);
+}
+
+void T4TApp::setTooltip() {
+	if(_touchControl == _tooltipControl) return;
+	_tooltipControl = _touchControl;
+	const char *tooltip = NULL;
+	if(_tooltipControl) tooltip = _tooltipControl->getTooltip();
+	if(_tooltipControl == NULL || tooltip == NULL || strlen(tooltip) == 0) {
+		_tooltipWrapper->setVisible(false);
+		return;
+	}
+	_tooltip->setText(tooltip);
+	Rectangle bounds = _tooltipControl->getAbsoluteBounds();
+	float x = bounds.x, y = bounds.y - _tooltip->getHeight();
+	if(y < 0) y = bounds.y + bounds.height;
+	_tooltipWrapper->setPosition(x, y);
+	_tooltipWrapper->setVisible(true);
+	_tooltipWrapper->update(0);
+	if(x + _tooltip->getWidth() > getWidth()) {
+		x = getWidth() - _tooltip->getWidth();
+		_tooltipWrapper->setX(x);
+		_tooltipWrapper->update(0);
+	}
+	std::ostringstream os;
+	os << "showing tooltip for " << _tooltipControl->getId() << " at " << x << "," << y << ": " << tooltip;
+	message(os.str().c_str());
 }
 
 void T4TApp::render(float elapsedTime)
@@ -369,11 +404,10 @@ void T4TApp::render(float elapsedTime)
     // Clear the color and depth buffers
     clear(CLEAR_COLOR_DEPTH, Vector4::zero(), 1.0f, 0);
     
-    if(_tooltipControl) {
-    	_tooltipTime += elapsedTime;
-    	if(_tooltipTime > 1000) {
-    		const char *tooltip = _tooltipControl->getTooltip();
-    		if(tooltip) message(tooltip);
+    if(_touchControl) {
+    	_touchTime += elapsedTime;
+    	if(_touchTime > 1000) {
+    		setTooltip();
     	}
     }
     
@@ -403,6 +437,7 @@ void T4TApp::render(float elapsedTime)
 
 	_mainMenu->draw();
 	_componentMenu->draw();
+	_tooltipWrapper->draw();
 	short n = _forms.size(), i;
 	for(i = 0; i < n; i++) _forms[i]->_container->draw();
 }
@@ -599,10 +634,11 @@ void T4TApp::controlEvent(Control *control, Control::Listener::EventType evt)
 	Container *parent = (Container*) control->getParent();
 	
 	if(evt == Control::Listener::PRESS) {
-		_tooltipControl = control;
-		_tooltipTime = 0;
+		_touchControl = control;
+		_touchTime = 0;
 	} else if(evt == Control::Listener::RELEASE) {
-		_tooltipControl = NULL;
+		_touchControl = NULL;
+		setTooltip();
 	}
 
 	if(evt == Control::Listener::PRESS || evt == Control::Listener::RELEASE) return;
@@ -814,11 +850,14 @@ void T4TApp::keyEvent(Keyboard::KeyEvent evt, int key) {
 
 void T4TApp::touchEvent(Touch::TouchEvent evt, int x, int y, unsigned int contactIndex) {
 	_touchPoint.set(evt, x, y);
+	if(evt == Touch::TOUCH_RELEASE) {
+		_touchControl = NULL;
+		setTooltip();
+	}
 	if(_activeMode >= 0 && _modes.size() > _activeMode) _modes[_activeMode]->touchEvent(evt, x, y, contactIndex);
 }
 
 bool T4TApp::mouseEvent(Mouse::MouseEvent evt, int x, int y, int wheelDelta) {
-	//cout << "Moused! " << x << "," << y << endl;
 	return false;
 }
 

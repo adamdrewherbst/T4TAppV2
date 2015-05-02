@@ -225,6 +225,20 @@ theme mainMenu
         region = 83, 3, 34, 34
         color = ${normalColor}
     }
+    
+    skin TooltipSkin
+    {
+    	border
+    	{
+    		left = 5
+    		right = 5
+    		top = 5
+    		bottom = 5
+    	}
+    
+    	region = 22, 92, 24, 24
+    	color = ${normalColor}
+    }
 
     style Form
     {
@@ -486,6 +500,18 @@ theme mainMenu
         {
             opacity = ${disabledOpacity}
         }
+    }
+    
+    style Tooltip
+    {
+    	stateNormal
+    	{
+    		skin = TooltipSkin
+    		font = ${font}
+    		fontSize = ${fontSize}
+    		textColor = #000000ff
+    		textAlignment = ALIGN_VCENTER_HCENTER
+    	}
     }
 
     skin hideNormal
