@@ -23,140 +23,40 @@ form mainMenu {
 		button login {
 			style = buttonStyle
 			autoWidth = true
-			height = 50
+			height = 40
 			text = Login
 		}
 		button register {
 			style = buttonStyle
 			autoWidth = true
-			height = 50
+			height = 40
 			text = Register
 		}
-		/*button parent_sceneMenu {
+		button saveAll {
 			style = buttonStyle
 			autoWidth = true
-			height = 50
-			text = Scene >>
+			height = 40
+			text = Save All
 		}
-		button parent_machineMenu {
+		checkbox drawDebug {	
 			style = buttonStyle
 			autoWidth = true
-			height = 50
-			text = Add Machine >>			
-		}*/
+			height = 40
+			text = Draw Debug
+			checked = true
+		}
 		container modePanel {
 			style = hiddenContainer
 			autoWidth = true
 			autoSize = AUTO_SIZE_HEIGHT
 			layout = LAYOUT_VERTICAL
 
-			button satellite {
-				style = buttonStyle
-				autoWidth = true
-				height = 40
-				text = Satellite
-				padding {
-					top = 0
-					bottom = 0
-				}
-			}
-			button rocket {
-				style = buttonStyle
-				autoWidth = true
-				height = 40
-				text = Rocket
-			}
-			button buggy {
-				style = buttonStyle
-				autoWidth = true
-				height = 40
-				text = Lunar Buggy
-			}
-			button robot {
-				style = buttonStyle
-				autoWidth = true
-				height = 40
-				text = Robot
-			}
-			button landingPod {
-				style = buttonStyle
-				autoWidth = true
-				height = 40
-				text = Landing Pod
-			}
-			button CEV {
-				style = buttonStyle
-				autoWidth = true
-				height = 40
-				text = CEV
-			}
-			button launcher {
-				style = buttonStyle
-				autoWidth = true
-				height = 40
-				text = Launcher
-			}
 			button hull {
 				style = buttonStyle
 				autoWidth = true
 				height = 40
 				text = Hull
 			}
-			/*image navigate {
-				style = buttonStyle
-				autoWidth = true
-				height = 100
-				path = res/png/navigate.png
-			}
-			image position {
-				style = buttonStyle
-				autoWidth = true
-				height = 100
-				path = res/png/position.png
-			}
-			image constraint {
-				style = buttonStyle
-				autoWidth = true
-				height = 100
-				path = res/png/constraint.png
-			}
-			image tool {
-				style = buttonStyle
-				autoWidth = true
-				height = 100
-				path = res/png/toolbox.png
-			}
-			button touch {
-				style = buttonStyle
-				autoWidth = true
-				height = 40
-				text = Touch
-			}
-			image test {
-				style = buttonStyle
-				autoWidth = true
-				height = 100
-				path = res/png/balldrop.png
-			}
-			image string {
-				style = buttonStyle
-				autoWidth = true
-				height = 100
-				path = res/png/string.png
-			}*/
-		}
-		button saveAll {
-			style = buttonStyle
-			autoWidth = true
-			height = 50
-			text = Save All
-		}
-		checkbox drawDebug {	
-			style = buttonStyle
-			autoWidth = true
-			height = 50
-			text = Draw Debug
-			checked = true
 		}
 	}
 	

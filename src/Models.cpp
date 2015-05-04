@@ -41,6 +41,8 @@ void T4TApp::generateModels() {
 
 #else
 
+	generateModel("workbench", "box", 80.0f, 2.0f, 80.0f);
+
 	generateModel("box", "box", 4.0f, 2.0f, 6.0f);
 	generateModel("sphere", "sphere", 1.0f, 10);
 	generateModel("cylinder", "cylinder", 1.0f, 4.0f, 20);

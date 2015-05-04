@@ -56,22 +56,24 @@ bool LandingPod::touchEvent(Touch::TouchEvent evt, int x, int y, unsigned int co
 				_ramp->setVisible(true);
 				_ramp->updateTransform();
 				_rootNode->updateTransform();
-				_payload->updateTransform();
 				MyNode *pod = (MyNode*)_rootNode->getFirstChild(), *platform = (MyNode*)_ramp->findNode("buggyPlatform");
 				BoundingBox platformBox = platform->getBoundingBox(), podBox = pod->getBoundingBox();
 				Vector3 center = platformBox.getCenter(), normal = _hatch->getNode()->getJointNormal();
 				_rootNode->enablePhysics(false);
-				_payload->enablePhysics(false);
-				Vector3 trans(center.x, platformBox.max.y + pod->getTranslationWorld().y - podBox.min.y, center.z),
-					delta = _payload->getTranslationWorld() - _rootNode->getFirstChild()->getTranslationWorld();
+				Vector3 trans(center.x, platformBox.max.y + pod->getTranslationWorld().y - podBox.min.y, center.z);
 				Quaternion rot = MyNode::getVectorRotation(normal, Vector3::unitZ());
 				cout << "moving pod to " << app->pv(trans) << endl;
 				pod->setMyTranslation(trans);
-				_payload->setMyTranslation(trans + delta);
 				pod->myRotate(rot);
-				_payload->myRotate(rot);
 				pod->enablePhysics(true);
-				_payload->enablePhysics(true);
+				if(_payload) {
+					_payload->updateTransform();
+					_payload->enablePhysics(false);
+					Vector3 delta = _payload->getTranslationWorld() - _rootNode->getFirstChild()->getTranslationWorld();
+					_payload->setMyTranslation(trans + delta);
+					_payload->myRotate(rot);
+					_payload->enablePhysics(true);
+				}
 				_hatchButton->setEnabled(true);
 			}
 			break;
@@ -153,10 +155,10 @@ bool LandingPod::positionPayload() {
 void LandingPod::launch() {
 	Project::launch();
 	_rootNode->enablePhysics(true);
-	_payload->enablePhysics(true);
+	if(_payload) _payload->enablePhysics(true);
 	app->getPhysicsController()->setGravity(app->_gravity);
 	_rootNode->setActivation(DISABLE_DEACTIVATION);
-	_payload->setActivation(DISABLE_DEACTIVATION);
+	if(_payload) _payload->setActivation(DISABLE_DEACTIVATION);
 	//_hatchButton->setEnabled(true);
 }
 
@@ -169,7 +171,10 @@ void LandingPod::launchComplete() {
 
 void LandingPod::update() {
 	Project::update();
-	if(_launching && _launchSteps == 100) _payload->setActivation(ACTIVE_TAG, true);
+	if(_launching && _launchSteps == 100) {
+		_rootNode->setActivation(ACTIVE_TAG, true);
+		if(_payload) _payload->setActivation(ACTIVE_TAG, true);
+	}
 	if(_hatching) {
 		_payload->updateTransform();
 		float maxZ = _payload->getMaxValue(Vector3::unitZ()) + _payload->getTranslationWorld().z;

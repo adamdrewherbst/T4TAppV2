@@ -41,9 +41,9 @@ T4TApp* T4TApp::getInstance() {
 
 void T4TApp::initialize()
 {
-    // Load font
-    _font = Font::create("res/common/arial.gpb");
-    assert(_font);
+	// Load font
+	_font = Font::create("res/common/arial.gpb");
+	assert(_font);
 
 	splash("Initializing...");
 
@@ -64,29 +64,30 @@ void T4TApp::initialize()
 			}
 		}
 	}
-	
+
 	splash("Loading models...");
 	generateModels();
-	
+
     _userEmail = "";
-    
+
     splash("Loading scene...");
     initScene();
 
     cout << "cam at: " << _cameraState->print() << endl;
-    
+
 	getPhysicsController()->setGravity(Vector3(0.0f, -10.0f, 0.0f));
 
 	_steering = _braking = _driving = 0.0f;
-	
+
 	splash("Loading user interface...");
-    
+
     //create the form for selecting catalog items
     cout << "creating theme" << endl;
     _theme = Theme::create("res/common/default.theme");
     cout << "created theme" << endl;
     _formStyle = _theme->getStyle("basicContainer");
     _hiddenStyle = _theme->getStyle("hiddenContainer");
+    _noBorderStyle = _theme->getStyle("noBorder");
     _buttonStyle = _theme->getStyle("buttonStyle");
     _buttonActive = _theme->getStyle("buttonActive");
     _titleStyle = _theme->getStyle("title");
@@ -116,7 +117,7 @@ void T4TApp::initialize()
 	for(i = 0; i < n; i++) {
 		navGroup->addButton(navButtons[i]);
 	}
-	
+
 	//and the projects
 	ButtonGroup *modeGroup = ButtonGroup::create("modes");
 	std::vector<Control*> modeButtons = _modePanel->getControls();
@@ -124,9 +125,9 @@ void T4TApp::initialize()
 	for(i = 0; i < n; i++) {
 		modeGroup->addButton(modeButtons[i]);
 	}
-	
+
 	_exit = (Button*) ((Container*)_mainMenu->getControl("exitMenu"))->getControl("exit");
-	
+
 	ImageControl* itemImage = addControl <ImageControl> (_sideMenu, "dummyImage");
 	itemImage->setVisible(false);
 
@@ -290,10 +291,6 @@ void T4TApp::initialize()
 	_tooltipControl = NULL;
 	
 	resizeEvent(getWidth(), getHeight());
-	
-	if(isGestureSupported(Gesture::GESTURE_LONG_TAP)) message("Long tap supported");
-	else message("Long tap not supported");
-	registerGesture(Gesture::GESTURE_LONG_TAP);
 }
 
 void T4TApp::drawSplash(void* param)
@@ -901,6 +898,13 @@ void T4TApp::initScene()
     _ground->setStatic(true);
     //store the plane representing the grid, for calculating intersections
     _groundPlane = Plane(Vector3(0, 1, 0), 0);
+
+	//visual workbench representation    
+    _workbench = MyNode::create("workbench");
+    _workbench->loadData("res/models/", false);
+    _workbench->_objType = "none";
+    _workbench->setMyTranslation(Vector3(0, -1.1f, 0));
+    _ground->addChild(_workbench);
     
     //add invisible walls at the edges of the grid to prevent objects falling off the world
     for(short i = 0; i < 2; i++) {
@@ -2039,6 +2043,64 @@ ButtonGroup* ButtonGroup::getGroup(const char *id) {
 	short n = _groups.size(), i;
 	for(i = 0; i < n; i++) if(_groups[i]->_id.compare(id) == 0) return _groups[i];
 	return NULL;
+}
+
+
+ImageButton::ImageButton(const char *id, const char *path, const char *text, const char *styleId) {
+	app = (T4TApp*) Game::getInstance();
+	Theme::Style *style = NULL;
+	if(styleId) style = app->_theme->getStyle(styleId);
+	if(style == NULL) style = app->_buttonStyle;
+	std::ostringstream os;
+	_container = Container::create(id, style);
+	_container->setLayout(Layout::LAYOUT_ABSOLUTE);
+	_image = ImageControl::create(MyNode::concat(2, id, "_image"), app->_noBorderStyle);
+	if(path && FileSystem::fileExists(path)) _image->setImage(path);
+	setImageSize(0.5f, 1.0f, true, Control::ALIGN_VCENTER_RIGHT);
+	_image->setConsumeInputEvents(false);
+	_text = Label::create(MyNode::concat(2, id, "_text"), app->_noBorderStyle);
+	if(text) _text->setText(text);
+	_text->setAutoSize(Control::AUTO_SIZE_WIDTH);
+	_text->setHeight(40.0f);
+	setTextAlignment(Control::ALIGN_VCENTER_LEFT);
+	_text->setConsumeInputEvents(false);
+	_container->addControl(_text);
+	_container->addControl(_image);
+}
+
+ImageButton* ImageButton::create(const char *id, const char *path, const char *text, const char *styleId) {
+	return new ImageButton(id, path, text, styleId);
+}
+
+void ImageButton::setSize(float width, float height, bool percentage) {
+	_container->setWidth(width, percentage);
+	_container->setHeight(height, percentage);
+}
+
+void ImageButton::setImageSize(float width, float height, bool percentage, Control::Alignment alignment) {
+	_image->setWidth(width, percentage);
+	_image->setHeight(height, percentage);
+	_image->setAlignment(alignment);
+}
+
+void ImageButton::setTextAlignment(Control::Alignment alignment) {
+	_text->setAlignment(alignment);
+}
+
+void ImageButton::setImage(const char *path) {
+	_image->setImage(path);
+}
+
+void ImageButton::setRegionSrc(float x, float y, float width, float height) {
+	_image->setRegionSrc(x, y, width, height);
+}
+
+void ImageButton::setRegionDst(float x, float y, float width, float height) {
+	_image->setRegionDst(x, y, width, height);
+}
+
+void ImageButton::setText(const char *text) {
+	_text->setText(text);
 }
 
 

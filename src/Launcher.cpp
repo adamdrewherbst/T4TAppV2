@@ -42,7 +42,8 @@ Launcher::Launcher() : Project::Project("launcher", "CEV Launcher") {
 	}
 	_table->addPhysics();
 	_table->enablePhysics(false);
-	
+
+	_payloadId = "CEV";
 	_cevBox = BoundingBox::empty();
 }
 
@@ -95,23 +96,22 @@ bool Launcher::setSubMode(short mode) {
 				app->addConstraint(_clamps[i], ends[i], -1, "socket", _anchorPoints[i], dir);
 			}
 			//place the crew exploration vehicle in front of the rubber band
-			_cev = app->getProjectNode("CEV");
-			if(_cev) {
-				_cev->enablePhysics(false);
-				_cev->placeRest();
-				_cev->updateTransform();
-				_scene->addNode(_cev);
-				_cevBox = _cev->getBoundingBox(true);
-			}
-			setStretch(0);
+			positionPayload();
 			break;
 		}
 	}
 	return changed;
 }
 
+bool Launcher::positionPayload() {
+	if(!Project::positionPayload()) return false;
+	_cevBox = _payload->getBoundingBox(true);
+	setStretch(0);
+	_scene->addNode(_payload);
+}
+
 void Launcher::setStretch(float stretch) {
-	if(_cevBox.isEmpty()) return;
+	if(_payload == NULL) return;
 	float D = stretch + _cevBox.max.z - _cevBox.min.z;
 	short n = _rubberBand->_numNodes, i, segment;
 	float d1 = _cevBox.max.x - _cevBox.min.x, margin = (_clampWidth - d1) / 2, d2 = sqrt(margin*margin + D*D);
@@ -146,21 +146,20 @@ void Launcher::setStretch(float stretch) {
 		node->setMyRotation(rot);
 	}
 	Vector3 cevPos(0, _tableHeight - _cevBox.min.y, -_cevBox.max.z - stretch);
-	_cev->setMyTranslation(cevPos);
+	_payload->setMyTranslation(cevPos);
 }
 
 void Launcher::launch() {
 	Project::launch();
-	_cev->enablePhysics(true);
+	if(_payload) _payload->enablePhysics(true);
 	_rootNode->enablePhysics(true);
 }
 
 void Launcher::update() {
-	if(!_launching) return;
-	MyNode *cev = (MyNode*)_cev->getFirstChild();
-	cev->updateTransform();
-	float maxZ = cev->getMaxValue(Vector3::unitZ()) + cev->getTranslationWorld().z;
-	//cout << cev->getId() << " now at " << maxZ << endl;
+	if(!_launching || !_payload) return;
+	_payload->updateTransform();
+	float maxZ = _payload->getMaxValue(Vector3::unitZ()) + _payload->getTranslationWorld().z;
+	//cout << _payload->getId() << " now at " << maxZ << endl;
 	if(maxZ > 15 && !app->hasMessage()) {
 		app->message("You reached 5 meters!");
 	}

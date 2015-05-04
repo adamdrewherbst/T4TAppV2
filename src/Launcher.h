@@ -24,12 +24,12 @@ public:
 	MyNode *_table, *_clamps[2]; //setup to which the rubber band is attached
 	float _tableHeight, _clampWidth;
 	
-	MyNode *_cev; //use the crew exploration vehicle as the payload
 	BoundingBox _cevBox;
 
 	Launcher();
 	bool setSubMode(short mode);
 	bool touchEvent(Touch::TouchEvent evt, int x, int y, unsigned int contactIndex);
+	bool positionPayload();
 	void setStretch(float stretch);
 	void launch();
 	void update();

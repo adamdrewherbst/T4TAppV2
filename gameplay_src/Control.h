@@ -967,6 +967,10 @@ public:
      * @see AnimationTarget::setAnimationProperty
      */
     virtual void setAnimationPropertyValue(int propertyId, AnimationValue* value, float blendWeight = 1.0f);
+    
+    std::string _tooltip;
+    void setTooltip(const char *tooltip);
+    const char* getTooltip() const;
 
 protected:
 

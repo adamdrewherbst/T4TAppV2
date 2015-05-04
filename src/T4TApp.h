@@ -119,6 +119,24 @@ public:
 	static ButtonGroup* getGroup(const char *id);
 };
 
+class ImageButton {
+public:
+	T4TApp *app;
+	Container *_container;
+	ImageControl *_image;
+	Label *_text;
+
+	ImageButton(const char *id, const char *path, const char *text, const char *style = NULL);
+	static ImageButton* create(const char *id, const char *path, const char *text, const char *style = NULL);
+	void setSize(float width, float height, bool percentage = false);
+	void setImageSize(float width, float height, bool percentage = false, Control::Alignment alignment = Control::ALIGN_RIGHT);
+	void setTextAlignment(Control::Alignment alignment);
+	void setImage(const char *path);
+	void setRegionSrc(float x, float y, float width, float height);
+	void setRegionDst(float x, float y, float width, float height);
+	void setText(const char *text);
+};
+
 class MenuFilter {
 public:
 	T4TApp *app;
@@ -174,7 +192,7 @@ public:
     std::vector<MyNode*> _intersectNodeGroup;
     BoundingBox _intersectBox;
     Vector3 _intersectPoint;
-    MyNode *_intersectModel, *_axes, *_ground;
+    MyNode *_intersectModel, *_axes, *_ground, *_workbench;
     Plane _groundPlane;
     
     //each constraint in the simulation will have an integer ID for lookup
@@ -231,7 +249,7 @@ public:
     CheckBox *_drawDebugCheckbox;
     std::vector<std::string> _modeNames, _machineNames;
     Theme *_theme;
-    Theme::Style *_formStyle, *_buttonStyle, *_buttonActive, *_titleStyle, *_hiddenStyle;
+    Theme::Style *_formStyle, *_buttonStyle, *_buttonActive, *_titleStyle, *_hiddenStyle, *_noBorderStyle;
     Font *_font;
     std::vector<AppForm*> _forms;
     AppForm *_loginForm, *_registerForm;

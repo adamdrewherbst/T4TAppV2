@@ -43,6 +43,18 @@ Project::Project(const char* id, const char *name) : Mode::Mode(id, name) {
 
 	_subModes.push_back("build");
 	_subModes.push_back("test");
+	
+	std::ostringstream os;
+	os << "res/png/" << _id << ".png";
+	const char *title = _name.c_str();
+	if(_id.compare("CEV") == 0) {
+		title = "Crew Exp. Veh.";
+	}
+	ImageButton *button = ImageButton::create(_id.c_str(), os.str().c_str(), title);
+	button->_container->setWidth(1.0f, true);
+	button->_container->setHeight(60.0f);
+	button->setImageSize(0.3f, 1.0f, true);
+	app->_modePanel->addControl(button->_container);
 
 	//load the project instructions
 	std::string str = "projects/descriptions/" + _id + ".desc";
@@ -249,7 +261,7 @@ void Project::highlightNode(MyNode *node, bool select) {
 bool Project::setSelectedNode(MyNode *node, Vector3 point) {
 	if(_selectedNode) highlightNode(_selectedNode, false);
 	bool changed = Mode::setSelectedNode(node, point);
-	if(_selectedNode) highlightNode(_selectedNode, true);
+	if(_subMode == 0 && _selectedNode) highlightNode(_selectedNode, true);
 	return changed;
 }
 
@@ -405,7 +417,10 @@ bool Project::setSubMode(short mode) {
 	bool building = _subMode == 0, changed = Mode::setSubMode(mode);
 	if(_subMode == 0) app->_ground->setVisible(false);
 	if(building) {
-		if(changed) _rootNode->setRest();
+		if(changed) {
+			_rootNode->setRest();
+			setSelectedNode(NULL);
+		}
 	} else _rootNode->placeRest();
 	if(_buildAnchor.get() != nullptr) _buildAnchor->setEnabled(_subMode == 0);
 	switch(_subMode) {

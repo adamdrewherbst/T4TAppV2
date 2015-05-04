@@ -277,6 +277,8 @@ void Control::initialize(const char* typeName, Theme::Style* style, Properties* 
 
 			innerSpace = properties->getNextNamespace();
 		}
+		
+		setTooltip(properties->getString("tooltip"));
 	}
 }
 
@@ -288,6 +290,16 @@ const char* Control::getId() const
 void Control::setId(const char* id)
 {
 	_id = id ? id : "";
+}
+
+const char* Control::getTooltip() const
+{
+	return _tooltip.c_str();
+}
+
+void Control::setTooltip(const char* tooltip)
+{
+	_tooltip = tooltip ? tooltip : "";
 }
 
 float Control::getX() const
