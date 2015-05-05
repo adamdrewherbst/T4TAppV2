@@ -72,7 +72,7 @@ public:
 	
 	std::string resolveFilename(const char *filename = NULL);
 	static std::vector<std::string> getVersions(const char *filename);
-	bool loadData(const char *filename = NULL, bool doPhysics = true);
+	bool loadData(const char *filename = NULL, bool doPhysics = true, bool doTexture = false);
 	void writeData(const char *filename = NULL, bool modelSpace = true);
 	void uploadData(const char *url, const char *rootId = NULL);
 	void clearNode();
@@ -82,7 +82,7 @@ public:
 	void updateTransform();
 	void updateEdges();
 	void setNormals();
-	void updateModel(bool doPhysics = true, bool doCenter = true);
+	void updateModel(bool doPhysics = true, bool doCenter = true, bool doTexture = false);
 	void updateCamera(bool doPatches = true);
 	void mergeVertices(float threshold);
 	void calculateHulls();

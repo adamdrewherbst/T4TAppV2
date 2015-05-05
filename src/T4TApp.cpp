@@ -272,7 +272,8 @@ void T4TApp::initialize()
 	_edge->_lineWidth = 5.0f;
 	_vertex = duplicateModelNode("sphere");
 	_vertex->setScale(0.15f);
-	_vertex->getModel()->setMaterial("res/common/models.material#red");
+	_vertex->getModel()->setMaterial("res/common/models.material#colored");
+	_vertex->setColor(1.0f, 0.0f, 0.0f);
 
     addListener(_mainMenu, this, Control::Listener::CLICK | Control::Listener::PRESS | Control::Listener::RELEASE);
     addListener(_componentMenu, this, Control::Listener::CLICK | Control::Listener::PRESS | Control::Listener::RELEASE);
@@ -890,22 +891,23 @@ void T4TApp::initScene()
 	//create the grid on which to place objects
 	short gridSize = 40;
     _ground = MyNode::create("grid");
-    Model* gridModel = createGridModel(2 * gridSize + 1);
+/*    Model* gridModel = createGridModel(2 * gridSize + 1);
     gridModel->setMaterial("res/common/models.material#grid");
     _ground->setModel(gridModel);
-    gridModel->release();
-    _ground->_objType = "box";
+    gridModel->release();//*/
+    _ground->_objType = "none";
     _ground->setStatic(true);
     //store the plane representing the grid, for calculating intersections
     _groundPlane = Plane(Vector3(0, 1, 0), 0);
 
 	//visual workbench representation    
     _workbench = MyNode::create("workbench");
-    _workbench->loadData("res/models/", false);
-    _workbench->_objType = "none";
-    _workbench->setMyTranslation(Vector3(0, -1.1f, 0));
+    _workbench->loadData("res/models/", false, true);
+    _workbench->_objType = "box";
+    _workbench->setStatic(true);
+    _workbench->setMyTranslation(Vector3(0, -1, 0));
     _ground->addChild(_workbench);
-    
+
     //add invisible walls at the edges of the grid to prevent objects falling off the world
     for(short i = 0; i < 2; i++) {
     	for(short j = 0; j < 2; j++) {
@@ -1367,18 +1369,20 @@ MyNode* T4TApp::addModelNode(const char *type) {
 	return node;
 }
 
-Model* T4TApp::createModel(std::vector<float> &vertices, bool wireframe, const char *material, Node *node) {
+Model* T4TApp::createModel(std::vector<float> &vertices, bool wireframe, const char *material, Node *node, bool doTexture) {
 	int numVertices = vertices.size()/6;
-	VertexFormat::Element elements[] = {
-		VertexFormat::Element(VertexFormat::POSITION, 3),
-		VertexFormat::Element(wireframe ? VertexFormat::COLOR : VertexFormat::NORMAL, 3)
-	};
-	Mesh* mesh = Mesh::createMesh(VertexFormat(elements, 2), numVertices, false);
+	VertexFormat::Element elements[doTexture ? 3 : 2];
+	elements[0] = VertexFormat::Element(VertexFormat::POSITION, 3);
+	elements[1] = VertexFormat::Element(wireframe ? VertexFormat::COLOR : VertexFormat::NORMAL, 3);
+	if(doTexture) elements[2] = VertexFormat::Element(VertexFormat::TEXCOORD0, 2);
+	Mesh* mesh = Mesh::createMesh(VertexFormat(elements, doTexture ? 3 : 2), numVertices, false);
 	mesh->setPrimitiveType(wireframe ? Mesh::LINES : Mesh::TRIANGLES);
 	mesh->setVertexData(&vertices[0], 0, numVertices);
 	Model *model = Model::create(mesh);
 	mesh->release();
-	model->setMaterial(MyNode::concat(2, "res/common/models.material#", material));
+	Material *mat = Material::create(MyNode::concat(2, "res/common/models.material#", material));
+	if(!mat) mat = Material::create("res/common/models.material#colored");
+	model->setMaterial(mat);
 	if(node) {
 		if(node->getModel()) node->setModel(NULL);
 		node->setModel(model);
@@ -1501,6 +1505,7 @@ void T4TApp::setActiveScene(Scene *scene)
 	if(_activeScene != NULL) {
 		_activeScene->addNode(_axes);
 		_activeScene->addNode(_ground);
+		_ground->updateMaterial();
 		_activeScene->visit(this, &T4TApp::showNode);
 	}
 }

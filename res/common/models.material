@@ -33,6 +33,7 @@ material colored
             defines = DIRECTIONAL_LIGHT_COUNT 1
 
 			u_diffuseColor = 1.0, 1.0, 1.0, 1.0
+			u_ambientColor = 0.5, 0.5, 0.5
             u_worldViewProjectionMatrix = WORLD_VIEW_PROJECTION_MATRIX
             u_inverseTransposeWorldViewMatrix = INVERSE_TRANSPOSE_WORLD_VIEW_MATRIX
             
@@ -45,324 +46,41 @@ material colored
     }
 }
 
-material cylinder : colored
+material workbench
 {
-    technique
+	u_textureRepeat = 1, 1
+	
+	technique unlit
     {
-        pass
+        pass 0
         {
-			u_ambientColor = 0.0, 1.0, 1.0
+            // shaders
+            vertexShader = res/shaders/textured.vert
+            fragmentShader = res/shaders/textured.frag
+			defines = TEXTURE_REPEAT
+            
+            // uniforms
+			u_worldViewProjectionMatrix = WORLD_VIEW_PROJECTION_MATRIX
+ 
+            // samplers
+            sampler u_diffuseTexture
+            {
+                path = res/png/workbench_texture.png
+                mipmap = true
+                wrapS = REPEAT
+                wrapT = REPEAT
+                minFilter = NEAREST_MIPMAP_LINEAR
+                magFilter = LINEAR
+            }
+
+            // render state
+            renderState
+            {
+                cullFace = true
+                depthTest = true
+            }
         }
     }
 }
 
-material sphere : colored
-{
-    technique
-    {
-        pass
-        {
-			u_ambientColor = 0.0, 1.0, 0.0
-        }
-    }
-}
-
-material halfpipe : colored
-{
-    technique
-    {
-        pass
-        {
-		    u_ambientColor = 1.0, 0.0, 1.0
-        }
-    }
-}
-
-material box : colored
-{
-    technique
-    {
-        pass
-        {
-        	u_ambientColor = 1.0, 1.0, 0.0
-        }
-    }
-}
-
-material wedge : colored
-{
-    technique
-    {
-        pass
-        {
-        	u_ambientColor = 0.6, 1.0, 0.2
-        }
-    }
-}
-
-material heart : colored
-{
-    technique
-    {
-        pass
-        {
-        	u_ambientColor = 1.0, 0.0, 0.0
-        }
-    }
-}
-material tube : colored
-{
-    technique
-    {
-        pass
-        {
-        	u_ambientColor = 1.0, 0.0, 0.0
-        }
-    }
-}
-material vase : colored
-{
-    technique
-    {
-        pass
-        {
-        	u_ambientColor = 1.0, 0.0, 0.0
-        }
-    }
-}
-material gear_thin : colored
-{
-    technique
-    {
-        pass
-        {
-        	u_ambientColor = 1.0, 0.0, 0.0
-        }
-    }
-}
-material gear_basic : colored
-{
-    technique
-    {
-        pass
-        {
-        	u_ambientColor = 1.0, 0.0, 0.0
-        }
-    }
-}
-material gear : colored
-{
-    technique
-    {
-        pass
-        {
-        	u_ambientColor = 1.0, 0.0, 0.0
-        }
-    }
-}
-material disc : colored
-{
-    technique
-    {
-        pass
-        {
-        	u_ambientColor = 1.0, 0.0, 0.0
-        }
-    }
-}
-material cone : colored
-{
-    technique
-    {
-        pass
-        {
-        	u_ambientColor = 1.0, 0.0, 0.0
-        }
-    }
-}
-
-material red : colored
-{
-    technique
-    {
-        pass
-        {
-		    u_ambientColor = 1.0, 0.0, 0.0
-        }
-    }
-}
-
-material torus : colored
-{
-    technique
-    {
-        pass
-        {
-            u_ambientColor = 1, 0.5, 0.0
-        }
-    }
-}
-
-material sphere : colored
-{
-    technique
-    {
-        pass
-        {
-            u_ambientColor = 0.7, 0.7, 0.7
-        }
-    }
-}
-
-material cone : colored
-{
-    technique
-    {
-        pass
-        {
-            u_ambientColor = 0.5, 0.25, 0.5
-        }
-    }
-}
-
-material pitri_wheel : colored
-{
-    technique
-    {
-        pass
-        {
-            u_ambientColor = 0.5, 0.25, 0.5
-        }
-    }
-}
-
-material green_flange_wheel : colored
-{
-    technique
-    {
-        pass
-        {
-            u_ambientColor = 0.5, 0.25, 0.5
-        }
-    }
-}
-
-material jar_with_cone : colored
-{
-    technique
-    {
-        pass
-        {
-            u_ambientColor = 0.5, 0.25, 0.5
-        }
-    }
-}
-
-material cap_with_hole_1 : colored
-{
-    technique
-    {
-        pass
-        {
-            u_ambientColor = 0.5, 0.25, 0.5
-        }
-    }
-}
-
-material cap_with_hole_2 : colored
-{
-    technique
-    {
-        pass
-        {
-            u_ambientColor = 0.5, 0.25, 0.5
-        }
-    }
-}
-
-material disk_with_holes : colored {
-	technique {
-		pass {
-			u_ambientColor = 0.7, 0.7, 0.7
-		}
-	}
-}
-
-material threaded_post : colored {
-	technique {
-		pass {
-			u_ambientColor = 0.1, 0.1, 0.1
-		}
-	}
-}
-
-material nose_cone : colored {
-	technique {
-		pass {
-			u_ambientColor = 0.1, 0.1, 0.1
-		}
-	}
-}
-
-material peepee_cap : colored {
-	technique {
-		pass {
-			u_ambientColor = 0.8, 0.8, 0.1
-		}
-	}
-}
-
-material plastic_cone : colored {
-	technique {
-		pass {
-			u_ambientColor = 1.0, 0.0, 0.0
-		}
-	}
-}
-
-material foam_roof : colored {
-	technique {
-		pass {
-			u_ambientColor = 0.5, 1.0, 0.8
-		}
-	}
-}
-
-material legoman : colored {
-	technique {
-		pass {
-			u_ambientColor = 0.9, 0.9, 0.2
-		}
-	}
-}
-
-material lego : colored {
-	technique {
-		pass {
-			u_ambientColor = 0.9, 0.9, 0.2
-		}
-	}
-}
-
-material astronaut : colored {
-	technique {
-		pass {
-			u_ambientColor = 0.9, 0.9, 0.2
-		}
-	}
-}
-
-material EnginePropellerThing : colored {
-	technique {
-		pass {
-			u_ambientColor = 0.0, 0.0, 1.0
-		}
-	}
-}
-
-material axle1 : box {}
-material wheel1 : box {}
-material wheel2 : box {}
-material hatch1 : box {}
-material hatch2 : box {}
 

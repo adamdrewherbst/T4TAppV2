@@ -295,7 +295,8 @@ public:
 	MyNode* loadNode(const char* id);
     MyNode* duplicateModelNode(const char* type, bool isStatic = false);
     MyNode* addModelNode(const char *type);
-    Model* createModel(std::vector<float> &vertices, bool wireframe = false, const char *material = "red", Node *node = NULL);
+    Model* createModel(std::vector<float> &vertices, bool wireframe = false, const char *material = "colored",
+    	Node *node = NULL, bool doTexture = false);
     MyNode* createWireframe(std::vector<float>& vertices, const char *id=NULL);
 	MyNode* dropBall(Vector3 point);
 	void showFace(Meshy *mesh, std::vector<unsigned short> &face, bool world = false);

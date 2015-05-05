@@ -1054,7 +1054,7 @@ std::vector<std::string> MyNode::getVersions(const char *filename) {
 	return versions;
 }
 
-bool MyNode::loadData(const char *file, bool doPhysics)
+bool MyNode::loadData(const char *file, bool doPhysics, bool doTexture)
 {
 	//ensure the file is valid
 	std::string filename = resolveFilename(file);
@@ -1318,7 +1318,7 @@ bool MyNode::loadData(const char *file, bool doPhysics)
 		addChild(child);
 	}
 	stream->close();
-	updateModel(doPhysics, false);
+	updateModel(doPhysics, false, doTexture);
 	if(_project != NULL) {
 		if(!doPhysics) addCollisionObject();
 	} else {
@@ -1604,7 +1604,7 @@ void MyNode::setNormals() {
 	for(short i = 0; i < _hulls.size(); i++) _hulls[i]->setNormals();
 }
 
-void MyNode::updateModel(bool doPhysics, bool doCenter) {
+void MyNode::updateModel(bool doPhysics, bool doCenter, bool doTexture) {
 	if(nv() == 0) return;
 	if(_type.compare("root") != 0) {
 		//must detach from parent while setting transformation since physics object is off
@@ -1646,35 +1646,72 @@ void MyNode::updateModel(bool doPhysics, bool doCenter) {
 		} else sphereCenter = center;
 		BoundingBox box(min, max);
 		BoundingSphere sphere(sphereCenter, radius);
+		
+		unsigned short vertexSize = doTexture ? 8 : 6, ind;
 
 		//then create the new model
 		std::vector<float> vertices;
 		if(_chain) {
 			n = _loop ? nv : nv-1;
-			vertices.resize(2 * n * 6);
+			vertices.resize(2 * n * vertexSize);
 			for(i = 0; i < n; i++) {
 				for(j = 0; j < 2; j++) {
 					for(k = 0; k < 3; k++) vertices[v++] = gv(_vertices[(i+j)%nv], k);
 					for(k = 0; k < 3; k++) vertices[v++] = gv(_color, k);
+					if(doTexture) for(k = 0; k < 2; k++) vertices[v++] = 0;
 				}
 			}
 		} else {
 			n = 0;
 			for(i = 0; i < nf; i++) n += _faces[i].nt() * 3;
-			vertices.resize(n * 6);
+			vertices.resize(n * vertexSize);
+			std::map<unsigned short, float> texU, texV;
 			for(i = 0; i < nf; i++) {
+				n = _faces[i].size();
+				if(doTexture) { //determine the texcoord for each vertex in the face
+					texU.clear();
+					texV.clear();
+					for(j = 0; j < n; j++) {
+						ind = _faces[i][j];
+						switch(n) {
+							case 3:
+								switch(j) {
+									case 0: texU[ind] = 0; texV[ind] = 0; break;
+									case 1: texU[ind] = 1; texV[ind] = 0; break;
+									case 2: texU[ind] = 0; texV[ind] = 1; break;
+									default: break;
+								}
+								break;
+							case 4:
+								switch(j) {
+									case 0: texU[ind] = 0; texV[ind] = 0; break;
+									case 1: texU[ind] = 1; texV[ind] = 0; break;
+									case 2: texU[ind] = 1; texV[ind] = 1; break;
+									case 3: texU[ind] = 0; texV[ind] = 1; break;
+								}
+								break;
+							default:
+								break;
+						}
+					}
+				}
 				n = _faces[i].nt();
 				normal = _faces[i].getNormal(true);
 				for(j = 0; j < n; j++) {
 					for(k = 0; k < 3; k++) {
-						vec = _vertices[_faces[i].triangle(j, /*_reverseFaces ? 2-k :*/ k)];
+						ind = _faces[i].triangle(j, k);
+						vec = _vertices[ind];
 						for(m = 0; m < 3; m++) vertices[v++] = gv(vec, m);
 						for(m = 0; m < 3; m++) vertices[v++] = gv(normal, m);
+						if(doTexture) {
+							vertices[v++] = texU.find(ind) != texU.end() ? texU[ind] : 0;
+							vertices[v++] = texV.find(ind) != texV.end() ? texV[ind] : 0;
+						}
 					}
 				}
 			}
 		}
-		app->createModel(vertices, _chain, _type.c_str(), this);
+		app->createModel(vertices, _chain, _id.c_str(), this, doTexture);
 		Mesh *mesh = getModel()->getMesh();
 		mesh->setBoundingBox(box);
 		mesh->setBoundingSphere(sphere);
