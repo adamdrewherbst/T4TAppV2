@@ -563,7 +563,7 @@ MyNode* MyNode::cloneNode(Node *node) {
 		copy->_lineWidth = myNode->_lineWidth;
 		copy->_color = myNode->_color;
 	}
-	copy->setModel(clone->getModel());
+	copy->setDrawable(clone->getDrawable());
 	copy->setCamera(clone->getCamera());
 	copy->setScale(clone->getScale());
 	copy->setRotation(clone->getRotation());
@@ -925,6 +925,10 @@ std::vector<MyNode*> MyNode::getAllNodes() {
 		}
 	}
 	return nodes;
+}
+
+Model* MyNode::getModel() {
+	return dynamic_cast<Model*>(getDrawable());
 }
 
 Project::Element* MyNode::getElement() {
@@ -1445,7 +1449,8 @@ void MyNode::writeData(const char *file, bool modelSpace) {
 			os << (_constraints[i]->isChild ? "1" : "0") << "\t";
 			os << (_constraints[i]->noCollide ? "1" : "0") << endl;
 		}
-		float mass = (getCollisionObject() != NULL) ? getCollisionObject()->asRigidBody()->getMass() : _mass;
+		PhysicsCollisionObject *obj = getCollisionObject();
+		float mass = obj && dynamic_cast<PhysicsRigidBody*>(obj) ? ((PhysicsRigidBody*)obj)->getMass() : _mass;
 		os << mass << endl;
 		os << (_staticObj ? 1 : 0) << endl;
 		os << _radius << endl;
@@ -2295,7 +2300,7 @@ void MyNode::placeRest() {
 	set(_restPosition);
 	PhysicsCollisionObject *obj = getCollisionObject();
 	if(obj) {
-		PhysicsRigidBody *body = obj->asRigidBody();
+		PhysicsRigidBody *body = dynamic_cast<PhysicsRigidBody*>(obj);
 		if(body) {
 			body->setLinearVelocity(0, 0, 0);
 			body->setAngularVelocity(0, 0, 0);
@@ -2375,7 +2380,7 @@ void MyNode::enablePhysics(bool enable, bool recur) {
 	PhysicsCollisionObject *obj = getCollisionObject();
 	if(obj != NULL && obj->isEnabled() == enable) return;
 	PhysicsRigidBody *body = NULL;
-	if(obj) body = obj->asRigidBody();
+	if(obj) body = dynamic_cast<PhysicsRigidBody*>(obj);
 
 	//then handle my own constraints and collision object
 	if(enable) {
@@ -2422,9 +2427,10 @@ void MyNode::setVisible(bool visible, bool doPhysics) {
 
 void MyNode::setActivation(int state, bool force) {
 	PhysicsCollisionObject *obj = getCollisionObject();
-	if(obj && obj->asRigidBody()) {
-		if(force) obj->asRigidBody()->forceActivation(state);
-		else obj->asRigidBody()->setActivation(state);
+	if(obj && dynamic_cast<PhysicsRigidBody*>(obj)) {
+		PhysicsRigidBody *body = (PhysicsRigidBody*)obj;
+		if(force) body->forceActivation(state);
+		else body->setActivation(state);
 	}
 	for(Node *n = getFirstChild(); n; n = n->getNextSibling()) {
 		MyNode *node = dynamic_cast<MyNode*>(n);
@@ -2434,8 +2440,8 @@ void MyNode::setActivation(int state, bool force) {
 
 int MyNode::getActivation() {
 	PhysicsCollisionObject *obj = getCollisionObject();
-	if(obj && obj->asRigidBody()) {
-		return obj->asRigidBody()->getActivation();
+	if(obj && dynamic_cast<PhysicsRigidBody*>(obj)) {
+		return ((PhysicsRigidBody*)obj)->getActivation();
 	}
 	for(Node *n = getFirstChild(); n; n = n->getNextSibling()) {
 		MyNode *node = dynamic_cast<MyNode*>(n);

@@ -19,7 +19,7 @@ HullMode::HullMode() : Mode::Mode("hull") {
 	_scaleSlider = (Slider*) _controls->getControl("scale");
 	_scaleText = (TextBox*) _controls->getControl("scaleText");
 	app->addListener(_scaleSlider, this, Control::Listener::PRESS | Control::Listener::RELEASE);
-	app->addListener(_scaleText, this, Control::Listener::TEXT_CHANGED | Control::Listener::VALUE_CHANGED);
+	app->addListener(_scaleText, this, Control::Listener::TEXT_CHANGED);
 
 	_subModes.push_back("selectRegion");
 	_subModes.push_back("selectRing");

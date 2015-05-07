@@ -105,10 +105,10 @@ void CEV::openHatch() {
 	if(_hatch->_lock.get() != nullptr) _hatch->_lock->setEnabled(false);
 	//the torque is about the hinge axis
 	MyNode *node = _hatch->getNode();
-	node->getCollisionObject()->asRigidBody()->applyTorqueImpulse(-node->getJointAxis() * 10.0f);
+	((PhysicsRigidBody*)node->getCollisionObject())->applyTorqueImpulse(-node->getJointAxis() * 10.0f);
 	//anchor the pod to the ground
 	_body->_groundAnchor = ConstraintPtr(app->getPhysicsController()->createFixedConstraint(
-	  _body->getNode()->getCollisionObject()->asRigidBody(), app->_ground->getCollisionObject()->asRigidBody()));
+	  (PhysicsRigidBody*)_body->getNode()->getCollisionObject(), (PhysicsRigidBody*)app->_ground->getCollisionObject()));
 	//TODO: push the astronauts out through the hatch
 }
 

@@ -190,15 +190,15 @@ void LandingPod::openHatch() {
 	if(_hatch->_lock.get() != nullptr) _hatch->_lock->setEnabled(false);
 	//the torque is about the hinge axis
 	MyNode *node = _hatch->getNode();
-	node->getCollisionObject()->asRigidBody()->applyTorqueImpulse(-node->getJointAxis() * 10.0f);
+	((PhysicsRigidBody*)node->getCollisionObject())->applyTorqueImpulse(-node->getJointAxis() * 10.0f);
 	//anchor the pod to the ground
 	_body->_groundAnchor = ConstraintPtr(app->getPhysicsController()->createFixedConstraint(
-	  _body->getNode()->getCollisionObject()->asRigidBody(),
-	  _ramp->findNode("buggyPlatform")->getCollisionObject()->asRigidBody()));
+	  (PhysicsRigidBody*)_body->getNode()->getCollisionObject(),
+	  (PhysicsRigidBody*)_ramp->findNode("buggyPlatform")->getCollisionObject()));
 	//push the buggy out through the hatch
 	if(_payload && _payload->getScene() == _scene) {
 		Vector3 impulse = -_payload->getForwardVector() * 1000.0f;
-		_payload->getCollisionObject()->asRigidBody()->applyImpulse(impulse);
+		((PhysicsRigidBody*)_payload->getCollisionObject())->applyImpulse(impulse);
 		_hatching = true;
 		app->message(NULL);
 	}

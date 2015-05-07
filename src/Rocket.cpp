@@ -119,7 +119,7 @@ void Rocket::update() {
 			trans = trans.normalize() * (scale * _balloons->_balloonRadius[i] - _balloons->_anchorRadius[i]);
 			balloon->setTranslation(trans);	
 			//apply the air pressure force
-			anchor->getCollisionObject()->asRigidBody()->applyForce(Vector3(0, 0, 200) * scale);
+			((PhysicsRigidBody*)anchor->getCollisionObject())->applyForce(Vector3(0, 0, 200) * scale);
 		}
 	}
 }
@@ -171,7 +171,7 @@ void Rocket::Straw::addPhysics(short n) {
 	node->addPhysics(false);
 	_project->_rootNode->addChild(node);
 	PhysicsGenericConstraint *constraint = app->getPhysicsController()->createGenericConstraint(
-		node->getCollisionObject()->asRigidBody(), rot, trans);
+		(PhysicsRigidBody*)node->getCollisionObject(), rot, trans);
 	constraint->setLinearLowerLimit(linearLow);
 	constraint->setLinearUpperLimit(linearHigh);
 	constraint->setAngularLowerLimit(angularLow);

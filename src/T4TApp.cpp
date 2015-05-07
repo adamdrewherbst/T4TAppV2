@@ -41,8 +41,10 @@ T4TApp* T4TApp::getInstance() {
 
 void T4TApp::initialize()
 {
+	_hasInternet = true;
+	
 	// Load font
-	_font = Font::create("res/common/arial.gpb");
+	_font = Font::create("res/common/fonts/arial-distance.gpb");
 	assert(_font);
 
 	splash("Initializing...");
@@ -336,6 +338,8 @@ void T4TApp::splash(const char *msg) {
 
 void T4TApp::resizeEvent(unsigned int width, unsigned int height) {
 
+	if(!_mainMenu) return;
+	
 	_stage->setWidth(width - _sideMenu->getWidth());
 	_stage->setHeight(height);
 
@@ -396,7 +400,7 @@ void T4TApp::setTooltip() {
 	}
 	std::ostringstream os;
 	os << "showing tooltip for " << _tooltipControl->getId() << " at " << x << "," << y << ": " << tooltip;
-	message(os.str().c_str());
+	//message(os.str().c_str());
 }
 
 void T4TApp::render(float elapsedTime)
@@ -440,6 +444,10 @@ void T4TApp::render(float elapsedTime)
 	_tooltipWrapper->draw();
 	short n = _forms.size(), i;
 	for(i = 0; i < n; i++) _forms[i]->_container->draw();
+}
+
+bool T4TApp::hasInternet() {
+	return _hasInternet;
 }
 
 bool T4TApp::login() {
@@ -538,6 +546,8 @@ size_t curl_write(void *ptr, size_t size, size_t count, void *data) {
 
 char* T4TApp::curlFile(const char *url, const char *filename, const char *localVersion) {
 
+	if(!hasInternet()) return NULL;
+
 	bool returnText = filename == NULL;
 	if(returnText) filename = "res/tmp/tmpfile";
 
@@ -592,6 +602,10 @@ char* T4TApp::curlFile(const char *url, const char *filename, const char *localV
 	
 	if(res != CURLE_OK) {
 		GP_WARN("Couldn't load file %s: %s", url, curl_easy_strerror(res));
+		if(res == CURLE_COULDNT_CONNECT) {
+			GP_WARN("Can't connect to server - abandoning online content");
+			_hasInternet = false;
+		}
 		return NULL;
 	}
 	
@@ -895,7 +909,7 @@ void T4TApp::initScene()
     _ground = MyNode::create("grid");
 /*    Model* gridModel = createGridModel(2 * gridSize + 1);
     gridModel->setMaterial("res/common/models.material#grid");
-    _ground->setModel(gridModel);
+    _ground->setDrawable(gridModel);
     gridModel->release();//*/
     _ground->_objType = "none";
     _ground->setStatic(true);
@@ -914,7 +928,6 @@ void T4TApp::initScene()
     _finishLine = MyNode::create("finishLine");
     Text *text = Text::create("res/common/arial.gpb", "FINISH", Vector4(1.0f, 0.0f, 0.0f, 1.0f), 32);
     _finishLine->setDrawable(text);
-    _finishLine->
 
     //add invisible walls at the edges of the grid to prevent objects falling off the world
     for(short i = 0; i < 2; i++) {
@@ -1282,9 +1295,9 @@ bool T4TApp::hasMessage(int locations) {
 bool T4TApp::prepareNode(MyNode* node)
 {
 	PhysicsCollisionObject* obj = node->getCollisionObject();
-	if(obj && obj->asRigidBody()) {
+	if(obj && dynamic_cast<PhysicsRigidBody*>(obj)) {
 		cout << "adding collision listener to " << node->getId() << endl;
-		obj->asRigidBody()->addCollisionListener(this);
+		((PhysicsRigidBody*)obj)->addCollisionListener(this);
 	}
 }
 
@@ -1299,7 +1312,7 @@ bool T4TApp::printNode(Node *node) {
 
 bool T4TApp::drawNode(Node* node)
 {
-    Model* model = node->getModel();
+    Model* model = dynamic_cast<Model*>(node->getDrawable());
     if (model) {
 		bool wireframe = false;
 		float lineWidth = 1.0f;
@@ -1395,8 +1408,8 @@ Model* T4TApp::createModel(std::vector<float> &vertices, bool wireframe, const c
 	if(!mat) mat = Material::create("res/common/models.material#colored");
 	model->setMaterial(mat);
 	if(node) {
-		if(node->getModel()) node->setModel(NULL);
-		node->setModel(model);
+		if(node->getDrawable()) node->setDrawable(NULL);
+		node->setDrawable(model);
 		model->release();
 	}
 	return model;
@@ -1814,7 +1827,7 @@ PhysicsConstraint* T4TApp::addConstraint(MyNode *n1, MyNode *n2, int id, const c
 	unsigned short i, j;
 	for(i = 0; i < 2; i++) {
 		node[i] = i == 0 ? n1 : n2;
-		body[i] = node[i]->getCollisionObject()->asRigidBody();
+		body[i] = dynamic_cast<PhysicsRigidBody*>(node[i]->getCollisionObject());
 		rot[i] = i == 0 ? rot1 : rot2;
 		trans[i] = i == 0 ? trans1 : trans2;
 		/*if(strcmp(type, "hinge") == 0) {

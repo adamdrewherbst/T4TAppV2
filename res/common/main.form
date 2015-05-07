@@ -4,7 +4,8 @@ form mainMenu {
 	position = 0, 0
 	width = 100%
 	height = 100%
-	font = res/common/arial14.gpb
+	font = res/common/fonts/arial-distance.gpb
+	fontSize = 14
 	layout = LAYOUT_ABSOLUTE
 	consumeInputEvents = false
 	
@@ -39,11 +40,11 @@ form mainMenu {
 			text = Save All
 		}
 		checkbox drawDebug {	
-			style = buttonStyle
+			style = CheckBox
 			autoWidth = true
 			height = 40
-			text = Draw Debug
-			checked = true
+			text = Show Physics
+			checked = false
 		}
 		container modePanel {
 			style = hiddenContainer
@@ -655,7 +656,8 @@ form mainMenu {
 
 	container textDialog {
 		style = basicContainer
-		font = res/common/arial14.gpb
+		font = res/common/fonts/arial-distance.gpb
+		fontSize = 14
 		layout = LAYOUT_FLOW
 		alignment = ALIGN_VCENTER_HCENTER
 		size = 350, 150
@@ -685,7 +687,8 @@ form mainMenu {
 	
 	container confirmDialog {
 		style = basicContainer
-		font = res/common/arial14.gpb
+		font = res/common/fonts/arial-distance.gpb
+		fontSize = 14
 		layout = LAYOUT_FLOW
 		alignment = ALIGN_VCENTER_HCENTER
 		size = 350, 150

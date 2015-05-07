@@ -11,7 +11,7 @@ theme mainMenu
     ${activeColor} = #aaaaaaff
     ${focusColor} = ${normalColor}
     ${textColor} = #ffffffff
-    ${font} = arial.gpb
+    ${font} = fonts/arial-distance.gpb
     ${fontSize} = 16
     ${disabledOpacity} = 0.5
 
@@ -569,7 +569,7 @@ theme mainMenu
         stateNormal
         {
             imageList = normalImages
-            font = res/common/arial18.gpb
+            font = ${font}
             textColor = #ffffffff
             fontSize = 18
             textAlignment = ALIGN_VCENTER_HCENTER

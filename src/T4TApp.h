@@ -200,6 +200,7 @@ public:
     int _constraintCount;
     
     //current state
+    bool _hasInternet;
     short _activeMode;
     short _navMode; //-1 = inactive, 0 = rotate, 1 = translate, 2 = zoom - overrides currently active mode when active
     bool _drawDebug;
@@ -275,6 +276,7 @@ public:
     ~T4TApp();
     void free();
     T4TApp* getInstance();
+    bool hasInternet();
     bool login();
     void processLogin(AppForm *form);
     void processRegistration(AppForm *form);

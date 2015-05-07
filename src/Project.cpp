@@ -342,7 +342,7 @@ void Project::finish() {
 			node->setStatic(true);
 			node->addPhysics();
 		} else { //add gravity to this node
-			node->getCollisionObject()->asRigidBody()->setGravity(app->getPhysicsController()->getGravity());
+			((PhysicsRigidBody*)node->getCollisionObject())->setGravity(app->getPhysicsController()->getGravity());
 		}
 	}
 	app->_scene->addNode(_rootNode);
@@ -783,7 +783,7 @@ void Project::Element::addPhysics(short n) {
 	node->addPhysics(false);
 	if(isBody()) {
 		if(n == 0) _project->_buildAnchor = ConstraintPtr(app->getPhysicsController()->createFixedConstraint(
-		  node->getCollisionObject()->asRigidBody()));
+		  (PhysicsRigidBody*)node->getCollisionObject()));
 		_project->_rootNode->addChild(node);
 	}
 }

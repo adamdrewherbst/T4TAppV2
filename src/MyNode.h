@@ -87,6 +87,7 @@ public:
 	void mergeVertices(float threshold);
 	void calculateHulls();
 	void setColor(float r, float g, float b, bool save = true, bool recur = false);
+	Model* getModel();
 	Project::Element* getElement();
 	Project::Element* getBaseElement();
 
