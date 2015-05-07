@@ -103,8 +103,8 @@ void Buggy::controlEvent(Control *control, Control::Listener::EventType evt) {
 bool Buggy::touchEvent(Touch::TouchEvent evt, int x, int y, unsigned int contactIndex) {
 	Project::touchEvent(evt, x, y, contactIndex);
 	if(_subMode == 1 && !_launching) {
-		if(isTouching() && getTouchNode() == _ramp) {
-			float scale = _ramp->_baseScale.y * (1.0f - _touchPt.deltaPix().y / 400.0f);
+		if(evt == Touch::TOUCH_MOVE && isTouching() && getTouchNode() == _ramp) {
+			float scale = _ramp->_baseScale.y - _touchPt.deltaPix().y / 200.0f;
 			scale = fmin(4.0f, fmax(0.2f, scale));
 			setRampHeight(scale);
 		}
@@ -158,6 +158,25 @@ CameraState* Buggy::Axle::getAttachState() {
 	return _attachState;
 }
 
+Vector3 Buggy::Axle::getAnchorPoint(short n) {
+	//actual anchor point is in the axle center, we want the body surface point on the same side as the camera
+	MyNode *node = _nodes[n].get(), *parent = _parent->getNode();
+	short dir = app->getCameraNode()->getTranslationWorld().x > 0 ? 1 : -1;
+	Vector3 origin = node->getTranslationWorld(), direction = dir * Vector3::unitX();
+	Ray ray(origin, direction);
+	PhysicsController::HitResult result;
+	app->_nodeFilter->setNode(parent);
+	if(app->getPhysicsController()->rayTest(ray, app->getCamera()->getFarPlane(), &result, app->_nodeFilter)) {
+		return result.point;
+	} else {
+		parent->updateTransform();
+		BoundingBox box = parent->getBoundingBox(false, false);
+		Vector3 point(dir > 0 ? box.max.x : box.min.x, origin.y, origin.z);
+		return point;
+	}
+	return Vector3::zero();
+}
+
 Buggy::Wheels::Wheels(Project *project, Element *parent, const char *id, const char *name)
   : Project::Element(project, parent, id, name) {
 	_numNodes = 2;
@@ -183,4 +202,19 @@ void Buggy::Wheels::addPhysics(short n) {
 	node->_parentNormal = Vector3::unitX();
 }
 
+bool Buggy::Wheels::touchEvent(Touch::TouchEvent evt, int x, int y, unsigned int contactIndex) {
+	//determine if we are in more of a side view, in which case treat it like we are touching the axle instead
+	Vector3 dir = app->getCameraNode()->getForwardVector(), side = Vector3::unitX();
+	if(fabs(dir.dot(side)) > 0.7f) {
+		if(evt == Touch::TOUCH_PRESS) {
+			_project->_touchPt._node[evt] = _parent->getNode();
+		}
+		_parent->touchEvent(evt, x, y, contactIndex);
+	} else {
+		Project::Element::touchEvent(evt, x, y, contactIndex);
+	}
 }
+
+}
+
+

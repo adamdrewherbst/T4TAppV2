@@ -179,6 +179,11 @@ void Rocket::Straw::addPhysics(short n) {
 	_constraint = ConstraintPtr(constraint);
 }
 
+void Rocket::Straw::deleteNode(short n) {
+	_constraint.reset();
+	Project::Element::deleteNode(n);
+}
+
 bool Rocket::Straw::touchEvent(Touch::TouchEvent evt, int x, int y, unsigned int contactIndex) {
 	Project::Element::touchEvent(evt, x, y, contactIndex);
 	switch(evt) {

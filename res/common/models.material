@@ -46,6 +46,22 @@ material colored
     }
 }
 
+material hull_outer : colored {
+	technique {
+		pass {
+			u_ambientColor = 1.0, 0.0, 1.0
+		}
+	}
+}
+
+material hull_inner : colored {
+	technique {
+		pass {
+			u_ambientColor = 1.0, 1.0, 0.0
+		}
+	}
+}
+
 material workbench
 {
 	u_textureRepeat = 1, 1

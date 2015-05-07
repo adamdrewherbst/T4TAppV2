@@ -13,8 +13,9 @@ public:
 		ConstraintPtr _constraint;
 
 		Straw(Project *project);
-		void addPhysics(short n);
 		bool touchEvent(Touch::TouchEvent evt, int x, int y, unsigned int contactIndex);
+		void addPhysics(short n);
+		void deleteNode(short n);
 	};
 	
 	class Balloon : public Project::Element {

@@ -473,10 +473,13 @@ void Project::setCurrentElement(short n) {
 void Project::showInstructions() {
 	app->_componentContainer->setVisible(false);
 	std::string title = _name + " - Instructions";
+	app->_componentWrapper->setScroll(Container::SCROLL_NONE);
 	app->_componentTitle->setText(title.c_str());
 	app->_componentInstructions->setVisible(true);
 	app->_componentDescription->setText(_description.c_str());
 	app->_componentBack->setVisible(false);
+	app->_componentWrapper->setEnabled(false);
+	app->_componentWrapper->setEnabled(true);
 	_instructionsPage = 0;
 	app->_componentMenu->setVisible(true);
 }
@@ -485,7 +488,11 @@ void Project::navigateInstructions(bool forward) {
 	if((_instructionsPage == 0 && !forward) || (_instructionsPage == 2 && forward)) return;
 	_instructionsPage += forward ? 1 : -1;
 	if(_instructionsPage == 2) promptNextElement();
-	else app->_componentDescription->setText(_instructionsPage == 0 ? _description.c_str() : _constraints.c_str());
+	else {
+		app->_componentDescription->setText(_instructionsPage == 0 ? _description.c_str() : _constraints.c_str());
+		app->_componentWrapper->setEnabled(false);
+		app->_componentWrapper->setEnabled(true);
+	}
 }
 
 void Project::promptNextElement() {
@@ -703,7 +710,7 @@ void Project::Element::doAction(const char *action) {
 
 void Project::Element::setNode(const char *id) {
 	_currentNodeId = id;
-	if(_parent == NULL && !_isOther) {
+	if(isBody()) {
 		//auto-place this node
 		addNode();
 	} else if(!_isOther) {
@@ -748,7 +755,7 @@ void Project::Element::placeNode(short n) {
 	MyNode *node = _nodes[n].get();
 	Vector3 point = _project->getTouchPoint(_project->getLastTouchEvent()),
 	  normal = _project->getTouchNormal(_project->getLastTouchEvent());
-	if(_parent == NULL && !_isOther) {
+	if(isBody()) {
 		node->setTranslation(0, 0, 0);
 	} else {
 		MyNode *parent = _project->getTouchNode(_project->getLastTouchEvent());
@@ -774,7 +781,7 @@ void Project::Element::setComplete(bool complete) {
 void Project::Element::addPhysics(short n) {
 	MyNode *node = _nodes[n].get();
 	node->addPhysics(false);
-	if(_parent == NULL && !_isOther) {
+	if(isBody()) {
 		if(n == 0) _project->_buildAnchor = ConstraintPtr(app->getPhysicsController()->createFixedConstraint(
 		  node->getCollisionObject()->asRigidBody()));
 		_project->_rootNode->addChild(node);
@@ -782,6 +789,10 @@ void Project::Element::addPhysics(short n) {
 }
 
 void Project::Element::deleteNode(short n) {
+	if(isBody()) {
+		_project->_buildAnchor.reset();
+		_project->setInSequence(true);
+	}
 	_nodes[n]->removeMe();
 }
 
@@ -791,6 +802,14 @@ short Project::Element::getNodeCount() {
 
 MyNode* Project::Element::getNode(short n) {
 	return _nodes.size() > n ? _nodes[n].get() : NULL;
+}
+
+Vector3 Project::Element::getAnchorPoint(short n) {
+	return _nodes[n]->getAnchorPoint();
+}
+
+bool Project::Element::isBody() {
+	return _parent == NULL && !_isOther;
 }
 
 bool Project::Element::touchEvent(Touch::TouchEvent evt, int x, int y, unsigned int contactIndex) {
@@ -843,7 +862,7 @@ bool Project::Element::touchEvent(Touch::TouchEvent evt, int x, int y, unsigned 
 						//treat it as if the user clicked on the point where this node is attached to its parent
 						parent->updateTransform();
 						parent->updateCamera();
-						Vector3 point = node->getAnchorPoint();
+						Vector3 point = getAnchorPoint(_touchInd);
 						_project->_touchPt.set(evt, x, y, point);
 						cout << "touched " << node->getId() << ", currently at " << app->pv(point) << endl;
 						for(i = start; i < end; i++) {

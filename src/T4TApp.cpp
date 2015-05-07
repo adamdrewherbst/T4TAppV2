@@ -133,6 +133,7 @@ void T4TApp::initialize()
 
 	//for selecting items	
 	_componentMenu = Form::create("res/common/main.form#componentMenu");
+	_componentWrapper = (Container*) _componentMenu->getControl("wrapper");
 	_componentContainer = (Container*) _componentMenu->getControl("components");
 	_componentHeader = (Container*) _componentMenu->getControl("header");
 	_componentTitle = (Label*) _componentHeader->getControl("title");
@@ -219,6 +220,7 @@ void T4TApp::initialize()
 	addItem("plastic_cone", 1, "general");
 	addItem("foam_roof", 1, "general");
 	addItem("astronaut", 1, "general");
+	addItem("bread_cone", 1, "general");
 	//addItem("EnginePropellerThing", 1, "general");
 
 	_drawDebugCheckbox = (CheckBox*) _sideMenu->getControl("drawDebug");
@@ -905,8 +907,14 @@ void T4TApp::initScene()
     _workbench->loadData("res/models/", false, true);
     _workbench->_objType = "box";
     _workbench->setStatic(true);
-    _workbench->setMyTranslation(Vector3(0, -1, 0));
+    _workbench->setMyTranslation(Vector3(0, -1.05f, 0));
     _ground->addChild(_workbench);
+    
+    //stamp a finish line on the workbench when testing certain projects
+    _finishLine = MyNode::create("finishLine");
+    Text *text = Text::create("res/common/arial.gpb", "FINISH", Vector4(1.0f, 0.0f, 0.0f, 1.0f), 32);
+    _finishLine->setDrawable(text);
+    _finishLine->
 
     //add invisible walls at the edges of the grid to prevent objects falling off the world
     for(short i = 0; i < 2; i++) {
@@ -984,11 +992,14 @@ void T4TApp::filterItemMenu(const char *tag) {
 
 void T4TApp::promptItem(const char *tag, const char *title) {
 	filterItemMenu(tag);
+	_componentWrapper->setScroll(Container::SCROLL_VERTICAL);
 	_componentTitle->setText(title ? title : "");
 	if(!title) _componentHeader->setVisible(false);
 	_componentInstructions->setVisible(false);
 	_componentBack->setVisible(true);
 	_componentContainer->setVisible(true);
+	_componentWrapper->setEnabled(false);
+	_componentWrapper->setEnabled(true);
 	_componentMenu->setVisible(true);
 }
 

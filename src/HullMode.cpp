@@ -32,7 +32,7 @@ void HullMode::setActive(bool active) {
 		app->_ground->setVisible(false);
 		app->getPhysicsController()->setGravity(Vector3::zero());
 		app->setCameraEye(30, 0, M_PI/12);
-		app->promptItem();
+		app->promptItem(NULL, "Select Model");
 	} else {
 		app->_ground->setVisible(true);
 		app->getPhysicsController()->setGravity(app->_gravity);
@@ -323,8 +323,8 @@ void HullMode::updateModel() {
 	part->setIndexData(&forward[0], 0, nt * 3);
 	part = model->getMesh()->addPart(Mesh::TRIANGLES, Mesh::INDEX16, nt * 3);
 	part->setIndexData(&reverse[0], 0, nt * 3);
-	model->setMaterial("res/common/models.material#halfpipe", 0);
-	model->setMaterial("res/common/models.material#box", 1);
+	model->setMaterial("res/common/models.material#hull_outer", 0);
+	model->setMaterial("res/common/models.material#hull_inner", 1);
 }
 
 bool HullMode::keyEvent(Keyboard::KeyEvent evt, int key) {

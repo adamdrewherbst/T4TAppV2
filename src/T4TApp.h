@@ -192,7 +192,7 @@ public:
     std::vector<MyNode*> _intersectNodeGroup;
     BoundingBox _intersectBox;
     Vector3 _intersectPoint;
-    MyNode *_intersectModel, *_axes, *_ground, *_workbench;
+    MyNode *_intersectModel, *_axes, *_ground, *_workbench, *_finishLine;
     Plane _groundPlane;
     
     //each constraint in the simulation will have an integer ID for lookup
@@ -229,7 +229,7 @@ public:
     //user interface
     Form *_mainMenu, *_componentMenu;
     Container *_sideMenu, *_stage, *_sceneMenu, *_machineMenu, *_modePanel,
-      *_textDialog, *_confirmDialog, *_overlay, *_cameraMenu, *_componentContainer, *_componentHeader,
+      *_textDialog, *_confirmDialog, *_overlay, *_cameraMenu, *_componentWrapper, *_componentContainer, *_componentHeader,
       *_componentInstructions;
     MenuFilter *_itemFilter;
 	

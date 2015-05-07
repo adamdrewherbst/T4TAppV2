@@ -743,18 +743,18 @@ form componentMenu {
 		layout = LAYOUT_ABSOLUTE
 		scroll = SCROLL_VERTICAL
 		size = 100%, 80%
-		
+
 		container instructions {
 			style = basicContainer
 			layout = LAYOUT_ABSOLUTE
 			size = 100%, 100%
-			
+
 			container navigation {
 				style = hiddenContainer
 				size = 100%, 15%
 				layout = LAYOUT_ABSOLUTE
 				alignment = ALIGN_TOP
-				
+
 				button prev {
 					style = buttonStyle
 					autoSize = AUTO_SIZE_WIDTH
@@ -787,7 +787,9 @@ form componentMenu {
 		container components {
 			style = hiddenContainer
 			layout = LAYOUT_FLOW
-			size = 100%, 100%
+			width = 100%
+			autoSize = AUTO_SIZE_HEIGHT
+			alignment = ALIGN_TOP
 		}
 	}
 	container controls {

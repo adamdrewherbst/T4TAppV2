@@ -40,9 +40,11 @@ public:
 		void doAction(const char *action);
 		void setParent(Element *parent);
 		void addChild(Element *child);
-		bool touchEvent(Touch::TouchEvent evt, int x, int y, unsigned int contactIndex);
+		virtual bool touchEvent(Touch::TouchEvent evt, int x, int y, unsigned int contactIndex);
 		short getNodeCount();
 		MyNode* getNode(short n = 0);
+		virtual Vector3 getAnchorPoint(short n = 0);
+		bool isBody();
 		virtual void setNode(const char *id);
 		virtual void addNode();
 		virtual void placeNode(short n = 0);
