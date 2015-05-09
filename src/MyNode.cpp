@@ -1969,28 +1969,42 @@ bool MyNode::getTouchPoint(int x, int y, Vector3 *point, Vector3 *normal) {
 	return false;
 }
 
+MaterialParameter* MyNode::getMaterialParameter(const char *name) {
+	Model *model = getModel();
+	if(!model) return NULL;
+	Material *material = model->getMaterial();
+	if(!material) return NULL;
+	Technique *technique = material->getTechniqueByIndex(0);
+	if(!technique) return NULL;
+	Pass *pass = technique->getPassByIndex(0);
+	if(!pass) return NULL;
+	Effect *effect = pass->getEffect();
+	if(!effect) return NULL;
+	Uniform *uniform = effect->getUniform(name);
+	if(!uniform) return NULL;
+	return pass->getParameter(name);
+}
+
 void MyNode::setColor(float r, float g, float b, bool save, bool recur) {
 	Vector3 color(r, g, b);
-	Model *model = getModel();
-	if(model) {
-		Material *mat = model->getMaterial();
-		if(mat) {
-			Technique *tech = mat->getTechniqueByIndex(0);
-			if(tech) {
-				Pass *pass = tech->getPassByIndex(0);
-				if(pass) {
-					Effect *effect = pass->getEffect();
-					if(effect) {
-						Uniform *amb = effect->getUniform("u_ambientColor");
-						if(amb) {
-							pass->getParameter("u_ambientColor")->setValue(color);
-						}
-					}
-				}
-			}
-		}
-	}
 	if(save) _color = color;
+	MaterialParameter *ambient = getMaterialParameter("u_ambientColor");
+	if(ambient) ambient->setValue(color);
+}
+
+void MyNode::setTexture(const char *imagePath) {
+	Model *model = getModel();
+	if(!model) return;
+	model->setMaterial("res/common/models.material#textured");
+	MaterialParameter *param = getMaterialParameter("u_diffuseTexture");
+	if(!param) return;
+	Texture::Sampler *sampler = param->getSampler();
+	if(!sampler) return;
+	Texture *texture = sampler->getTexture();
+	if(!texture) return;
+	Image *image = Image::create(imagePath);
+	unsigned char *data = image->getData();
+	texture->setData(data);
 }
 
 bool MyNode::isStatic() {

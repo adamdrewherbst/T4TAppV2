@@ -86,7 +86,9 @@ public:
 	void updateCamera(bool doPatches = true);
 	void mergeVertices(float threshold);
 	void calculateHulls();
+	MaterialParameter* getMaterialParameter(const char *name);
 	void setColor(float r, float g, float b, bool save = true, bool recur = false);
+	void setTexture(const char *imagePath);
 	Model* getModel();
 	Project::Element* getElement();
 	Project::Element* getBaseElement();

@@ -24,6 +24,12 @@ static T4TApp* __t4tInstance = NULL;
 static bool _debugFlag = false;
 T4TApp game;
 
+enum RenderQueue {
+	QUEUE_OPAQUE = 0,
+	QUEUE_TRANSPARENT,
+	QUEUE_COUNT
+};
+
 T4TApp::T4TApp()
     : _scene(NULL)
 {
@@ -435,10 +441,14 @@ void T4TApp::render(float elapsedTime)
 
     // Visit all the nodes in the scene for drawing
     if(_activeScene != NULL) {
-    	_activeScene->visit(this, &T4TApp::drawNode);
-    	if(_drawDebug) getPhysicsController()->drawDebug(_activeScene->getActiveCamera()->getViewProjectionMatrix());
+		for(short i = 0; i < QUEUE_COUNT; i++) {
+			_renderQueues[i].clear();
+		}
+    	_activeScene->visit(this, &T4TApp::buildRenderQueues);
+   	    drawScene();
+	   	if(_drawDebug) getPhysicsController()->drawDebug(_activeScene->getActiveCamera()->getViewProjectionMatrix());
     }
-
+    
 	_mainMenu->draw();
 	_componentMenu->draw();
 	_tooltipWrapper->draw();
@@ -916,18 +926,30 @@ void T4TApp::initScene()
     //store the plane representing the grid, for calculating intersections
     _groundPlane = Plane(Vector3(0, 1, 0), 0);
 
-	//visual workbench representation    
+    //stamp a finish line on the workbench when testing certain projects
+    _finishLine = MyNode::create("finishLine");
+    Mesh *mesh = Mesh::createQuad(0, 0, 4.0f, 1.5f);
+    Model *model = Model::create(mesh);
+    model->setMaterial("res/common/models.material#finishLine");
+    SAFE_RELEASE(mesh);
+    _finishLine->setDrawable(model);
+    SAFE_RELEASE(model);
+    _finishLine->setTag("transparent");
+    _finishLine->setRotation(Vector3::unitY(), M_PI);
+    _finishLine->rotate(Vector3::unitX(), -M_PI/2);
+    _finishLine->setTranslation(2, 0, 0);
+    _finishLine->setVisible(false);
+    //_finishLine->setTexture("res/png/finishLine.png");
+    _ground->addChild(_finishLine);
+
+	//visual workbench representation
     _workbench = MyNode::create("workbench");
     _workbench->loadData("res/models/", false, true);
+    //_workbench->setTexture("res/png/workbench_texture.png");
     _workbench->_objType = "box";
     _workbench->setStatic(true);
     _workbench->setMyTranslation(Vector3(0, -1.05f, 0));
     _ground->addChild(_workbench);
-    
-    //stamp a finish line on the workbench when testing certain projects
-    _finishLine = MyNode::create("finishLine");
-    Text *text = Text::create("res/common/arial.gpb", "FINISH", Vector4(1.0f, 0.0f, 0.0f, 1.0f), 32);
-    _finishLine->setDrawable(text);
 
     //add invisible walls at the edges of the grid to prevent objects falling off the world
     for(short i = 0; i < 2; i++) {
@@ -1310,22 +1332,52 @@ bool T4TApp::printNode(Node *node) {
 	return true;
 }
 
-bool T4TApp::drawNode(Node* node)
+bool T4TApp::buildRenderQueues(Node* node)
 {
     Model* model = dynamic_cast<Model*>(node->getDrawable());
-    if (model) {
-		bool wireframe = false;
-		float lineWidth = 1.0f;
-    	MyNode *myNode = dynamic_cast<MyNode*>(node);
-    	if(myNode) {
-    		if(!myNode->_visible) return true;
-    		wireframe = myNode->_wireframe || myNode->_chain;
-    		lineWidth = myNode->_lineWidth;
-    	}
-    	if(wireframe) glLineWidth(lineWidth);
-    	model->draw(wireframe);
-    	if(wireframe) glLineWidth(1.0f);
+    if (model)
+    {
+        // Determine which render queue to insert the node into
+        std::vector<Node*>* queue;
+        if (node->hasTag("transparent"))
+            queue = &_renderQueues[QUEUE_TRANSPARENT];
+        else
+            queue = &_renderQueues[QUEUE_OPAQUE];
+
+        queue->push_back(node);
     }
+    return true;
+}
+
+void T4TApp::drawScene()
+{
+    // Iterate through each render queue and draw the nodes in them
+    for (unsigned int i = 0; i < QUEUE_COUNT; ++i)
+    {
+        std::vector<Node*>& queue = _renderQueues[i];
+
+        for (size_t j = 0, ncount = queue.size(); j < ncount; ++j)
+        {
+            drawNode(queue[j]);
+        }
+    }
+}
+
+bool T4TApp::drawNode(Node* node)
+{
+	Drawable *drawable = node->getDrawable();
+	if(!drawable) return true;
+	bool wireframe = false;
+	float lineWidth = 1.0f;
+	MyNode *myNode = dynamic_cast<MyNode*>(node);
+	if(myNode) {
+		if(!myNode->_visible) return true;
+		wireframe = myNode->_wireframe || myNode->_chain;
+		lineWidth = myNode->_lineWidth;
+	}
+	if(wireframe) glLineWidth(lineWidth);
+	drawable->draw(wireframe);
+	if(wireframe) glLineWidth(1.0f);
     return true;
 }
 

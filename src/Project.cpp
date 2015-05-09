@@ -415,7 +415,6 @@ bool Project::setSubMode(short mode) {
 	}
 	_complete = true;
 	bool building = _subMode == 0, changed = Mode::setSubMode(mode);
-	if(_subMode == 0) app->_ground->setVisible(false);
 	if(building) {
 		if(changed) {
 			_rootNode->setRest();
@@ -425,12 +424,14 @@ bool Project::setSubMode(short mode) {
 	if(_buildAnchor.get() != nullptr) _buildAnchor->setEnabled(_subMode == 0);
 	switch(_subMode) {
 		case 0: { //build
+			app->_ground->setVisible(false);
 			app->setCamera(_buildState);
 			removePayload();
 			_rootNode->enablePhysics(true);
 			break;
 		} case 1: { //place in test position
 			setSelectedNode(NULL);
+			app->_finishLine->setVisible(false);
 			app->setCamera(_testState);
 			break;
 		}

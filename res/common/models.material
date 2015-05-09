@@ -62,6 +62,43 @@ material hull_inner : colored {
 	}
 }
 
+material textured
+{
+	u_textureRepeat = 1, 1
+	
+	technique unlit
+    {
+        pass 0
+        {
+            // shaders
+            vertexShader = res/shaders/textured.vert
+            fragmentShader = res/shaders/textured.frag
+			defines = TEXTURE_REPEAT
+            
+            // uniforms
+			u_worldViewProjectionMatrix = WORLD_VIEW_PROJECTION_MATRIX
+ 
+            // samplers
+            sampler u_diffuseTexture
+            {
+            	path = res/png/dummy_texture.png
+                mipmap = true
+                wrapS = REPEAT
+                wrapT = REPEAT
+                minFilter = NEAREST_MIPMAP_LINEAR
+                magFilter = LINEAR
+            }
+
+            // render state
+            renderState
+            {
+                cullFace = true
+                depthTest = true
+            }
+        }
+    }
+}
+
 material workbench
 {
 	u_textureRepeat = 1, 1
@@ -81,7 +118,7 @@ material workbench
             // samplers
             sampler u_diffuseTexture
             {
-                path = res/png/workbench_texture.png
+            	path = res/png/workbench_texture.png
                 mipmap = true
                 wrapS = REPEAT
                 wrapT = REPEAT
@@ -99,4 +136,43 @@ material workbench
     }
 }
 
+material finishLine
+{
+	u_textureRepeat = 1, 1
+	
+	technique unlit
+    {
+        pass 0
+        {
+            // shaders
+            vertexShader = res/shaders/textured.vert
+            fragmentShader = res/shaders/textured.frag
+			defines = TEXTURE_REPEAT
+            
+            // uniforms
+			u_worldViewProjectionMatrix = WORLD_VIEW_PROJECTION_MATRIX
+ 
+            // samplers
+            sampler u_diffuseTexture
+            {
+            	path = res/png/finishLine.png
+                mipmap = true
+                wrapS = REPEAT
+                wrapT = REPEAT
+                minFilter = NEAREST_MIPMAP_LINEAR
+                magFilter = LINEAR
+            }
+
+            // render state
+            renderState
+            {
+                cullFace = true
+                depthTest = true
+                blend = true
+                blendSrc = SRC_ALPHA
+                blendDst = ONE_MINUS_SRC_ALPHA
+            }
+        }
+    }
+}
 

@@ -178,6 +178,7 @@ public:
     Scene* _scene;
     Node* _lightNode;
     Light* _light;
+    std::vector<Node*> _renderQueues[2];
     
 	//the functionality of the various interactive modes    
 	std::vector<Mode*> _modes;
@@ -389,7 +390,9 @@ public:
     void update(float elapsedTime);
     void render(float elapsedTime);
     void redraw();
+    bool buildRenderQueues(Node *node);
     bool drawNode(Node* node);
+    void drawScene();
     void placeNode(MyNode *node, float x, float y);
     void setMode(short mode);
     void setNavMode(short mode);
