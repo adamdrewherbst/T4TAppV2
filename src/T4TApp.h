@@ -194,6 +194,7 @@ public:
     BoundingBox _intersectBox;
     Vector3 _intersectPoint;
     MyNode *_intersectModel, *_axes, *_ground, *_workbench, *_finishLine;
+    float _finishLineWidth, _finishLineHeight;
     Plane _groundPlane;
     
     //each constraint in the simulation will have an integer ID for lookup
@@ -397,6 +398,7 @@ public:
     void setMode(short mode);
     void setNavMode(short mode);
     void setTooltip();
+    void setFinishLine(float distance);
 
     //see if the current touch coordinates intersect a given model in the scene
     bool checkTouchModel(Node* node);

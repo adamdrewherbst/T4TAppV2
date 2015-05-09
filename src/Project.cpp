@@ -27,6 +27,8 @@ Project::Project(const char* id, const char *name) : Mode::Mode(id, name) {
 
 	_payloadId = NULL;
 	_payload = NULL;
+	
+	_finishDistance = -1;
 
 	_buildState = new CameraState(30, -M_PI/3, M_PI/12);
 	_testState = new CameraState(40, 0, M_PI/12);	
@@ -431,7 +433,8 @@ bool Project::setSubMode(short mode) {
 			break;
 		} case 1: { //place in test position
 			setSelectedNode(NULL);
-			app->_finishLine->setVisible(false);
+			if(_finishDistance > 0) app->setFinishLine(_finishDistance);
+			else app->_finishLine->setVisible(false);
 			app->setCamera(_testState);
 			break;
 		}
@@ -523,6 +526,7 @@ void Project::launch() {
 	_launching = true;
 	_launchSteps = 0;
 	_launchButton->setEnabled(false);
+	app->message(NULL);
 }
 
 void Project::activate() {

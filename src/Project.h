@@ -80,6 +80,9 @@ public:
 	const char *_payloadId;
 	MyNode *_payload;
 	Vector3 _payloadPosition;
+	
+	//if the project must be launched to a certain distance, we place a finish line at that point
+	float _finishDistance;
 
 	Container *_elementContainer, *_actionContainer;
 	MenuFilter *_actionFilter;

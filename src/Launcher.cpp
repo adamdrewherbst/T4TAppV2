@@ -12,6 +12,8 @@ Launcher::Launcher() : Project::Project("launcher", "CEV Launcher") {
 	_rubberBand = (RubberBand*) addElement(new RubberBand(this));
 	setupMenu();
 	
+	_finishDistance = 15;
+	
 	_testState->set(80, 0, M_PI/3);
 
 	_table = MyNode::create("table1");
@@ -160,8 +162,10 @@ void Launcher::update() {
 	_payload->updateTransform();
 	float maxZ = _payload->getMaxValue(Vector3::unitZ()) + _payload->getTranslationWorld().z;
 	//cout << _payload->getId() << " now at " << maxZ << endl;
-	if(maxZ > 15 && !app->hasMessage()) {
-		app->message("You reached 5 meters!");
+	if(maxZ > _finishDistance && !app->hasMessage()) {
+		std::ostringstream os;
+		os << "You made it " << _finishDistance << " meters!";
+		app->message(os.str().c_str());
 	}
 }
 

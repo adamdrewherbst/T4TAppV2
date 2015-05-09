@@ -383,6 +383,11 @@ void T4TApp::update(float elapsedTime)
 	if(_carVehicle) _carVehicle->update(elapsedTime, _steering, _braking, _driving);
 }
 
+void T4TApp::setFinishLine(float distance) {
+	_finishLine->setVisible(true);
+	_finishLine->setTranslation(_finishLineWidth / 2, 0, distance);
+}
+
 void T4TApp::setTooltip() {
 	if(_touchControl == _tooltipControl) return;
 	_tooltipControl = _touchControl;
@@ -927,8 +932,10 @@ void T4TApp::initScene()
     _groundPlane = Plane(Vector3(0, 1, 0), 0);
 
     //stamp a finish line on the workbench when testing certain projects
+    _finishLineWidth = 6.0f;
+    _finishLineHeight = 2.0f;
     _finishLine = MyNode::create("finishLine");
-    Mesh *mesh = Mesh::createQuad(0, 0, 4.0f, 1.5f);
+    Mesh *mesh = Mesh::createQuad(0, 0, _finishLineWidth, _finishLineHeight);
     Model *model = Model::create(mesh);
     model->setMaterial("res/common/models.material#finishLine");
     SAFE_RELEASE(mesh);
@@ -937,7 +944,6 @@ void T4TApp::initScene()
     _finishLine->setTag("transparent");
     _finishLine->setRotation(Vector3::unitY(), M_PI);
     _finishLine->rotate(Vector3::unitX(), -M_PI/2);
-    _finishLine->setTranslation(2, 0, 0);
     _finishLine->setVisible(false);
     //_finishLine->setTexture("res/png/finishLine.png");
     _ground->addChild(_finishLine);

@@ -17,6 +17,8 @@ Buggy::Buggy() : Project::Project("buggy", "Lunar Buggy") {
 	_rearWheels = addElement(new Wheels(this, _rearAxle, "rearWheels", "Rear Wheels"));
 	setupMenu();
 	
+	_finishDistance = 10;
+	
 	_testState->set(60, 0, M_PI/8);
 
 	_ramp = MyNode::create("buggyRamp");
@@ -51,8 +53,6 @@ bool Buggy::setSubMode(short mode) {
 			setRampHeight(1);
 			app->getPhysicsController()->setGravity(app->_gravity);
 			app->_ground->setVisible(true);
-			app->_finishLine->setVisible(true);
-			app->_finishLine->setTranslation(2, 0, 10);
 			_ramp->setVisible(true);
 			app->message("Drag the ramp up and down to change its slope.");
 			break;
@@ -93,8 +93,10 @@ void Buggy::update() {
 	MyNode *body = _body->getNode();
 	body->updateTransform();
 	float maxZ = body->getMaxValue(Vector3::unitZ()) + body->getTranslationWorld().z;
-	if(maxZ > 10) {
-		app->message("You made it to the end!");
+	if(maxZ > _finishDistance && !app->hasMessage()) {
+		std::ostringstream os;
+		os << "You made it " << _finishDistance << " meters!";
+		app->message(os.str().c_str());
 	}
 }
 
