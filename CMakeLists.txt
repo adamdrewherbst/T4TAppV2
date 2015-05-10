@@ -3,6 +3,11 @@ PROJECT(t4tapp)
 
 set(GAME_NAME t4tapp)
 
+<<<<<<< HEAD
+=======
+set(CMAKE_BUILD_TYPE Debug)
+
+>>>>>>> a95b352369ae682b85e5c4344b6066e308e7a909
 if( CMAKE_SIZEOF_VOID_P EQUAL 8 )
     set(ARCH_DIR "x64" )
     set(ARCH_DEPS_DIR "x86_64" )
@@ -94,6 +99,10 @@ endmacro(copy_files)
 include_directories( 
     ${GAMEPLAY_SRC_PATH}/gameplay/src
     ${GAMEPLAY_SRC_PATH}/external-deps/include
+<<<<<<< HEAD
+=======
+    ${PROG_DIR}/curl-7.40.0/include
+>>>>>>> a95b352369ae682b85e5c4344b6066e308e7a909
 )
 
 append_gameplay_lib(GAMEPLAY_LIBRARIES)
@@ -116,12 +125,46 @@ ELSEIF (TARGET_OS STREQUAL "WINDOWS")
 	ADD_DEFINITIONS(-D_ITERATOR_DEBUG_LEVEL=0)
 ENDIF (TARGET_OS STREQUAL "LINUX")
 
+<<<<<<< HEAD
+=======
+set(GAMEPLAY_LIBRARIES ${GAMEPLAY_LIBRARIES} "/usr/lib64/libboost_thread-mt.so.1.53.0")
+set(GAMEPLAY_LIBRARIES ${GAMEPLAY_LIBRARIES} "/usr/lib64/libGLU.so.1")
+set(GAMEPLAY_LIBRARIES ${GAMEPLAY_LIBRARIES} "/home/aherbst/Documents/Programming/GamePlay/t4tapp/src/pugixml-1.5/scripts/build/libpugixml.a")
+set(GAMEPLAY_LIBRARIES ${GAMEPLAY_LIBRARIES} "/home/aherbst/Documents/Programming/curl-7.40.0/build/lib/libcurl.a")
+
+>>>>>>> a95b352369ae682b85e5c4344b6066e308e7a909
 source_group(res FILES ${GAME_RES} ${GAMEPLAY_RES} ${GAME_RES_SHADERS} ${GAME_RES_SHADERS_LIB})
 source_group(src FILES ${GAME_SRC})
 
 set(GAME_SRC
 	src/T4TApp.cpp
+<<<<<<< HEAD
 	src/T4TApp.h
+=======
+	src/Models.cpp
+	src/MyNode.cpp
+	src/Grid.cpp
+	src/Mode.cpp
+	src/Project.cpp
+	src/Satellite.cpp
+	src/Buggy.cpp
+	src/Rocket.cpp
+	src/Robot.cpp
+	src/LandingPod.cpp
+	src/CEV.cpp
+	src/Launcher.cpp
+	src/HullMode.cpp
+	#src/Lever.cpp
+	#src/Pulley.cpp
+	#src/ToolMode.cpp
+	#src/ToolCGAL.cpp
+	src/NavigateMode.cpp
+	#src/PositionMode.cpp
+	#src/ConstraintMode.cpp
+	#src/StringMode.cpp
+	#src/TestMode.cpp
+	#src/TouchMode.cpp
+>>>>>>> a95b352369ae682b85e5c4344b6066e308e7a909
 )
 
 add_executable(${GAME_NAME}
