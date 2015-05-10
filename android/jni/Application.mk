@@ -1,4 +1,6 @@
+NDK_TOOLCHAIN_VERSION := 4.8
 APP_CPPFLAGS += -std=c++11
-APP_ABI     := armeabi-v7a
-APP_STL     := gnustl_static
-LOCAL_C_INCLUDES += ${ANDROID_NDK}/sources/cxx-stl/gnu-libstdc++/4.6/include
+APP_STL      := gnustl_static
+APP_MODULES  := libgameplay
+APP_ABI      := armeabi-v7a x86
+APP_PLATFORM := android-16
