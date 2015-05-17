@@ -28,6 +28,7 @@ Project::Project(const char* id, const char *name) : Mode::Mode(id, name) {
 	_payloadId = NULL;
 	_payload = NULL;
 	
+    _showGround = true;
 	_finishDistance = -1;
 
 	_buildState = new CameraState(30, -M_PI/3, M_PI/12);
@@ -289,6 +290,7 @@ bool Project::touchEvent(Touch::TouchEvent evt, int x, int y, unsigned int conta
 			getEl()->touchEvent(evt, x, y, contactIndex);
 		}
 	}
+    return true;
 }
 
 void Project::deleteSelected() {
@@ -433,6 +435,7 @@ bool Project::setSubMode(short mode) {
 			break;
 		} case 1: { //place in test position
 			setSelectedNode(NULL);
+            app->_ground->setVisible(_showGround);
 			if(_finishDistance > 0) app->setFinishLine(_finishDistance);
 			else app->_finishLine->setVisible(false);
 			app->setCamera(_testState);

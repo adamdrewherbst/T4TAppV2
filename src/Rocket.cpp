@@ -11,6 +11,7 @@ Rocket::Rocket() : Project::Project("rocket", "Balloon Rocket") {
 	app->addItem("balloon_long", 2, "general", "balloon");
 	
 	_testState->set(45, 0, M_PI/12);
+    _showGround = false;
 	
 	_payloadId = "satellite";
 

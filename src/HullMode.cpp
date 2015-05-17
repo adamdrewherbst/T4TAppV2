@@ -4,7 +4,7 @@
 
 namespace T4T {
 
-HullMode::HullMode() : Mode::Mode("hull") {
+HullMode::HullMode() : Mode::Mode("hull", "Hull") {
 	_scene = Scene::load("res/common/scene.gpb");
 	_doSelect = false;
 	_ctrlPressed = false;

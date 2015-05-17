@@ -98,7 +98,8 @@ public:
 		 _complete, //true once all required elements have been added
 	     _inSequence, //true during the first run-through to add all the elements
 	     _launching, //after user clicks the Launch button in test mode
-	     _launchComplete, _broken;
+	     _launchComplete, _broken,
+         _showGround; //if we should display the workbench when testing
 	     
 	unsigned int _launchSteps;
 	     

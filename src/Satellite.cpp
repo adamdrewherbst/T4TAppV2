@@ -66,7 +66,6 @@ bool Satellite::setSubMode(short mode) {
 			_rootNode->placeRest();
 			Vector3 trans(0, 10, 0);
 			_rootNode->setMyTranslation(trans);
-			app->_ground->setVisible(true);
 			break;
 		}
 	}

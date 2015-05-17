@@ -116,7 +116,6 @@ bool LandingPod::setSubMode(short mode) {
 			positionPayload();
 			//TODO: if not enough space, alert the user
 			app->getPhysicsController()->setGravity(Vector3::zero());
-			app->_ground->setVisible(true);
 			break;
 		}
 	}

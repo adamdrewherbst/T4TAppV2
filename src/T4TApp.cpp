@@ -865,7 +865,7 @@ Container* T4TApp::getContainer(Control *control) {
 
 AppForm* T4TApp::getForm(Control *control) {
 	Control *current = control, *parent;
-	while(parent = current->getParent()) current = parent;
+	while((parent = current->getParent())) current = parent;
 	short n = _forms.size(), i;
 	for(i = 0; i < n; i++) {
 		if(_forms[i]->_container == current) return _forms[i];
@@ -1327,6 +1327,7 @@ bool T4TApp::prepareNode(MyNode* node)
 		cout << "adding collision listener to " << node->getId() << endl;
 		((PhysicsRigidBody*)obj)->addCollisionListener(this);
 	}
+    return true;
 }
 
 bool T4TApp::printNode(Node *node) {
@@ -1453,7 +1454,7 @@ MyNode* T4TApp::addModelNode(const char *type) {
 
 Model* T4TApp::createModel(std::vector<float> &vertices, bool wireframe, const char *material, Node *node, bool doTexture) {
 	int numVertices = vertices.size()/6;
-	VertexFormat::Element elements[doTexture ? 3 : 2];
+	VertexFormat::Element elements[3];
 	elements[0] = VertexFormat::Element(VertexFormat::POSITION, 3);
 	elements[1] = VertexFormat::Element(wireframe ? VertexFormat::COLOR : VertexFormat::NORMAL, 3);
 	if(doTexture) elements[2] = VertexFormat::Element(VertexFormat::TEXCOORD0, 2);
@@ -1723,6 +1724,7 @@ void T4TApp::animationEvent(AnimationClip *clip, AnimationClip::Listener::EventT
 				}
 				break;
 			}
+            default: break;
 		}
 	}
 }
@@ -2023,6 +2025,7 @@ bool T4TApp::HitFilter::filter(PhysicsCollisionObject *object) {
 	if(object == NULL) return true;
 	MyNode *node = dynamic_cast<MyNode*>(object->getNode());
 	if(!node || app->auxNode(node)) return true;
+    return false;
 }
 
 
@@ -2484,7 +2487,7 @@ template <class T> T* T4TApp::popBack(std::vector<T*> &vec) {
 }
 
 template <class T> void T4TApp::delBack(std::vector<T*> &vec) {
-	if(vec.empty()) return NULL;
+	if(vec.empty()) return;
 	T* t = vec.back();
 	vec.pop_back();
 	delete t;

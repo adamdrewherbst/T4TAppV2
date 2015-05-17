@@ -14,6 +14,8 @@ CEV::CEV() : Project::Project("CEV", "Crew Exploration Vehicle") {
 	_seat = (Seat*) addElement(new Seat(this, _body));
 	_hatch = (Hatch*) addElement(new Hatch(this, _body));
 	setupMenu();
+    
+    _showGround = false;
 	
 	_maxRadius = 10.0f;
 	_maxLength = 20.0f;

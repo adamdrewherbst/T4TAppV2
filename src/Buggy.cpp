@@ -52,7 +52,6 @@ bool Buggy::setSubMode(short mode) {
 			//_rootNode->setMyTranslation(trans);
 			setRampHeight(1);
 			app->getPhysicsController()->setGravity(app->_gravity);
-			app->_ground->setVisible(true);
 			_ramp->setVisible(true);
 			app->message("Drag the ramp up and down to change its slope.");
 			break;

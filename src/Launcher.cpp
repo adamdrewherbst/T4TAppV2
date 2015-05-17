@@ -87,7 +87,6 @@ bool Launcher::setSubMode(short mode) {
 			//show the table with the clamps
 			_scene->addNode(_table);
 			_table->enablePhysics(true);
-			app->_ground->setVisible(true);
 			app->getPhysicsController()->setGravity(app->_gravity);
 			//anchor the rubber band between the clamps
 			Vector3 trans = _anchorPoints[0] + (_anchorPoints[1] - _anchorPoints[0]) / 2;
