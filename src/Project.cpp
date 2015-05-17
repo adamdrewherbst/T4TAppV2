@@ -793,6 +793,10 @@ void Project::Element::addPhysics(short n) {
 	}
 }
 
+void Project::Element::enablePhysics(bool enable, short n) {
+	_nodes[n]->enablePhysics(enable);
+}
+
 void Project::Element::deleteNode(short n) {
 	if(isBody()) {
 		_project->_buildAnchor.reset();
@@ -807,6 +811,10 @@ short Project::Element::getNodeCount() {
 
 MyNode* Project::Element::getNode(short n) {
 	return _nodes.size() > n ? _nodes[n].get() : NULL;
+}
+
+MyNode* Project::Element::getTouchParent(short n) {
+	return dynamic_cast<MyNode*>(_nodes[n]->getParent());
 }
 
 Vector3 Project::Element::getAnchorPoint(short n) {
@@ -828,8 +836,10 @@ bool Project::Element::touchEvent(Touch::TouchEvent evt, int x, int y, unsigned 
 		}
 	}
 	MyNode *node = NULL, *parent = NULL;
-	if(_touchInd >= 0) node = _nodes[_touchInd].get();
-	if(node) parent = dynamic_cast<MyNode*>(node->getParent());
+	if(_touchInd >= 0) {
+		node = _nodes[_touchInd].get();
+		parent = getTouchParent(_touchInd);
+	}
 	//move the node as needed
 	if(node && parent && parent != _project->_rootNode && _project->_moveMode >= 0) {
 		short start = _touchInd - _touchInd % _numNodes, end = start + _numNodes, i;
@@ -841,7 +851,7 @@ bool Project::Element::touchEvent(Touch::TouchEvent evt, int x, int y, unsigned 
 						_plane.set(normal, -normal.dot(point));
 						cout << "set plane to " << app->pv(_plane.getNormal()) << " at " << _plane.getDistance() << endl;
 						for(i = start; i < end; i++) {
-							_nodes[i]->enablePhysics(false);
+							enablePhysics(false, i);
 						}
 						break;
 					} case Touch::TOUCH_MOVE: {
@@ -855,7 +865,7 @@ bool Project::Element::touchEvent(Touch::TouchEvent evt, int x, int y, unsigned 
 					} case Touch::TOUCH_RELEASE: {
 						addPhysics(_touchInd);
 						for(i = start; i < end; i++) {
-							_nodes[i]->enablePhysics(true);
+							enablePhysics(true, i);
 						}
 						break;
 					}
@@ -871,7 +881,7 @@ bool Project::Element::touchEvent(Touch::TouchEvent evt, int x, int y, unsigned 
 						_project->_touchPt.set(evt, x, y, point);
 						cout << "touched " << node->getId() << ", currently at " << app->pv(point) << endl;
 						for(i = start; i < end; i++) {
-							_nodes[i]->enablePhysics(false);
+							enablePhysics(false, i);
 						}
 						break;
 					} case Touch::TOUCH_MOVE: {
@@ -884,7 +894,7 @@ bool Project::Element::touchEvent(Touch::TouchEvent evt, int x, int y, unsigned 
 					} case Touch::TOUCH_RELEASE: {
 						for(i = start; i < end; i++) {
 							addPhysics(i);
-							_nodes[i]->enablePhysics(true);
+							enablePhysics(true, i);
 						}
 						break;
 					}
@@ -894,7 +904,7 @@ bool Project::Element::touchEvent(Touch::TouchEvent evt, int x, int y, unsigned 
 				switch(evt) {
 					case Touch::TOUCH_PRESS: {
 						for(i = start; i < end; i++) {
-							_nodes[i]->enablePhysics(false);
+							enablePhysics(false, i);
 						}
 						break;
 					} case Touch::TOUCH_MOVE: {
@@ -912,7 +922,7 @@ bool Project::Element::touchEvent(Touch::TouchEvent evt, int x, int y, unsigned 
 					} case Touch::TOUCH_RELEASE: {
 						for(i = start; i < end; i++) {
 							addPhysics(i);
-							_nodes[i]->enablePhysics(true);
+							enablePhysics(true, i);
 						}
 						break;
 					}
@@ -921,7 +931,7 @@ bool Project::Element::touchEvent(Touch::TouchEvent evt, int x, int y, unsigned 
 			} case 3: { //free rotate
 				switch(evt) {
 					case Touch::TOUCH_PRESS: {
-						node->enablePhysics(false);
+						enablePhysics(false, _touchInd);
 						_project->_jointBase = _project->getTouchPoint() - node->getAnchorPoint();
 						break;
 					} case Touch::TOUCH_MOVE: {
@@ -955,7 +965,7 @@ bool Project::Element::touchEvent(Touch::TouchEvent evt, int x, int y, unsigned 
 						break;
 					} case Touch::TOUCH_RELEASE: {
 						addPhysics(_touchInd);
-						node->enablePhysics(true);
+						enablePhysics(true, _touchInd);
 						break;
 					}
 				}

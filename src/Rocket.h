@@ -25,7 +25,9 @@ public:
 		Balloon(Project *project, Element *parent);
 		void placeNode(short n);
 		void addPhysics(short n);
+		void enablePhysics(bool enable, short n);
 		void deleteNode(short n);
+		MyNode* getTouchParent(short n);
 	};
 
 	Straw *_straw;

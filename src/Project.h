@@ -43,6 +43,7 @@ public:
 		virtual bool touchEvent(Touch::TouchEvent evt, int x, int y, unsigned int contactIndex);
 		short getNodeCount();
 		MyNode* getNode(short n = 0);
+		virtual MyNode* getTouchParent(short n = 0);
 		virtual Vector3 getAnchorPoint(short n = 0);
 		bool isBody();
 		virtual void setNode(const char *id);
@@ -50,6 +51,7 @@ public:
 		virtual void placeNode(short n = 0);
 		virtual void setComplete(bool complete);
 		virtual void addPhysics(short n = 0);
+		virtual void enablePhysics(bool enable, short n = 0);
 		virtual void deleteNode(short n = 0);
 		virtual CameraState* getAttachState();
 		virtual float getAttachZoom(float fillFraction = 0.8f);

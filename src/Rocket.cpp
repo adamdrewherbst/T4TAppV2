@@ -46,15 +46,17 @@ bool Rocket::setSubMode(short mode) {
 			_rootNode->enablePhysics(true);
 			_straw->_constraint->setEnabled(true);
 
-			_payload->enablePhysics(true);
-			Vector3 trans = _payload->getTranslationWorld();
-			BoundingBox satelliteBox = _payload->getBoundingBox(true);
-			if(_payload->getScene() != _scene) {
-				Vector3 joint = trans, dir = Vector3::unitY();
-				joint.y += satelliteBox.max.y;
-				app->addConstraint(_straw->getNode(), _payload, -1, "fixed", joint, dir, true);
-				_payload->updateMaterial();
-				_payloadPosition = trans;
+			if(_payload) {
+				_payload->enablePhysics(true);
+				Vector3 trans = _payload->getTranslationWorld();
+				BoundingBox satelliteBox = _payload->getBoundingBox(true);
+				if(_payload->getScene() != _scene) {
+					Vector3 joint = trans, dir = Vector3::unitY();
+					joint.y += satelliteBox.max.y;
+					app->addConstraint(_straw->getNode(), _payload, -1, "fixed", joint, dir, true);
+					_payload->updateMaterial();
+					_payloadPosition = trans;
+				}
 			}
 			break;
 		}
@@ -125,6 +127,12 @@ void Rocket::update() {
 }
 
 void Rocket::launchComplete() {
+}
+
+void Rocket::sync() {
+	bool saving = _saveFlag;
+	Project::sync();
+	if(saving) return;
 }
 
 void Rocket::controlEvent(Control *control, Control::Listener::EventType evt) {
@@ -218,28 +226,31 @@ void Rocket::Balloon::placeNode(short n) {
 	strawAxis.normalize();
 	trans -= strawAxis * trans.dot(strawAxis);
 	trans.normalize();
-	//constrain the balloon so it is fixed to the straw
-	MyNode *balloon = _nodes.back().get();
-	const char *id = balloon->getId();
-	MyNode *anchor = MyNode::create(MyNode::concat(2, "rocket_anchor_", &id[7]));
-	BoundingBox box = balloon->getModel()->getMesh()->getBoundingBox();
-	float balloonRadius = (box.max.x - box.min.x) / 2;
-	float anchorRadius = balloonRadius * 0.5f; //best fit to the balloon shape as it deflates?
-	anchor->setTranslation(point + trans * anchorRadius);
-	anchor->setRotation(straw->getRotation());
-	anchor->_objType = "sphere";
-	anchor->_radius = anchorRadius;
-	anchor->_mass = 0.5f;
-	balloon->_objType = "ghost";
-	anchor->addChild(balloon);
-	_project->_scene->addNode(anchor);
-	balloon->setTranslation(trans * (balloonRadius - anchorRadius));
-}
+	MyNode *balloon = _nodes[n].get(), *anchor = dynamic_cast<MyNode*>(balloon->getParent());
 
-void Rocket::sync() {
-	bool saving = _saveFlag;
-	Project::sync();
-	if(saving) return;
+	if(anchor) { //balloon has already been anchored - means we are just moving it, not adding it
+		anchor->setTranslation(point + trans * _anchorRadius[n]);
+		balloon->setTranslation(trans * (_balloonRadius[n] - _anchorRadius[n]));
+		anchor->_parentOffset = point;
+		anchor->_parentAxis = trans;
+		anchor->_parentNormal = trans;
+	} else {
+		//constrain the balloon so it is fixed to the straw
+		const char *id = balloon->getId();
+		anchor = MyNode::create(MyNode::concat(2, "rocket_anchor_", &id[7]));
+		BoundingBox box = balloon->getModel()->getMesh()->getBoundingBox();
+		float balloonRadius = (box.max.x - box.min.x) / 2;
+		float anchorRadius = balloonRadius * 0.5f; //best fit to the balloon shape as it deflates?
+		anchor->setTranslation(point + trans * anchorRadius);
+		anchor->setRotation(straw->getRotation());
+		anchor->_objType = "sphere";
+		anchor->_radius = anchorRadius;
+		anchor->_mass = 0.5f;
+		balloon->_objType = "ghost";
+		anchor->addChild(balloon);
+		_project->_scene->addNode(anchor);
+		balloon->setTranslation(trans * (balloonRadius - anchorRadius));
+	}
 }
 
 void Rocket::Balloon::addPhysics(short n) {
@@ -258,12 +269,21 @@ void Rocket::Balloon::addPhysics(short n) {
 
 	anchor->addPhysics(false);
 	balloon->addPhysics(false);
-	app->addConstraint(straw, anchor, -1, "fixed", Vector3::zero(), Vector3::zero(), true);
+	app->addConstraint(straw, anchor, anchor->_constraintId, "fixed", Vector3::zero(), Vector3::zero(), true);
+}
+
+void Rocket::Balloon::enablePhysics(bool enable, short n) {
+	_nodes[n]->enablePhysics(enable);
+	_parent->getNode(n)->enablePhysics(enable);
 }
 
 void Rocket::Balloon::deleteNode(short n) {
 	MyNode *anchor = dynamic_cast<MyNode*>(_nodes[n]->getParent());
 	anchor->removeMe();
+}
+
+MyNode* Rocket::Balloon::getTouchParent(short n) {
+	return _parent->getNode();
 }
 
 }
