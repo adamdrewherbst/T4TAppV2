@@ -254,6 +254,10 @@ void Rocket::Balloon::placeNode(short n) {
 	}
 }
 
+void Rocket::Balloon::doGroundFace(short n, short f, const Plane &plane) {
+	Project::Element::doGroundFace(n, f, plane);
+}
+
 void Rocket::Balloon::addPhysics(short n) {
 	MyNode *straw = ((Rocket*)_project)->_straw->getNode(), *balloon = _nodes[n].get(),
 	  *anchor = dynamic_cast<MyNode*>(balloon->getParent());
@@ -275,12 +279,16 @@ void Rocket::Balloon::addPhysics(short n) {
 
 void Rocket::Balloon::enablePhysics(bool enable, short n) {
 	_nodes[n]->enablePhysics(enable);
-	_parent->getNode(n)->enablePhysics(enable);
+	((MyNode*)_nodes[n]->getParent())->enablePhysics(enable);
 }
 
 void Rocket::Balloon::deleteNode(short n) {
 	MyNode *anchor = dynamic_cast<MyNode*>(_nodes[n]->getParent());
 	anchor->removeMe();
+}
+
+MyNode* Rocket::Balloon::getBaseNode(short n) {
+	return dynamic_cast<MyNode*>(_nodes[n]->getParent());
 }
 
 MyNode* Rocket::Balloon::getTouchParent(short n) {

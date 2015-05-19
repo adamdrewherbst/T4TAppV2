@@ -22,7 +22,7 @@ public:
 		Element *_parent;
 		Plane _plane;
 		TouchPoint _parentTouch, _planeTouch;
-		std::vector<std::string> _actions;
+		std::vector<std::string> _actions, _excludedMoves;
 		std::vector<Element*> _children;
 		//where the camera should pan to when the user is attaching something to this element...
 		CameraState *_attachState;
@@ -43,12 +43,14 @@ public:
 		virtual bool touchEvent(Touch::TouchEvent evt, int x, int y, unsigned int contactIndex);
 		short getNodeCount();
 		MyNode* getNode(short n = 0);
+		virtual MyNode* getBaseNode(short n = 0);
 		virtual MyNode* getTouchParent(short n = 0);
 		virtual Vector3 getAnchorPoint(short n = 0);
 		bool isBody();
 		virtual void setNode(const char *id);
 		virtual void addNode();
 		virtual void placeNode(short n = 0);
+		virtual void doGroundFace(short n, short f, const Plane &plane);
 		virtual void setComplete(bool complete);
 		virtual void addPhysics(short n = 0);
 		virtual void enablePhysics(bool enable, short n = 0);
@@ -87,7 +89,7 @@ public:
 	float _finishDistance;
 
 	Container *_elementContainer, *_actionContainer;
-	MenuFilter *_actionFilter;
+	MenuFilter *_moveFilter, *_actionFilter;
 	Button *_launchButton, *_activateButton;
 
 	ConstraintPtr _buildAnchor; //keep the model from moving while we are building it

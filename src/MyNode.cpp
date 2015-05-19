@@ -2149,12 +2149,12 @@ bool MyNode::inheritsTransform() {
 	  || getCollisionObject()->getType() == PhysicsCollisionObject::GHOST_OBJECT;
 }
 
-void MyNode::myTranslate(const Vector3& delta) {
+void MyNode::myTranslate(const Vector3& delta, short depth) {
 	for(MyNode *child = dynamic_cast<MyNode*>(getFirstChild()); child; child = dynamic_cast<MyNode*>(child->getNextSibling())) {
-		child->myTranslate(delta);
+		child->myTranslate(delta, depth+1);
 	}
 	//cout << "moving " << getId() << " by " << app->pv(delta) << endl;
-	if(getParent() == NULL || !inheritsTransform())
+	if(depth == 0 || getParent() == NULL || !inheritsTransform())
 		translate(delta);
 }
 
@@ -2162,7 +2162,7 @@ void MyNode::setMyTranslation(const Vector3& translation) {
 	myTranslate(translation - getTranslationWorld());
 }
 
-void MyNode::myRotate(const Quaternion& delta, Vector3 *center) {
+void MyNode::myRotate(const Quaternion& delta, Vector3 *center, short depth) {
 	Vector3 baseTrans = getTranslationWorld(), offset, offsetRot;
 	Matrix rot;
 	Matrix::createRotation(delta, &rot);
@@ -2180,7 +2180,7 @@ void MyNode::myRotate(const Quaternion& delta, Vector3 *center) {
 		child->myRotate(delta);
 		child->myTranslate(offsetRot - offset);
 	}
-	if(getParent() == NULL || (getCollisionObject() && !isStatic())) {
+	if(depth == 0 || getParent() == NULL || !inheritsTransform()) {
 		setRotation(delta * getRotation());
 		if(!trans.isZero()) myTranslate(trans);
 	}
@@ -2196,7 +2196,7 @@ void MyNode::setMyRotation(const Quaternion& rotation, Vector3 *center) {
 	myRotate(delta, center);
 }
 
-void MyNode::myScale(const Vector3& scale) {
+void MyNode::myScale(const Vector3& scale, short depth) {
 	this->scale(scale);
 }
 

@@ -154,6 +154,7 @@ void Project::setupMenu() {
 		button->setTooltip(tooltips[i].c_str());
 		moveGroup->addButton(button);
 	}
+	_moveFilter = new MenuFilter(_moveContainer);
 
 	//add a button for each action that any element has - we will enable them on the fly for the selected element
 	_actionContainer = app->addControl <Container> (_controls, "actions", "hiddenContainer");
@@ -454,11 +455,16 @@ void Project::setCurrentElement(short n) {
 	_currentElement = n;
 	if(_currentElement >= 0) {
 		Element *element = getEl();
-		std::vector<std::string> &actions = element->_actions;
+		std::vector<std::string> &actions = element->_actions, &excludedMoves = element->_excludedMoves;
 		_actionFilter->filterAll(true);
 		short n = actions.size(), i;
 		for(i = 0; i < n; i++) {
 			_actionFilter->filter(actions[i].c_str(), false);
+		}
+		_moveFilter->filterAll(false);
+		n = excludedMoves.size();
+		for(i = 0; i < n; i++) {
+			_moveFilter->filter(excludedMoves[i].c_str(), true);
 		}
 		//update button tooltips to use the name of this element
 		std::vector<Control*> controls = _actionContainer->getControls();
@@ -775,6 +781,10 @@ void Project::Element::placeNode(short n) {
 	}
 }
 
+void Project::Element::doGroundFace(short n, short f, const Plane &plane) {
+	_nodes[n]->rotateFaceToPlane(f, plane);
+}
+
 void Project::Element::setComplete(bool complete) {
 	_complete = complete;
 	cout << _id << " complete" << endl;
@@ -816,6 +826,10 @@ MyNode* Project::Element::getNode(short n) {
 	return _nodes.size() > n ? _nodes[n].get() : NULL;
 }
 
+MyNode* Project::Element::getBaseNode(short n) {
+	return _nodes[n].get();
+}
+
 MyNode* Project::Element::getTouchParent(short n) {
 	return dynamic_cast<MyNode*>(_nodes[n]->getParent());
 }
@@ -830,18 +844,24 @@ bool Project::Element::isBody() {
 
 bool Project::Element::touchEvent(Touch::TouchEvent evt, int x, int y, unsigned int contactIndex) {
 	_planeTouch.set(evt, x, y, _plane);
+	MyNode *node = NULL, *parent = NULL, *baseNode = NULL;
 	if(evt == Touch::TOUCH_PRESS) {
 		//identify which of my nodes was touched
 		_touchInd = -1;
 		for(short i = 0; i < _nodes.size(); i++) {
-			_nodes[i]->setBase();
+			node = _nodes[i].get();
+			baseNode = getBaseNode(i);
+			node->setBase();
+			if(baseNode != node) baseNode->setBase();
 			if(_nodes[i].get() == _project->getTouchNode(evt)) _touchInd = i;
 		}
 	}
-	MyNode *node = NULL, *parent = NULL;
 	if(_touchInd >= 0) {
 		node = _nodes[_touchInd].get();
 		parent = getTouchParent(_touchInd);
+	} else {
+		node = NULL;
+		parent = NULL;
 	}
 	//move the node as needed
 	if(node && parent && parent != _project->_rootNode && _project->_moveMode >= 0) {
@@ -862,7 +882,7 @@ bool Project::Element::touchEvent(Touch::TouchEvent evt, int x, int y, unsigned 
 						cout << "plane now " << app->pv(_plane.getNormal()) << " at " << _plane.getDistance() << endl;
 						cout << "translating by " << app->pv(delta) << endl;
 						for(i = start; i < end; i++) {
-							_nodes[i]->baseTranslate(delta);
+							getBaseNode(i)->baseTranslate(delta);
 						}
 						break;
 					} case Touch::TOUCH_RELEASE: {
@@ -913,11 +933,13 @@ bool Project::Element::touchEvent(Touch::TouchEvent evt, int x, int y, unsigned 
 					} case Touch::TOUCH_MOVE: {
 						float deltaAngle = _project->_touchPt.deltaPix().x * 2 * M_PI / 400.0f;
 						for(i = start; i < end; i++) {
-							Quaternion rot(_nodes[i]->getJointNormal(), deltaAngle);
-							_nodes[i]->baseRotate(rot);
-							if(_nodes[i].get() == node) {
+							baseNode = getBaseNode(i);
+							Quaternion rot(baseNode->getJointNormal(), deltaAngle);
+							baseNode->baseRotate(rot);
+							if(i == _touchInd) {
 								cout << "base rotating " << node->getId() << " from "
-									<< app->pq(node->_baseRotation) << " by " << app->pq(rot) << endl;
+									<< app->pq(node->_baseRotation) << " by " << app->pq(rot) << " ("
+									<< deltaAngle << ")" << endl;
 								cout << "  now at " << app->pq(node->getRotation()) << endl;
 							}
 						}
@@ -932,16 +954,17 @@ bool Project::Element::touchEvent(Touch::TouchEvent evt, int x, int y, unsigned 
 				}
 				break;
 			} case 3: { //free rotate
+				baseNode = getBaseNode(_touchInd);
 				switch(evt) {
 					case Touch::TOUCH_PRESS: {
 						enablePhysics(false, _touchInd);
-						_project->_jointBase = _project->getTouchPoint() - node->getAnchorPoint();
+						_project->_jointBase = _project->getTouchPoint() - baseNode->getAnchorPoint();
 						break;
 					} case Touch::TOUCH_MOVE: {
 						//try to keep the point that was touched under the mouse pointer while rotating about the joint
 						//if ray is v0 + k*v, and free radius is R, then |v0 + k*v| = R
 						// => v0^2 + 2*k*v*v0 + k^2*v^2 = R^2 => k = [-v*v0 +/- sqrt((v*v0)^2 - v^2*(v0^2 - R^2))] / v^2
-						Vector3 origin = node->getAnchorPoint();
+						Vector3 origin = baseNode->getAnchorPoint();
 						Vector3 v0 = _project->_ray.getOrigin() - origin, v = _project->_ray.getDirection(), joint;
 						float R = _project->_jointBase.length(), v_v0 = v.dot(v0), v_v = v.lengthSquared();
 						float det = v_v0*v_v0 - v_v * (v0.lengthSquared() - R*R), k;
@@ -949,7 +972,7 @@ bool Project::Element::touchEvent(Touch::TouchEvent evt, int x, int y, unsigned 
 							k = (-v_v0 - sqrt(det)) / v_v;
 							joint = v0 + v * k;
 						} else { //if the mouse pointer is too far out...
-							Vector3 normal = node->getJointNormal();
+							Vector3 normal = baseNode->getJointNormal();
 							//gracefully decline the joint vector to the parent's surface
 							Plane plane(normal, -normal.dot(origin));
 							//take the joint where the determinant would be zero (joint would be perp. to camera ray)
@@ -964,7 +987,7 @@ bool Project::Element::touchEvent(Touch::TouchEvent evt, int x, int y, unsigned 
 						}
 						Quaternion rot = MyNode::getVectorRotation(_project->_jointBase, joint);
 						//cout << "rotating to " << app->pq(rot) << " about " << app->pv(origin) << endl;
-						node->baseRotate(rot, &origin);
+						baseNode->baseRotate(rot, &origin);
 						break;
 					} case Touch::TOUCH_RELEASE: {
 						addPhysics(_touchInd);
@@ -984,12 +1007,13 @@ bool Project::Element::touchEvent(Touch::TouchEvent evt, int x, int y, unsigned 
 						short f = node->pt2Face(_project->_touchPt.getPoint(evt));
 						if(f < 0) break;
 						parent->updateTransform();
-						node->enablePhysics(false);
-						Vector3 joint = node->getAnchorPoint(), normal = node->getJointNormal();
+						enablePhysics(false, _touchInd);
+						baseNode = getBaseNode(_touchInd);
+						Vector3 joint = baseNode->getAnchorPoint(), normal = baseNode->getJointNormal();
 						Plane plane(normal, -joint.dot(normal));
-						node->rotateFaceToPlane(f, plane);
+						doGroundFace(_touchInd, f, plane);
 						addPhysics(_touchInd);
-						node->enablePhysics(true);
+						enablePhysics(true, _touchInd);
 						break;
 					}
 				}

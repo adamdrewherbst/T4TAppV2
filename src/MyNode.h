@@ -105,11 +105,11 @@ public:
 	void set(const Matrix& trans);
 	void set(Node *other);
 	bool inheritsTransform();
-	void myTranslate(const Vector3& delta);
+	void myTranslate(const Vector3& delta, short depth = 0);
 	void setMyTranslation(const Vector3& translation);
-	void myRotate(const Quaternion &delta, Vector3 *center = NULL);
+	void myRotate(const Quaternion &delta, Vector3 *center = NULL, short depth = 0);
 	void setMyRotation(const Quaternion &rotation, Vector3 *center = NULL);
-	void myScale(const Vector3& scale);
+	void myScale(const Vector3& scale, short depth = 0);
 	void setMyScale(const Vector3& scale);
 	void shiftModel(float x, float y, float z);
 	void translateToOrigin();

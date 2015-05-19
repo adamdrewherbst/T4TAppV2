@@ -24,9 +24,11 @@ public:
 
 		Balloon(Project *project, Element *parent);
 		void placeNode(short n);
+		void doGroundFace(short n, short f, const Plane &plane);
 		void addPhysics(short n);
 		void enablePhysics(bool enable, short n);
 		void deleteNode(short n);
+		MyNode* getBaseNode(short n);
 		MyNode* getTouchParent(short n);
 	};
 
