@@ -1872,8 +1872,11 @@ PhysicsConstraint* T4TApp::addConstraint(MyNode *n1, MyNode *n2, int id, const c
 	Quaternion rotOffset = MyNode::getVectorRotation(Vector3::unitZ(), direction),
 	  rot1 = PhysicsConstraint::getRotationOffset(n1, joint) * rotOffset,
 	  rot2 = PhysicsConstraint::getRotationOffset(n2, joint) * rotOffset;
-	Vector3 trans1 = PhysicsConstraint::getTranslationOffset(n1, joint),
-	  trans2 = PhysicsConstraint::getTranslationOffset(n2, joint);
+	Vector3 trans1, trans2;
+	if(!joint.isZero() || !direction.isZero()) {
+		trans1 = PhysicsConstraint::getTranslationOffset(n1, joint),
+		trans2 = PhysicsConstraint::getTranslationOffset(n2, joint);
+	}
 	return addConstraint(n1, n2, id, type, rot1, trans1, rot2, trans2, parentChild, noCollide);
 }
 
@@ -1931,10 +1934,12 @@ PhysicsConstraint* T4TApp::addConstraint(MyNode *n1, MyNode *n2, int id, const c
 		n1->addChild(n2);
 		n2->_constraintParent = n1;
 		n2->_constraintId = id;
-		n2->_parentOffset = trans[0];
-		Matrix m;
-		Matrix::createRotation(rot[0], &m);
-		m.transformVector(Vector3::unitZ(), &n2->_parentAxis);
+		if(!trans[0].isZero()) {
+			n2->_parentOffset = trans[0];
+			Matrix m;
+			Matrix::createRotation(rot[0], &m);
+			m.transformVector(Vector3::unitZ(), &n2->_parentAxis);
+		}
 	}
 	return ret;
 }

@@ -128,6 +128,7 @@ public:
 	short pix2Face(int x, int y, Vector3 *point = NULL);
 	Plane facePlane(unsigned short f, bool modelSpace = false);
 	Vector3 faceCenter(unsigned short f, bool modelSpace = false);
+	void setGroundRotation();
 	void rotateFaceToPlane(unsigned short f, Plane p);
 	void rotateFaceToFace(unsigned short f, MyNode *other, unsigned short g);
 

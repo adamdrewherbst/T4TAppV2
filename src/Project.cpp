@@ -912,6 +912,7 @@ bool Project::Element::touchEvent(Touch::TouchEvent evt, int x, int y, unsigned 
 						cout << "moving to " << app->pv(_project->_touchPt.getPoint(evt)) << endl;
 						for(i = start; i < end; i++) {
 							placeNode(i);
+							cout << "  anchor point at " << app->pv(getBaseNode(i)->getAnchorPoint()) << endl;
 						}
 						break;
 					} case Touch::TOUCH_RELEASE: {
@@ -946,6 +947,9 @@ bool Project::Element::touchEvent(Touch::TouchEvent evt, int x, int y, unsigned 
 						break;
 					} case Touch::TOUCH_RELEASE: {
 						for(i = start; i < end; i++) {
+							//update the ground rotation to include the new spin
+							baseNode = getBaseNode(i);
+							baseNode->setGroundRotation();
 							addPhysics(i);
 							enablePhysics(true, i);
 						}
@@ -990,6 +994,7 @@ bool Project::Element::touchEvent(Touch::TouchEvent evt, int x, int y, unsigned 
 						baseNode->baseRotate(rot, &origin);
 						break;
 					} case Touch::TOUCH_RELEASE: {
+						baseNode->setGroundRotation();
 						addPhysics(_touchInd);
 						enablePhysics(true, _touchInd);
 						break;

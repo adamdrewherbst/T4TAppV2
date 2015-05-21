@@ -677,9 +677,11 @@ BoundingBox MyNode::getBoundingBox(bool modelSpace, bool recur) {
 		Matrix::createRotation(_groundRotation, &rot);
 		m = rot * m;
 	}
+	bool hasVertices = false;
 	for(i = 0; i < n; i++) {
 		MyNode *node = nodes[i];
 		short nv = node->nv();
+		if(nv > 0) hasVertices = true;
 		for(j = 0; j < nv; j++) {
 			vec = node->_worldVertices[j];
 			if(modelSpace) m.transformPoint(&vec);
@@ -687,6 +689,14 @@ BoundingBox MyNode::getBoundingBox(bool modelSpace, bool recur) {
 				MyNode::sv(min, k, fmin(MyNode::gv(min, k), MyNode::gv(vec, k)));
 				MyNode::sv(max, k, fmax(MyNode::gv(max, k), MyNode::gv(vec, k)));
 			}
+		}
+	}
+	if(!hasVertices) {
+		min.set(-_radius, -_radius, -_radius);
+		max.set(_radius, _radius, _radius);
+		if(!modelSpace) {
+			min += getTranslationWorld();
+			max += getTranslationWorld();
 		}
 	}
 	return BoundingBox(min, max);
@@ -801,6 +811,12 @@ Vector3 MyNode::faceCenter(unsigned short f, bool modelSpace) {
 	}
 	center *= 1.0f / n;
 	return center;
+}
+
+void MyNode::setGroundRotation() {
+	Quaternion offset = getVectorRotation(Vector3::unitZ(), getJointNormal());
+	offset.inverse();
+	_groundRotation = offset * getRotation();
 }
 
 //position node so that given face is flush with given plane
@@ -2177,8 +2193,8 @@ void MyNode::myRotate(const Quaternion& delta, Vector3 *center, short depth) {
 	for(MyNode *child = dynamic_cast<MyNode*>(getFirstChild()); child; child = dynamic_cast<MyNode*>(child->getNextSibling())) {
 		offset = child->getTranslationWorld() - baseTrans;
 		rot.transformVector(offset, &offsetRot);
-		child->myRotate(delta);
-		child->myTranslate(offsetRot - offset);
+		child->myRotate(delta, NULL, depth+1);
+		child->myTranslate(offsetRot - offset, depth+1);
 	}
 	if(depth == 0 || getParent() == NULL || !inheritsTransform()) {
 		setRotation(delta * getRotation());
@@ -2229,7 +2245,7 @@ void MyNode::scaleModel(float scale) {
 
 void MyNode::attachTo(MyNode *parent, const Vector3 &point, const Vector3 &norm) {
 	updateTransform();
-	BoundingBox box = getBoundingBox(true);
+	BoundingBox box = getBoundingBox(true, false);
 	//keep my bottom on the bottom by rotating about the y-axis first
 	Vector3 normal = norm;
 	normal.normalize();

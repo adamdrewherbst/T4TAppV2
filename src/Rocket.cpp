@@ -93,6 +93,17 @@ void Rocket::launch() {
 	cout << endl << "straw constraint: " << _straw->_constraint->_constraint << endl;
 	_rootNode->printTree();
 	_deflating = true;
+	//determine the extent of each balloon normal to the straw
+	short n = _balloons->_nodes.size(), i;
+	for(i = 0; i < n; i++) {
+		MyNode *balloon = _balloons->_nodes[i].get(), *anchor = dynamic_cast<MyNode*>(balloon->getParent());
+		balloon->updateTransform();
+		Vector3 norm = anchor->getJointNormal();
+		float max = balloon->getMaxValue(norm);
+		cout << "balloon " << i << " init radius = " << _balloons->_balloonRadius[i];
+		_balloons->_balloonRadius[i] = max;
+		cout << ", now " << _balloons->_balloonRadius[i] << endl;
+	}
 }
 
 void Rocket::update() {
@@ -114,13 +125,14 @@ void Rocket::update() {
 			_deflating = true;
 			scale *= 0.985f;
 			balloon->setScale(scale);
+			balloon->setTranslation(0, 0, scale * _balloons->_balloonRadius[i] - _balloons->_anchorRadius[i]);
 			//adjust it so it is still tangent to the straw
-			Vector3 trans = anchor->getTranslationWorld() - straw->getTranslationWorld(), strawAxis;
+/*			Vector3 trans = anchor->getTranslationWorld() - straw->getTranslationWorld(), strawAxis;
 			straw->getWorldMatrix().transformVector(Vector3::unitZ(), &strawAxis);
 			strawAxis.normalize();
 			trans -= strawAxis * trans.dot(strawAxis);
 			trans = trans.normalize() * (scale * _balloons->_balloonRadius[i] - _balloons->_anchorRadius[i]);
-			balloon->setTranslation(trans);	
+			balloon->setTranslation(trans);//*/
 			//apply the air pressure force
 			((PhysicsRigidBody*)anchor->getCollisionObject())->applyForce(Vector3(0, 0, 200) * scale);
 		}
@@ -229,29 +241,26 @@ void Rocket::Balloon::placeNode(short n) {
 	trans.normalize();
 	MyNode *balloon = _nodes[n].get(), *anchor = dynamic_cast<MyNode*>(balloon->getParent());
 
-	if(anchor) { //balloon has already been anchored - means we are just moving it, not adding it
-		anchor->setTranslation(point + trans * _anchorRadius[n]);
-		balloon->setTranslation(trans * (_balloonRadius[n] - _anchorRadius[n]));
-		anchor->_parentOffset = point;
-		anchor->_parentAxis = trans;
-		anchor->_parentNormal = trans;
-	} else {
+	if(!anchor) {
 		//constrain the balloon so it is fixed to the straw
 		const char *id = balloon->getId();
 		anchor = MyNode::create(MyNode::concat(2, "rocket_anchor_", &id[7]));
 		BoundingBox box = balloon->getModel()->getMesh()->getBoundingBox();
 		float balloonRadius = (box.max.x - box.min.x) / 2;
 		float anchorRadius = balloonRadius * 0.5f; //best fit to the balloon shape as it deflates?
-		anchor->setTranslation(point + trans * anchorRadius);
-		anchor->setRotation(straw->getRotation());
 		anchor->_objType = "sphere";
 		anchor->_radius = anchorRadius;
 		anchor->_mass = 0.5f;
 		balloon->_objType = "ghost";
 		anchor->addChild(balloon);
-		_project->_scene->addNode(anchor);
-		balloon->setTranslation(trans * (balloonRadius - anchorRadius));
+		//align the nozzle axis (z-axis) with the straw
+		Quaternion rot;
+		Quaternion::createFromAxisAngle(Vector3::unitY(), M_PI/2, &rot);
+		balloon->setRotation(rot);
+		balloon->setTranslation(0, 0, (balloonRadius - anchorRadius));
 	}
+	
+	anchor->attachTo(straw, point, trans);
 }
 
 void Rocket::Balloon::doGroundFace(short n, short f, const Plane &plane) {
@@ -293,6 +302,10 @@ MyNode* Rocket::Balloon::getBaseNode(short n) {
 
 MyNode* Rocket::Balloon::getTouchParent(short n) {
 	return _parent->getNode();
+}
+
+Vector3 Rocket::Balloon::getAnchorPoint(short n) {
+	return ((MyNode*)_nodes[n]->getParent())->getAnchorPoint();
 }
 
 }

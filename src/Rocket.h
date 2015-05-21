@@ -30,6 +30,7 @@ public:
 		void deleteNode(short n);
 		MyNode* getBaseNode(short n);
 		MyNode* getTouchParent(short n);
+		Vector3 getAnchorPoint(short n);
 	};
 
 	Straw *_straw;
