@@ -256,7 +256,8 @@ void Rocket::Balloon::placeNode(short n) {
 		//align the nozzle axis (z-axis) with the straw
 		Quaternion rot;
 		Quaternion::createFromAxisAngle(Vector3::unitY(), M_PI/2, &rot);
-		balloon->setRotation(rot);
+		anchor->_groundRotation = rot;
+		//balloon->setRotation(rot);
 		balloon->setTranslation(0, 0, (balloonRadius - anchorRadius));
 	}
 	

@@ -814,7 +814,7 @@ Vector3 MyNode::faceCenter(unsigned short f, bool modelSpace) {
 }
 
 void MyNode::setGroundRotation() {
-	Quaternion offset = getVectorRotation(Vector3::unitZ(), getJointNormal());
+	Quaternion offset = getAttachRotation();
 	offset.inverse();
 	_groundRotation = offset * getRotation();
 }
@@ -827,13 +827,32 @@ void MyNode::rotateFaceToPlane(unsigned short f, Plane p) {
 	face = _faces[f].getNormal(true);
 	//get axis/angle rotation required to align face normal with plane normal
 	plane.set(-p.getNormal());
-	_groundRotation = getVectorRotation(face, -Vector3::unitZ());
-	setMyRotation(getVectorRotation(-Vector3::unitZ(), plane));
+	MyNode *baseNode = inheritsTransform() ? (MyNode*)getParent() : this;
+	baseNode->_groundRotation = getVectorRotation(face, -Vector3::unitZ());
+	Quaternion rot = getVectorRotation(-Vector3::unitZ(), plane);
+	baseNode->setMyRotation(rot);
 	//translate node so it is flush with the plane
-	Vector3 vertex(_vertices[_faces[f][0]]);
-	getWorldMatrix().transformPoint(&vertex);
-	float distance = vertex.dot(plane) - p.getDistance();
-	myTranslate(-plane * distance);
+	//if we are joined to a parent, keep the center of the face at the joint
+	if(baseNode->_constraintParent) {
+		Vector3 joint = baseNode->getAnchorPoint(), center = _faces[f].getCenter();
+		getWorldMatrix().transformPoint(&center);
+		Vector3 delta = joint - center;
+		if(inheritsTransform()) {
+			Matrix parentInv = getParent()->getWorldMatrix();
+			parentInv.invert();
+			parentInv.transformVector(&delta);
+		}
+		myTranslate(delta);
+	} else {
+		Vector3 vertex(_vertices[_faces[f][0]]);
+		getWorldMatrix().transformPoint(&vertex);
+		float distance = vertex.dot(plane) - p.getDistance();
+		if(inheritsTransform()) {
+			myTranslate(-face * distance);
+		} else {
+			myTranslate(-plane * distance);
+		}
+	}
 	updateTransform();
 }
 
@@ -2243,15 +2262,13 @@ void MyNode::scaleModel(float scale) {
 	}
 }
 
-void MyNode::attachTo(MyNode *parent, const Vector3 &point, const Vector3 &norm) {
-	updateTransform();
-	BoundingBox box = getBoundingBox(true, false);
+Quaternion MyNode::getAttachRotation(const Vector3 &norm) {
+	Quaternion rot;
+	if(!_constraintParent && norm.isZero()) return rot;
+	Vector3 normal = norm.isZero() ? getJointNormal() : norm;
 	//keep my bottom on the bottom by rotating about the y-axis first
-	Vector3 normal = norm;
-	normal.normalize();
 	Vector3 normalXZ = normal;
 	normalXZ.y = 0;
-	Quaternion rot;
 	if(normalXZ.length() < 1e-3) {
 		rot = MyNode::getVectorRotation(Vector3::unitZ(), normal);
 	} else {
@@ -2264,8 +2281,17 @@ void MyNode::attachTo(MyNode *parent, const Vector3 &point, const Vector3 &norm)
 			rot *= rotY;
 		}
 	}
+	return rot;
+}
+
+void MyNode::attachTo(MyNode *parent, const Vector3 &point, const Vector3 &norm) {
+	updateTransform();
+	BoundingBox box = getBoundingBox(true, false);
+	Quaternion rot = getAttachRotation(norm);
 	setMyRotation(rot);
 	//flush my bottom with the parent surface
+	Vector3 normal = norm;
+	normal.normalize();
 	setMyTranslation(point - normal * box.min.z);
 	//hold the position data in my constraint parameters in case needed to add a constraint later
 	_parentOffset = point;

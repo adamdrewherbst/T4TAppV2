@@ -114,6 +114,7 @@ public:
 	void shiftModel(float x, float y, float z);
 	void translateToOrigin();
 	void scaleModel(float scale);
+	Quaternion getAttachRotation(const Vector3 &norm = Vector3::zero());
 	void attachTo(MyNode *parent, const Vector3 &point, const Vector3 &normal);
 	void updateMaterial(bool recur = false);
 	void setBase();
