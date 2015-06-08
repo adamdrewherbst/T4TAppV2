@@ -24,7 +24,9 @@ public:
 	MyNode *_table, *_clamps[2]; //setup to which the rubber band is attached
 	float _tableHeight, _clampWidth;
 	
-	BoundingBox _cevBox;
+	MyNode *_astronaut;
+
+	BoundingBox _cevBox, _astronautBox;
 
 	Launcher();
 	bool setSubMode(short mode);

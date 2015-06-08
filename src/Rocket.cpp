@@ -125,7 +125,9 @@ void Rocket::update() {
 			_deflating = true;
 			scale *= 0.985f;
 			balloon->setScale(scale);
-			balloon->setTranslation(0, 0, scale * _balloons->_balloonRadius[i] - _balloons->_anchorRadius[i]);
+			Vector3 center = anchor->getAnchorPoint() + (scale * _balloons->_balloonRadius[i] * anchor->getJointNormal());
+			balloon->setMyTranslation(center);
+			//balloon->setTranslation(-(scale * _balloons->_balloonRadius[i] - _balloons->_anchorRadius[i]), 0, 0);
 			//adjust it so it is still tangent to the straw
 /*			Vector3 trans = anchor->getTranslationWorld() - straw->getTranslationWorld(), strawAxis;
 			straw->getWorldMatrix().transformVector(Vector3::unitZ(), &strawAxis);
@@ -134,7 +136,7 @@ void Rocket::update() {
 			trans = trans.normalize() * (scale * _balloons->_balloonRadius[i] - _balloons->_anchorRadius[i]);
 			balloon->setTranslation(trans);//*/
 			//apply the air pressure force
-			((PhysicsRigidBody*)anchor->getCollisionObject())->applyForce(Vector3(0, 0, 200) * scale);
+			((PhysicsRigidBody*)straw->getCollisionObject())->applyForce(Vector3(0, 0, 200) * scale);
 		}
 	}
 }
@@ -257,8 +259,7 @@ void Rocket::Balloon::placeNode(short n) {
 		Quaternion rot;
 		Quaternion::createFromAxisAngle(Vector3::unitY(), M_PI/2, &rot);
 		anchor->_groundRotation = rot;
-		//balloon->setRotation(rot);
-		balloon->setTranslation(0, 0, (balloonRadius - anchorRadius));
+		balloon->setTranslation(-(balloonRadius - anchorRadius), 0, 0);
 	}
 	
 	anchor->attachTo(straw, point, trans);

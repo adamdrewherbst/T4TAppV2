@@ -67,6 +67,7 @@ void Mode::setActive(bool active) {
 	if(active) {
 		app->cameraPush();
 		app->setActiveScene(_scene);
+		_subMode = -1;
 		setSubMode(0);
 		app->setNavMode(-1);
 	} else {

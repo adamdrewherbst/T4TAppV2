@@ -834,24 +834,15 @@ void MyNode::rotateFaceToPlane(unsigned short f, Plane p) {
 	//translate node so it is flush with the plane
 	//if we are joined to a parent, keep the center of the face at the joint
 	if(baseNode->_constraintParent) {
-		Vector3 joint = baseNode->getAnchorPoint(), center = _faces[f].getCenter();
+		Vector3 joint = baseNode->getAnchorPoint(), center = _faces[f].getCenter(true);
 		getWorldMatrix().transformPoint(&center);
 		Vector3 delta = joint - center;
-		if(inheritsTransform()) {
-			Matrix parentInv = getParent()->getWorldMatrix();
-			parentInv.invert();
-			parentInv.transformVector(&delta);
-		}
 		myTranslate(delta);
 	} else {
 		Vector3 vertex(_vertices[_faces[f][0]]);
 		getWorldMatrix().transformPoint(&vertex);
 		float distance = vertex.dot(plane) - p.getDistance();
-		if(inheritsTransform()) {
-			myTranslate(-face * distance);
-		} else {
-			myTranslate(-plane * distance);
-		}
+		myTranslate(-plane * distance);
 	}
 	updateTransform();
 }
@@ -2188,13 +2179,23 @@ void MyNode::myTranslate(const Vector3& delta, short depth) {
 	for(MyNode *child = dynamic_cast<MyNode*>(getFirstChild()); child; child = dynamic_cast<MyNode*>(child->getNextSibling())) {
 		child->myTranslate(delta, depth+1);
 	}
-	//cout << "moving " << getId() << " by " << app->pv(delta) << endl;
-	if(depth == 0 || getParent() == NULL || !inheritsTransform())
-		translate(delta);
+	bool inherits = inheritsTransform();
+	if(depth == 0 || getParent() == NULL || !inherits) {
+		if(inherits && getParent()) {
+			Vector3 delta2 = delta;
+			Matrix parentInv = getParent()->getWorldMatrix();
+			parentInv.invert();
+			parentInv.transformVector(&delta2);
+			translate(delta2);
+		} else {
+			translate(delta);
+		}
+	}
 }
 
 void MyNode::setMyTranslation(const Vector3& translation) {
-	myTranslate(translation - getTranslationWorld());
+	Vector3 delta = translation - getTranslationWorld();
+	myTranslate(delta);
 }
 
 void MyNode::myRotate(const Quaternion& delta, Vector3 *center, short depth) {

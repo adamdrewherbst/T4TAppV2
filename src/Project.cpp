@@ -430,7 +430,7 @@ bool Project::setSubMode(short mode) {
 	switch(_subMode) {
 		case 0: { //build
 			app->_ground->setVisible(false);
-			app->setCamera(_buildState);
+			if(changed) app->setCamera(_buildState);
 			removePayload();
 			_rootNode->enablePhysics(true);
 			break;
@@ -439,7 +439,7 @@ bool Project::setSubMode(short mode) {
             app->_ground->setVisible(_showGround);
 			if(_finishDistance > 0) app->setFinishLine(_finishDistance);
 			else app->_finishLine->setVisible(false);
-			app->setCamera(_testState);
+			if(changed) app->setCamera(_testState);
 			break;
 		}
 	}

@@ -47,6 +47,9 @@ Launcher::Launcher() : Project::Project("launcher", "CEV Launcher") {
 
 	_payloadId = "CEV";
 	_cevBox = BoundingBox::empty();
+
+	_astronaut = app->duplicateModelNode("astronaut");
+	_astronautBox = _astronaut->getModel()->getMesh()->getBoundingBox();
 }
 
 bool Launcher::touchEvent(Touch::TouchEvent evt, int x, int y, unsigned int contactIndex) {
@@ -109,6 +112,12 @@ bool Launcher::positionPayload() {
 	_cevBox = _payload->getBoundingBox(true);
 	setStretch(0);
 	_scene->addNode(_payload);
+	//sit the astronaut on the seat
+	CEV *cev = (CEV*) app->getProject("CEV");
+	MyNode *seat = cev->_seat->getNode();
+	BoundingBox box = seat->getBoundingBox(false, false);
+	Vector3 seatCenter = box.getCenter();
+	_astronaut->setMyTranslation(Vector3(seatCenter.x, box.max.y - _astronautBox.min.y, seatCenter.z));
 }
 
 void Launcher::setStretch(float stretch) {
