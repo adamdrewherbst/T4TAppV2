@@ -192,7 +192,7 @@ void Buggy::Wheels::placeNode(short n) {
 	//position determines how far we are along the axle
 	float dir = n == 0 ? 1 : -1;
 	Vector3 parent = _parent->getNode()->getTranslationWorld();
-	Quaternion rot(Vector3::unitY(), M_PI/2);
+	Quaternion rot(Vector3::unitY(), dir * M_PI/2);
 	_nodes[n]->setMyRotation(rot);
 	Vector3 trans(dir * point.x, parent.y, parent.z);
 	_nodes[n]->setMyTranslation(trans);

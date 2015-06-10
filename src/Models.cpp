@@ -52,6 +52,7 @@ void T4TApp::generateModels() {
 	
 	//BEST projects
 	generateModel("straw", "cylinder", 0.25f, 5.0f, 8);
+	generateModel("long_tube", "cylinder", 1.5f, 11.5f, 20);
 	generateModel("balloon_sphere", "sphere", 1.5f, 10);
 	generateModel("balloon_long", "cylinder", 0.5f, 3.0f, 20);
 	generateModel("axle1", "cylinder", 0.15f, 6.0f, 8);

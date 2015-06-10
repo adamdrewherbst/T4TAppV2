@@ -216,6 +216,7 @@ void T4TApp::initialize()
 	addItem("sphere", 2, "general", "body");
 	addItem("cylinder", 2, "general", "body");
 	addItem("halfpipe", 3, "general", "body", "lever arm");
+	addItem("long_tube", 2, "general", "body");
 	addItem("gear_basic", 2, "general", "gear");
 	addItem("cap_with_hole_1", 1, "general");
 	addItem("pitri_wheel", 1, "general");
@@ -223,7 +224,7 @@ void T4TApp::initialize()
 	addItem("jar_with_cone", 1, "general");
 	addItem("disk_with_holes", 1, "general");
 	addItem("threaded_post", 1, "general");
-	addItem("nose_cone", 1, "general");
+	addItem("nose_cone", 2, "general", "wheel");
 	addItem("peepee_cap", 1, "general");
 	addItem("plastic_cone", 1, "general");
 	addItem("foam_roof", 1, "general");

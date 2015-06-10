@@ -32,6 +32,7 @@ public:
 	bool setSubMode(short mode);
 	bool touchEvent(Touch::TouchEvent evt, int x, int y, unsigned int contactIndex);
 	bool positionPayload();
+	bool removePayload();
 	void setStretch(float stretch);
 	void launch();
 	void update();

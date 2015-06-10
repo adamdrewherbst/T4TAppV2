@@ -1,4 +1,5 @@
 #include "T4TApp.h"
+#include "CEV.h"
 #include "Launcher.h"
 #include "MyNode.h"
 
@@ -50,6 +51,8 @@ Launcher::Launcher() : Project::Project("launcher", "CEV Launcher") {
 
 	_astronaut = app->duplicateModelNode("astronaut");
 	_astronautBox = _astronaut->getModel()->getMesh()->getBoundingBox();
+	_astronaut->addPhysics();
+	_astronaut->enablePhysics(false);
 }
 
 bool Launcher::touchEvent(Touch::TouchEvent evt, int x, int y, unsigned int contactIndex) {
@@ -111,6 +114,7 @@ bool Launcher::positionPayload() {
 	if(!Project::positionPayload()) return false;
 	_cevBox = _payload->getBoundingBox(true);
 	setStretch(0);
+	_payload->updateTransform();
 	_scene->addNode(_payload);
 	//sit the astronaut on the seat
 	CEV *cev = (CEV*) app->getProject("CEV");
@@ -118,6 +122,20 @@ bool Launcher::positionPayload() {
 	BoundingBox box = seat->getBoundingBox(false, false);
 	Vector3 seatCenter = box.getCenter();
 	_astronaut->setMyTranslation(Vector3(seatCenter.x, box.max.y - _astronautBox.min.y, seatCenter.z));
+	_astronaut->setMyRotation(MyNode::getVectorRotation(Vector3::unitZ(), Vector3::unitY()));
+	PhysicsConstraint *constraint = app->addConstraint(seat, _astronaut, _astronaut->_constraintId, "fixed",
+		Vector3(seatCenter.x, box.max.y, seatCenter.z), Vector3::unitY(), true);
+	constraint->setBreakingImpulse(1000.0f);
+	constraint->setEnabled(false);
+}
+
+bool Launcher::removePayload() {
+	_astronaut->enablePhysics(false);
+	Node *parent = _astronaut->getParent();
+	if(parent) {
+		parent->removeChild(_astronaut);
+	}
+	Project::removePayload();
 }
 
 void Launcher::setStretch(float stretch) {
