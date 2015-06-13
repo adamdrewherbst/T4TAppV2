@@ -407,6 +407,7 @@ void Project::setActive(bool active) {
 
 bool Project::setSubMode(short mode) {
 	//if trying to test, must first make sure all components have been added
+	app->message(NULL);
 	if(mode == 1) {
 		for(short i = 0; i < _elements.size(); i++) {
 			if(!_elements[i]->_isOther && !_elements[i]->_complete) {
@@ -439,7 +440,12 @@ bool Project::setSubMode(short mode) {
             app->_ground->setVisible(_showGround);
 			if(_finishDistance > 0) app->setFinishLine(_finishDistance);
 			else app->_finishLine->setVisible(false);
-			if(changed) app->setCamera(_testState);
+			if(changed) {
+				app->setCamera(_testState);
+				std::ostringstream os;
+				os << "Click 'Launch' to launch your " << _name;
+				app->message(os.str().c_str());
+			}
 			break;
 		}
 	}
@@ -447,7 +453,6 @@ bool Project::setSubMode(short mode) {
 	_launching = false;
 	_launchComplete = false;
 	_broken = false;
-	app->message(NULL);
 	return changed;
 }
 

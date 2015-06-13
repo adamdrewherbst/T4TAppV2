@@ -216,7 +216,7 @@ void T4TApp::initialize()
 	addItem("sphere", 2, "general", "body");
 	addItem("cylinder", 2, "general", "body");
 	addItem("halfpipe", 3, "general", "body", "lever arm");
-	addItem("long_tube", 2, "general", "body");
+	addItem("stripey_tube", 2, "general", "body");
 	addItem("gear_basic", 2, "general", "gear");
 	addItem("cap_with_hole_1", 1, "general");
 	addItem("pitri_wheel", 1, "general");
@@ -1438,7 +1438,7 @@ MyNode* T4TApp::duplicateModelNode(const char* type, bool isStatic)
 	std::ostringstream os;
 	os << modelNode->getId() << ++modelNode->_typeCount;
 	node->setId(os.str().c_str());
-	node->setTranslation(Vector3(0.0f, (box.max.y - box.min.y)/2.0f, 0.0f));
+	//node->setTranslation(Vector3(0.0f, (box.max.y - box.min.y)/2.0f, 0.0f));
 	node->setStatic(isStatic);
 	node->updateAll();
 	return node;

@@ -45,12 +45,18 @@ bool HullMode::setSubMode(short mode) {
 	switch(_subMode) {
 		case 0: { //select region
 			_currentSelection = _region;
+			_ring->clear();
+			_chain->clear();
 			break;
 		} case 1: { //select ring
 			_currentSelection = _ring;
+			_region->clear();
+			_chain->clear();
 			break;
 		} case 2: { //select chain
 			_currentSelection = _chain;
+			_region->clear();
+			_ring->clear();
 			break;
 		}
 	}
@@ -127,6 +133,8 @@ void HullMode::controlEvent(Control *control, EventType evt) {
 			n = hull->nv();
 			for(j = 0; j < n; j++) world.transformPoint(&hull->_vertices[j]);
 		}
+		_hullNode->setScale(1, 1, 1);
+		_scaleText->setText("");
 		//_hullNode->writeData("res/models/", false);
 		_hullNode->uploadData("http://www.t4t.org/nasa-app/models/scripts/save.php");
 	}
@@ -180,14 +188,14 @@ void HullMode::makeHulls() {
 				for(k = 0; k < 2; k++) e[k] = face.hole(0, (j+k)%n);
 				for(k = 0; k < 2; k++) {
 					m = _hullNode->getEdgeFace(e[k], e[1-k]);
-					if(m >= 0 && m != f) faces.back().push_back(m);
+					if(m >= 0 && m != f && _hullNode->_faces[m].nh() == 0) faces.back().push_back(m);
 				}
 			}
 			for(j = border1; j != border2; j = (j-1+faceSize)%faceSize) {
 				for(k = 0; k < 2; k++) e[k] = face[(j-k+faceSize)%faceSize];
 				for(k = 0; k < 2; k++) {
 					m = _hullNode->getEdgeFace(e[k], e[1-k]);
-					if(m >= 0 && m != f) faces.back().push_back(m);
+					if(m >= 0 && m != f && _hullNode->_faces[m].nh() == 0) faces.back().push_back(m);
 				}
 			}
 			hole1 = hole2;
@@ -292,6 +300,7 @@ bool HullMode::selectItem(const char *id) {
 	_hullNode->_objType = "mesh";
 	_hullNode->_mass = 10;
 	_hullNode->setId(id);
+	_hullNode->updateTransform();
 	_hullNode->translateToOrigin();
 	updateModel();
 	_scene->addNode(_hullNode);

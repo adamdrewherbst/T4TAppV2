@@ -103,6 +103,7 @@ void Rocket::launch() {
 		cout << "balloon " << i << " init radius = " << _balloons->_balloonRadius[i];
 		_balloons->_balloonRadius[i] = max;
 		cout << ", now " << _balloons->_balloonRadius[i] << endl;
+		balloon->setVisible(false);
 	}
 }
 
@@ -127,16 +128,12 @@ void Rocket::update() {
 			balloon->setScale(scale);
 			Vector3 center = anchor->getAnchorPoint() + (scale * _balloons->_balloonRadius[i] * anchor->getJointNormal());
 			balloon->setMyTranslation(center);
-			//balloon->setTranslation(-(scale * _balloons->_balloonRadius[i] - _balloons->_anchorRadius[i]), 0, 0);
-			//adjust it so it is still tangent to the straw
-/*			Vector3 trans = anchor->getTranslationWorld() - straw->getTranslationWorld(), strawAxis;
-			straw->getWorldMatrix().transformVector(Vector3::unitZ(), &strawAxis);
-			strawAxis.normalize();
-			trans -= strawAxis * trans.dot(strawAxis);
-			trans = trans.normalize() * (scale * _balloons->_balloonRadius[i] - _balloons->_anchorRadius[i]);
-			balloon->setTranslation(trans);//*/
 			//apply the air pressure force
-			((PhysicsRigidBody*)straw->getCollisionObject())->applyForce(Vector3(0, 0, 200) * scale);
+			Vector3 force = -Vector3::unitZ();
+			balloon->getWorldMatrix().transformVector(&force);
+			force *= 200 * scale;
+			((PhysicsRigidBody*)anchor->getCollisionObject())->applyForce(force);
+			cout << "applied force " << app->pv(force) << endl;
 		}
 	}
 }

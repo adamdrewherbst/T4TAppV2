@@ -2249,7 +2249,9 @@ void MyNode::shiftModel(float x, float y, float z) {
 }
 
 void MyNode::translateToOrigin() {
-	Vector3 centroid = getCentroid();
+	BoundingBox box = getBoundingBox(true);
+	Vector3 centroid = box.getCenter();
+	//Vector3 centroid = getCentroid();
 	cout << "shifting by " << app->pv(-centroid) << endl;
 	shiftModel(-centroid.x, -centroid.y, -centroid.z);
 	cout << "centroid now at " << app->pv(getCentroid()) << endl;
